@@ -28,8 +28,11 @@ document.addEventListener('DOMContentLoaded', () => {
         markers: [],
         terrain: { type: 'FeatureCollection', features: [] },
         route: [],
+        routeLegs: [],
+        routePolylines: [],
         overlays: {},
         isLiveCMS: false, // Will be set to true when authenticated for live saving
+        routePolyline: null, // active rendered route
     };
 
     // --- UI ELEMENTS ---
@@ -46,6 +49,90 @@ document.addEventListener('DOMContentLoaded', () => {
         maxZoom: 2,
         zoomControl: false,
         attributionControl: false,
+    });
+
+    // Create a dedicated pane for route so it stays above overlays & terrain
+    if (!map.getPane('routePane')) {
+        const routePane = map.createPane('routePane');
+        routePane.style.zIndex = 650; // Above overlays (default 400-600 range) but below markers (700)
+    }
+
+    // --- MOBILE UI WIRING ---
+    const mobileRouteBtn = document.getElementById('mobile-route-btn');
+    const mobileInfoBtn = document.getElementById('mobile-info-btn');
+    const mobileOverlaysBtn = document.getElementById('mobile-overlays-btn');
+    const mobileCenterBtn = document.getElementById('mobile-center-btn');
+    const mobileDmBtn = document.getElementById('mobile-dm-btn');
+    const legendToggleBtn = document.getElementById('legend-toggle');
+    const legendPanel = document.getElementById('map-legend');
+
+    function isNarrow() { return window.innerWidth <= 700; }
+
+    function togglePanel(sidebarEl, btnEl) {
+        if (!sidebarEl) return;
+        const open = sidebarEl.classList.toggle('open');
+        if (btnEl) btnEl.setAttribute('aria-expanded', open ? 'true' : 'false');
+        // Auto-close the other panel on mobile to save space
+        if (isNarrow() && open) {
+            if (sidebarEl === routeSidebar) { infoSidebar.classList.remove('open'); mobileInfoBtn && mobileInfoBtn.setAttribute('aria-expanded','false'); }
+            if (sidebarEl === infoSidebar) { routeSidebar.classList.remove('open'); mobileRouteBtn && mobileRouteBtn.setAttribute('aria-expanded','false'); }
+        }
+    }
+
+    if (mobileRouteBtn) {
+        mobileRouteBtn.addEventListener('click', () => togglePanel(routeSidebar, mobileRouteBtn));
+    }
+    if (mobileInfoBtn) {
+        mobileInfoBtn.addEventListener('click', () => togglePanel(infoSidebar, mobileInfoBtn));
+    }
+    if (mobileCenterBtn) {
+        mobileCenterBtn.addEventListener('click', () => {
+            // Fit to original bounds if known, else just set view to center.
+            if (originalMapBounds) {
+                map.fitBounds(originalMapBounds);
+            } else {
+                map.setView([map.getSize().y/2, map.getSize().x/2], 0);
+            }
+        });
+    }
+    if (mobileOverlaysBtn) {
+        mobileOverlaysBtn.addEventListener('click', () => {
+            // Simple cycle: both on -> only regions -> only borders -> both off -> both on
+            const regionsOn = state.overlays.regions && map.hasLayer(state.overlays.regions);
+            const bordersOn = state.overlays.borders && map.hasLayer(state.overlays.borders);
+            let next = 0;
+            if (regionsOn && bordersOn) next = 1; // only regions
+            else if (regionsOn && !bordersOn) next = 2; // only borders
+            else if (!regionsOn && bordersOn) next = 3; // none
+            else next = 0; // both
+            if (state.overlays.regions) { if (next === 0 || next === 1) { map.addLayer(state.overlays.regions); toggleRegions && (toggleRegions.checked = true);} else { map.removeLayer(state.overlays.regions); toggleRegions && (toggleRegions.checked = false);} }
+            if (state.overlays.borders) { if (next === 0 || next === 2) { map.addLayer(state.overlays.borders); toggleBorders && (toggleBorders.checked = true);} else { map.removeLayer(state.overlays.borders); toggleBorders && (toggleBorders.checked = false);} }
+        });
+    }
+
+    if (legendToggleBtn && legendPanel) {
+        legendToggleBtn.addEventListener('click', () => {
+            const hidden = legendPanel.classList.toggle('hidden');
+            legendToggleBtn.setAttribute('aria-expanded', hidden ? 'false' : 'true');
+        });
+    }
+
+    // Show DM mobile button if in DM mode
+    if (state.isDmMode && mobileDmBtn) {
+        mobileDmBtn.style.display = 'flex';
+        mobileDmBtn.addEventListener('click', () => {
+            // Focus DM controls: open info or route panel as placeholder; future: open a DM toolbar overlay
+            togglePanel(infoSidebar, mobileInfoBtn);
+        });
+    }
+
+    window.addEventListener('resize', () => {
+        // Close panels if switching modes to avoid odd positions
+        if (!isNarrow()) {
+            // Ensure desktop transform states
+            if (routeSidebar.classList.contains('open')) routeSidebar.classList.add('open');
+            if (infoSidebar.classList.contains('open')) infoSidebar.classList.add('open');
+        }
     });
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
@@ -244,15 +331,52 @@ document.addEventListener('DOMContentLoaded', () => {
     function addToRoute(marker) {
         state.route.push(marker);
         routeSidebar.classList.add('open');
-        updateRouteDisplay();
-        if (state.route.length > 1) {
-            calculateAndDisplayPath();
-        }
+        recomputeRoute();
     }
 
     function updateRouteDisplay() {
         const stopsDiv = document.getElementById('route-stops');
-        stopsDiv.innerHTML = state.route.map(stop => `<div>${stop.name}</div>`).join('');
+        if (!stopsDiv) return;
+        stopsDiv.innerHTML = state.route.map((stop, idx) => {
+            return `<div class="route-stop-row">${idx+1}. ${stop.name} ${state.route.length>1?`<button class="mini-btn" data-ridx="${idx}" title="Remove stop" ${idx===0||idx===state.route.length-1?'disabled':''}>✖</button>`:''}</div>`;
+        }).join('') + (state.route.length?`<div class="route-actions"><button id="clear-route-btn" class="clear-route-btn">Clear Route</button></div>`:'');
+        stopsDiv.querySelectorAll('button[data-ridx]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const ridx = parseInt(e.currentTarget.dataset.ridx,10);
+                removeRouteIndex(ridx);
+            });
+        });
+        const clearBtn = document.getElementById('clear-route-btn');
+        if (clearBtn) clearBtn.addEventListener('click', clearRoute);
+    }
+
+    function removeRouteIndex(idx) {
+        if (idx <= 0 || idx >= state.route.length-1) return; // keep endpoints for now
+        state.route.splice(idx,1);
+        recomputeRoute();
+    }
+
+    function clearRoute() {
+        state.route = [];
+        state.routeLegs = [];
+        state.routePolylines.forEach(pl => map.removeLayer(pl));
+        state.routePolylines = [];
+        if (state.routePolyline) { map.removeLayer(state.routePolyline); state.routePolyline = null; }
+        updateRouteDisplay();
+        updateRouteSummaryEmpty();
+    }
+
+    function recomputeRoute() {
+        // Clear existing leg polylines
+        state.routePolylines.forEach(pl => map.removeLayer(pl));
+        state.routePolylines = [];
+        state.routeLegs = [];
+        if (state.routePolyline) { map.removeLayer(state.routePolyline); state.routePolyline = null; }
+        updateRouteDisplay();
+        if (state.route.length < 2) { updateRouteSummaryEmpty(); return; }
+        for (let i=1;i<state.route.length;i++) {
+            calculateLegPath(state.route[i-1], state.route[i], i === state.route.length -1);
+        }
     }
 
     // --- PATHFINDING (A*) ---
@@ -355,56 +479,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    function calculateAndDisplayPath() {
-        console.log('calculateAndDisplayPath called, route length:', state.route.length);
-        
-        // Clean up existing route lines
-        map.eachLayer(layer => {
-            if (layer instanceof L.Polyline && !layer.options.isOverlay) {
-                map.removeLayer(layer);
-            }
-        });
-        
-        if (!pathfindingGrid) {
-            console.log('Building pathfinding grid...');
-            buildPathfindingGrid();
-        }
-
-        const start = state.route[state.route.length - 2];
-        const end = state.route[state.route.length - 1];
-        
-        console.log('Route from:', start.name, 'to:', end.name);
-        console.log('Start coords:', start.x, start.y);
-        console.log('End coords:', end.x, end.y);
-
+    function calculateLegPath(start, end, isFinalLeg) {
+        if (!pathfindingGrid) buildPathfindingGrid();
         const startCell = worldToGridCoords(start.x, start.y);
         const endCell = worldToGridCoords(end.x, end.y);
-        
-        console.log('Grid coords - Start:', startCell, 'End:', endCell);
-
-        // Fallback: if pathfinding fails, show straight line distance
         const straightLineDistance = Math.sqrt(Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2));
         const straightLineKm = straightLineDistance * config.kmPerPixel;
-        
-        console.log('Straight line distance:', straightLineKm.toFixed(2), 'km');
-
-        // Try EasyStar pathfinding
         easystar.findPath(startCell.x, startCell.y, endCell.x, endCell.y, (path) => {
             if (path && path.length > 0) {
-                console.log('Path found with', path.length, 'steps');
                 const pixelPath = path.map(p => {
                     const coords = gridToWorldCoords(p.x, p.y);
-                    return [coords[0], coords[1]]; // [lat, lng] for Leaflet
+                    return [coords[0], coords[1]];
                 });
-                const polyline = L.polyline(pixelPath, { color: 'red', weight: 3 }).addTo(map);
-                updateRouteSummary(pixelPath);
+                const polyline = L.polyline(pixelPath, { color: 'red', weight: 3, pane: 'routePane' }).addTo(map);
+                state.routePolylines.push(polyline);
+                const distanceKm = computePixelPathKm(pixelPath);
+                state.routeLegs.push({ from: start, to: end, distanceKm });
             } else {
-                console.log("No path found via A*, using straight line");
-                // Fallback to straight line  
-                const straightPath = [[start.y, start.x], [end.y, end.x]]; // [lat, lng] for Leaflet
-                const polyline = L.polyline(straightPath, { color: 'blue', weight: 3, dashArray: '5, 5' }).addTo(map);
-                updateRouteSummarySimple(straightLineKm);
+                const straightPath = [[start.y, start.x], [end.y, end.x]];
+                const polyline = L.polyline(straightPath, { color: 'blue', weight: 3, dashArray: '5,5', pane: 'routePane' }).addTo(map);
+                state.routePolylines.push(polyline);
+                state.routeLegs.push({ from: start, to: end, distanceKm: straightLineKm, fallback: true });
             }
+            if (isFinalLeg) updateRouteSummaryFromLegs();
         });
         easystar.calculate();
     }
@@ -433,22 +530,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    function updateRouteSummary(pixelPath) {
+    function computePixelPathKm(pixelPath) {
         let totalDistancePx = 0;
         for (let i = 1; i < pixelPath.length; i++) {
-            // Calculate Euclidean distance in pixel space (not spherical distance!)
-            const dx = pixelPath[i][1] - pixelPath[i-1][1]; // X difference  
-            const dy = pixelPath[i][0] - pixelPath[i-1][0]; // Y difference
+            const dx = pixelPath[i][1] - pixelPath[i-1][1];
+            const dy = pixelPath[i][0] - pixelPath[i-1][0];
             totalDistancePx += Math.sqrt(dx * dx + dy * dy);
         }
-        const totalKm = totalDistancePx * config.kmPerPixel;
+        return totalDistancePx * config.kmPerPixel;
+    }
 
-        console.log('Route calculation - Total pixels:', totalDistancePx.toFixed(2), 'Total km:', totalKm.toFixed(2));
-
+    function updateRouteSummaryFromLegs() {
         const summaryDiv = document.getElementById('route-summary');
+        if (!summaryDiv) return;
+        if (!state.routeLegs.length) { updateRouteSummaryEmpty(); return; }
+        const totalKm = state.routeLegs.reduce((a,l)=>a+l.distanceKm,0);
+        const legsHtml = state.routeLegs.map((l,i)=>`<li>Leg ${i+1}: ${l.from.name} → ${l.to.name}: ${l.distanceKm.toFixed(2)} km${l.fallback?' (direct)':''}</li>`).join('');
         summaryDiv.innerHTML = `
             <h3>Route Summary</h3>
             <p><strong>Total Distance:</strong> ${totalKm.toFixed(2)} km</p>
+            <ul class="route-legs">${legsHtml}</ul>
             <div class="travel-times">
                 <p><strong>Walking:</strong> ${(totalKm / config.profiles.walk.speed).toFixed(1)} days</p>
                 <p><strong>Wagon:</strong> ${(totalKm / config.profiles.wagon.speed).toFixed(1)} days</p>
@@ -457,20 +558,11 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
-    function updateRouteSummarySimple(totalKm) {
-        console.log('Simple route calculation - Total km:', totalKm.toFixed(2));
-
+    function updateRouteSummaryEmpty() {
         const summaryDiv = document.getElementById('route-summary');
-        summaryDiv.innerHTML = `
-            <h3>Route Summary (Direct)</h3>
-            <p><strong>Total Distance:</strong> ${totalKm.toFixed(2)} km</p>
-            <div class="travel-times">
-                <p><strong>Walking:</strong> ${(totalKm / config.profiles.walk.speed).toFixed(1)} days</p>
-                <p><strong>Wagon:</strong> ${(totalKm / config.profiles.wagon.speed).toFixed(1)} days</p>
-                <p><strong>Horse:</strong> ${(totalKm / config.profiles.horse.speed).toFixed(1)} days</p>
-            </div>
-            <p><em>Note: Direct line (pathfinding failed)</em></p>
-        `;
+        if (!summaryDiv) return;
+        if (!state.route.length) { summaryDiv.innerHTML = '<p>No route defined yet. Add a marker.</p>'; return; }
+        if (state.route.length === 1) { summaryDiv.innerHTML = '<p>Add a second stop to compute a route.</p>'; return; }
     }
 
 

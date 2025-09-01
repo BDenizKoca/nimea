@@ -19,6 +19,26 @@
     </header>
     
     <div id="map"></div>
+    <button class="legend-toggle-btn" id="legend-toggle" aria-expanded="false" aria-controls="map-legend">❓</button>
+    <div class="map-legend hidden" id="map-legend" role="region" aria-label="Map Legend">
+        <h4>Legend</h4>
+        <ul>
+            <li><span class="legend-swatch legend-road"></span> Road (0.5x cost)</li>
+            <li><span class="legend-swatch legend-diff"></span> Difficult (3x cost)</li>
+            <li><span class="legend-swatch legend-block"></span> Blocked (Impassable)</li>
+            <li><span class="legend-swatch legend-route"></span> Route Path</li>
+        </ul>
+        <div class="legend-note">Scale: 175 px = 100 km</div>
+    </div>
+
+    <!-- Mobile Action Bar -->
+    <div class="mobile-bar" id="mobile-bar">
+        <button class="m-btn" id="mobile-route-btn" aria-controls="route-sidebar" aria-expanded="false">🧭<span>Route</span></button>
+        <button class="m-btn" id="mobile-info-btn" aria-controls="info-sidebar" aria-expanded="false">ℹ️<span>Info</span></button>
+        <button class="m-btn" id="mobile-overlays-btn" aria-expanded="false">🗺️<span>Layers</span></button>
+        <button class="m-btn" id="mobile-center-btn">🎯<span>Center</span></button>
+    <button class="m-btn" id="mobile-dm-btn">⚒️<span>DM</span></button>
+    </div>
 
     <div class="sidebar left-sidebar" id="route-sidebar">
         <h2>Route Planner</h2>
