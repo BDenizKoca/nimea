@@ -1,8 +1,9 @@
 backend:
-  name: git-gateway
+  name: github
+  repo: BDenizKoca/nimea
   branch: main
 
-site_url: https://nimea.netlify.app
+site_url: https://bdenizkoca.github.io/nimea
 
 media_folder: "images"
 public_folder: "/images"
