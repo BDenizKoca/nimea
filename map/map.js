@@ -48,12 +48,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
+    // Store the original map bounds for overlays
+    let originalMapBounds = null;
+
     // --- LOAD MAP IMAGE & DATA ---
     const mapImageUrl = 'map.webp';
     const img = new Image();
     img.onload = () => {
         const { width, height } = img;
         const bounds = [[0, 0], [height, width]];
+        originalMapBounds = bounds; // Store the original bounds
         L.imageOverlay(mapImageUrl, bounds).addTo(map);
         map.fitBounds(bounds);
         loadInitialData();
@@ -120,14 +124,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- OVERLAYS ---
     function setupOverlays() {
-        if (config.overlays) {
-            const imgBounds = map.getBounds();
+        if (config.overlays && originalMapBounds) {
+            // Use the original map bounds for overlays to ensure proper sizing
             if (config.overlays.regions) {
-                state.overlays.regions = L.imageOverlay(`../${config.overlays.regions}`, imgBounds, { opacity: 0.7 }).addTo(map);
+                state.overlays.regions = L.imageOverlay(`../${config.overlays.regions}`, originalMapBounds, { opacity: 0.7 }).addTo(map);
                 toggleRegions.checked = true;
             }
             if (config.overlays.borders) {
-                state.overlays.borders = L.imageOverlay(`../${config.overlays.borders}`, imgBounds, { opacity: 0.8 }).addTo(map);
+                state.overlays.borders = L.imageOverlay(`../${config.overlays.borders}`, originalMapBounds, { opacity: 0.8 }).addTo(map);
                 toggleBorders.checked = true;
             }
         }
