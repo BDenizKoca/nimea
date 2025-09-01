@@ -547,9 +547,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentTerrainMode = null; // Track current terrain painting mode
 
     async function setupDmMode() {
-        if (!state.isDmMode) return;
-        
-        console.log('Setting up DM mode controls...');
+        // Always add authentication controls so login is discoverable
+        addAuthenticationControls();
+        if (!state.isDmMode) {
+            return; // Skip the rest if not in DM mode
+        }
+
+        console.log('Setting up DM mode controls (DM mode active)...');
 
         // Initialize Git Gateway for live CMS
         try {
@@ -578,7 +582,7 @@ document.addEventListener('DOMContentLoaded', () => {
         addTerrainModeControls();
         
         // Add authentication controls
-        addAuthenticationControls();
+    // Auth controls already added above
 
         // Add logic for saving markers and terrain
         const saveButton = L.Control.extend({
