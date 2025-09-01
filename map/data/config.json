@@ -1,0 +1,7 @@
+{
+    "kmPerPixel": 0.5714285714,
+    "overlays": {
+        "regions": "overlays/regions.png",
+        "borders": "overlays/borders.png"
+    }
+}

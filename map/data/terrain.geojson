@@ -1,0 +1,53 @@
+{
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "properties": {
+                "kind": "road"
+            },
+            "geometry": {
+                "type": "LineString",
+                "coordinates": [
+                    [1000, 800],
+                    [1125, 900],
+                    [1250, 1000],
+                    [1375, 1100],
+                    [1500, 1200]
+                ]
+            }
+        },
+        {
+            "type": "Feature", 
+            "properties": {
+                "kind": "difficult"
+            },
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [[
+                    [900, 900],
+                    [1100, 900],
+                    [1100, 1100],
+                    [900, 1100],
+                    [900, 900]
+                ]]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "kind": "blocked"
+            }, 
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [[
+                    [1300, 700],
+                    [1400, 700],
+                    [1400, 800],
+                    [1300, 800],
+                    [1300, 700]
+                ]]
+            }
+        }
+    ]
+}

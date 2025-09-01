@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Load markers
             let markersData = { markers: [] };
             try {
-                const markersRes = await fetch('../data/markers.json');
+                const markersRes = await fetch('data/markers.json');
                 if (markersRes.ok) {
                     markersData = await markersRes.json();
                 }
@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Load terrain
             let terrainData = { type: 'FeatureCollection', features: [] };
             try {
-                const terrainRes = await fetch('../data/terrain.geojson');
+                const terrainRes = await fetch('data/terrain.geojson');
                 if (terrainRes.ok) {
                     terrainData = await terrainRes.json();
                 }
@@ -94,7 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Load config
             let remoteConfig = {};
             try {
-                const configRes = await fetch('../data/config.json');
+                const configRes = await fetch('data/config.json');
                 if (configRes.ok) {
                     remoteConfig = await configRes.json();
                 }
@@ -114,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             renderMarkers();
             setupOverlays();
-            setupDmMode();
+            await setupDmMode();
 
         } catch (error) {
             console.error("Error loading initial data:", error);
@@ -262,7 +262,13 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log(`Building ${cols}x${rows} grid for map size ${mapWidth}x${mapHeight}...`);
         console.log('Terrain features available:', state.terrain.features.length);
 
-        const grid = Array(rows).fill(null).map(() => Array(cols).fill(config.terrainCosts.normal));
+        // Define tile types (EasyStar needs integer IDs, not cost values)
+        const TILE_NORMAL = 1;
+        const TILE_ROAD = 2;
+        const TILE_DIFFICULT = 3;
+        // TILE_BLOCKED is not in acceptableTiles, so it can't be traversed
+
+        const grid = Array(rows).fill(null).map(() => Array(cols).fill(TILE_NORMAL));
 
         // Only process terrain if we have features
         if (state.terrain.features && state.terrain.features.length > 0) {
@@ -274,12 +280,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols; c++) {
-                    const [worldY, worldX] = gridToWorldCoords(c, r);
+                    const [worldX, worldY] = gridToWorldCoords(c, r);
                     const point = turf.point([worldX, worldY]);
-                    let cost = config.terrainCosts.normal;
+                    let tileType = TILE_NORMAL;
                     let isBlocked = false;
 
-                    // Check for blocked polygons
+                    // Check for blocked polygons (highest priority)
                     for (const feature of blockedFeatures) {
                         if (feature.geometry.type === 'Polygon' && turf.booleanPointInPolygon(point, feature)) {
                             isBlocked = true;
@@ -288,40 +294,38 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
                     if (isBlocked) {
-                        grid[r][c] = Infinity; // Using Infinity for blocked
-                        continue;
+                        // Don't set blocked tiles in grid - EasyStar handles this by not including them in acceptableTiles
+                        continue; // Leave as TILE_NORMAL but EasyStar won't traverse it
                     }
 
-                    // Check for roads (LineString)
+                    // Check for roads (second priority)
                     let onRoad = false;
                     for (const feature of roadFeatures) {
-                        // Use a buffer to make roads easier to snap to
                         const distance = turf.pointToLineDistance(point, feature, { units: 'pixels' });
                         if (distance < config.gridCellSize / 2) {
-                            cost = config.terrainCosts.road;
+                            tileType = TILE_ROAD;
                             onRoad = true;
                             break;
                         }
                     }
-                    if (onRoad) {
-                        grid[r][c] = cost;
-                        continue;
-                    }
 
-                    // Check for difficult terrain (Polygon or LineString buffer)
-                    for (const feature of difficultFeatures) {
-                         if (feature.geometry.type === 'Polygon' && turf.booleanPointInPolygon(point, feature)) {
-                            cost = config.terrainCosts.difficult;
-                            break;
-                        } else if (feature.geometry.type === 'LineString') {
-                            const distance = turf.pointToLineDistance(point, feature, { units: 'pixels' });
-                            if (distance < config.gridCellSize) { // Larger buffer for difficult terrain lines
-                                 cost = config.terrainCosts.difficult;
-                                 break;
+                    // Check for difficult terrain (lowest priority)
+                    if (!onRoad) {
+                        for (const feature of difficultFeatures) {
+                            if (feature.geometry.type === 'Polygon' && turf.booleanPointInPolygon(point, feature)) {
+                                tileType = TILE_DIFFICULT;
+                                break;
+                            } else if (feature.geometry.type === 'LineString') {
+                                const distance = turf.pointToLineDistance(point, feature, { units: 'pixels' });
+                                if (distance < config.gridCellSize) {
+                                    tileType = TILE_DIFFICULT;
+                                    break;
+                                }
                             }
                         }
                     }
-                     grid[r][c] = cost;
+
+                    grid[r][c] = tileType;
                 }
             }
         } else {
@@ -329,20 +333,29 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         console.log("Grid build complete.");
+        
+        // Configure EasyStar properly
         easystar.setGrid(grid);
-        const acceptableTiles = [config.terrainCosts.normal, config.terrainCosts.road, config.terrainCosts.difficult];
-        easystar.setAcceptableTiles(acceptableTiles);
-        easystar.setTileCost(config.terrainCosts.road, 0.5);
-        easystar.setTileCost(config.terrainCosts.difficult, 3);
+        easystar.setAcceptableTiles([TILE_NORMAL, TILE_ROAD, TILE_DIFFICULT]);
+        easystar.setTileCost(TILE_NORMAL, 1.0);
+        easystar.setTileCost(TILE_ROAD, 0.5);
+        easystar.setTileCost(TILE_DIFFICULT, 3.0);
         easystar.enableDiagonals();
         easystar.disableCornerCutting();
 
-        pathfindingGrid = { cols, rows, width: mapWidth, height: mapHeight };
+        pathfindingGrid = { cols, rows, width: mapWidth, height: mapHeight, TILE_NORMAL, TILE_ROAD, TILE_DIFFICULT };
     }
 
 
     function calculateAndDisplayPath() {
         console.log('calculateAndDisplayPath called, route length:', state.route.length);
+        
+        // Clean up existing route lines
+        map.eachLayer(layer => {
+            if (layer instanceof L.Polyline && !layer.options.isOverlay) {
+                map.removeLayer(layer);
+            }
+        });
         
         if (!pathfindingGrid) {
             console.log('Building pathfinding grid...');
@@ -379,8 +392,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateRouteSummary(pixelPath);
             } else {
                 console.log("No path found via A*, using straight line");
-                // Fallback to straight line
-                const straightPath = [[start.y, start.x], [end.y, end.x]];
+                // Fallback to straight line  
+                const straightPath = [[start.y, start.x], [end.y, end.x]]; // [lat, lng] for Leaflet
                 const polyline = L.polyline(straightPath, { color: 'blue', weight: 3, dashArray: '5, 5' }).addTo(map);
                 updateRouteSummarySimple(straightLineKm);
             }
@@ -395,10 +408,10 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    function gridToWorldCoords(x, y) {
+    function gridToWorldCoords(gridX, gridY) {
         return [
-            y * config.gridCellSize + config.gridCellSize / 2,
-            x * config.gridCellSize + config.gridCellSize / 2
+            gridX * config.gridCellSize + config.gridCellSize / 2,  // X coordinate
+            gridY * config.gridCellSize + config.gridCellSize / 2   // Y coordinate
         ];
     }
 
