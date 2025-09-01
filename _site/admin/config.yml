@@ -1,13 +1,20 @@
 backend:
-  name: test-repo
+  name: github
+  repo: BDenizKoca/nimea
   branch: main
+  auth_type: implicit # Use GitHub implicit auth
+  base_url: https://api.github.com
+  auth_endpoint: https://github.com/login/oauth/authorize
 
-# Use our custom server for persistence
-local_backend:
-  url: http://localhost:8081/api/v1
+site_url: https://bdenizkoca.github.io/nimea
 
 media_folder: "images"
 public_folder: "/images"
+
+media_library:
+  name: uploadcare
+  config:
+    publicKey: "YOUR_UPLOADCARE_PUBLIC_KEY" # Replace with your public key
 
 # Display instructions for editors
 publish_mode: editorial_workflow
@@ -17,7 +24,7 @@ collections:
     label: "Player Characters"
     folder: "wiki/player-characters"
     create: true
-    identifier_field: "name"
+    identifier_field: "slug"
     slug: "{{slug}}"
     editor:
       preview: true
@@ -33,7 +40,7 @@ collections:
     label: "Characters"
     folder: "wiki/characters"
     create: true
-    identifier_field: "name"
+    identifier_field: "slug"
     slug: "{{slug}}"
     editor:
       preview: true
@@ -49,7 +56,7 @@ collections:
     label: "Nations & Factions"
     folder: "wiki/nations-factions"
     create: true
-    identifier_field: "name"
+    identifier_field: "slug"
     slug: "{{slug}}"
     editor:
       preview: true
@@ -65,7 +72,7 @@ collections:
     label: "Locations & Regions"
     folder: "wiki/locations-regions"
     create: true
-    identifier_field: "name"
+    identifier_field: "slug"
     slug: "{{slug}}"
     editor:
       preview: true
@@ -82,7 +89,7 @@ collections:
     label: "Gods & Religions"
     folder: "wiki/gods-religions"
     create: true
-    identifier_field: "name"
+    identifier_field: "slug"
     slug: "{{slug}}"
     editor:
       preview: true
@@ -98,7 +105,7 @@ collections:
     label: "Magic & Powers"
     folder: "wiki/magic-powers"
     create: true
-    identifier_field: "name"
+    identifier_field: "slug"
     slug: "{{slug}}"
     editor:
       preview: true
