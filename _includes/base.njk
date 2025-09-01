@@ -18,6 +18,11 @@
             </nav>
         </header>
         <main>
+            {% if cover_image %}
+            <div class="cover-image">
+                <img src="{{ cover_image }}" alt="Cover image for {{ title or name }}" />
+            </div>
+            {% endif %}
             {{ content | safe }}
         </main>
     </div>

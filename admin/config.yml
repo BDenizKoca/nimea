@@ -7,10 +7,15 @@ site_url: https://nimea-wiki.netlify.app
 media_folder: "images"
 public_folder: "./images"
 
+# Configure image uploads
 media_library:
   name: uploadcare
   config:
     publicKey: "YOUR_UPLOADCARE_PUBLIC_KEY" # Replace with your public key
+
+# Enable rich text editor features for better image insertion
+editor:
+  preview: true
 
 # Simple publish mode - changes go live immediately
 # publish_mode: editorial_workflow
@@ -29,6 +34,7 @@ collections:
       - { label: "Name", name: "name", widget: "string" }
       - { label: "Slug", name: "slug", widget: "string", hint: "URL-friendly version of the name (e.g., 'varkas-dragonslayer')" }
       - { label: "Summary", name: "summary", widget: "text", hint: "A brief description (1-2 sentences)" }
+      - { label: "Cover Image", name: "cover_image", widget: "image", required: false, hint: "Optional cover image for this character" }
       - { label: "Public", name: "public", widget: "boolean", default: true }
       - { label: "Body", name: "body", widget: "markdown", hint: "The main content of the page" }
 
@@ -45,6 +51,7 @@ collections:
       - { label: "Name", name: "name", widget: "string" }
       - { label: "Slug", name: "slug", widget: "string", hint: "URL-friendly version of the name (e.g., 'varkas-dragonslayer')" }
       - { label: "Summary", name: "summary", widget: "text", hint: "A brief description (1-2 sentences)" }
+      - { label: "Cover Image", name: "cover_image", widget: "image", required: false, hint: "Optional cover image for this character" }
       - { label: "Public", name: "public", widget: "boolean", default: true }
       - { label: "Body", name: "body", widget: "markdown", hint: "The main content of the page" }
 
@@ -61,6 +68,7 @@ collections:
       - { label: "Name", name: "name", widget: "string" }
       - { label: "Slug", name: "slug", widget: "string", hint: "URL-friendly version of the name (e.g., 'empire-of-aurelius')" }
       - { label: "Summary", name: "summary", widget: "text", hint: "A brief description (1-2 sentences)" }
+      - { label: "Cover Image", name: "cover_image", widget: "image", required: false, hint: "Optional cover image for this nation/faction" }
       - { label: "Public", name: "public", widget: "boolean", default: true }
       - { label: "Body", name: "body", widget: "markdown", hint: "The main content of the page" }
 
@@ -77,6 +85,7 @@ collections:
       - { label: "Name", name: "name", widget: "string" }
       - { label: "Slug", name: "slug", widget: "string", hint: "URL-friendly version of the name (e.g., 'aurelium')" }
       - { label: "Summary", name: "summary", widget: "text", hint: "A brief description (1-2 sentences)" }
+      - { label: "Cover Image", name: "cover_image", widget: "image", required: false, hint: "Optional cover image for this location" }
       - { label: "Map ID", name: "map_id", widget: "string", required: false, hint: "Identifier to link this location on the map (optional)" }
       - { label: "Public", name: "public", widget: "boolean", default: true }
       - { label: "Body", name: "body", widget: "markdown", hint: "The main content of the page" }
@@ -94,6 +103,7 @@ collections:
       - { label: "Name", name: "name", widget: "string" }
       - { label: "Slug", name: "slug", widget: "string", hint: "URL-friendly version of the name (e.g., 'solara-goddess-of-light')" }
       - { label: "Summary", name: "summary", widget: "text", hint: "A brief description (1-2 sentences)" }
+      - { label: "Cover Image", name: "cover_image", widget: "image", required: false, hint: "Optional cover image for this deity/religion" }
       - { label: "Public", name: "public", widget: "boolean", default: true }
       - { label: "Body", name: "body", widget: "markdown", hint: "The main content of the page" }
 
@@ -110,6 +120,7 @@ collections:
       - { label: "Name", name: "name", widget: "string" }
       - { label: "Slug", name: "slug", widget: "string", hint: "URL-friendly version of the name (e.g., 'elemental-magic')" }
       - { label: "Summary", name: "summary", widget: "text", hint: "A brief description (1-2 sentences)" }
+      - { label: "Cover Image", name: "cover_image", widget: "image", required: false, hint: "Optional cover image for this magic/power" }
       - { label: "Public", name: "public", widget: "boolean", default: true }
       - { label: "Body", name: "body", widget: "markdown", hint: "The main content of the page" }
 
