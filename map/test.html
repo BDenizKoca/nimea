@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nimea Map Test</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { width: 100vw; height: 100vh; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        console.log('Starting map test...');
+        
+        // Test 1: Basic map creation
+        const map = L.map('map', {
+            crs: L.CRS.Simple,
+            minZoom: -2,
+            maxZoom: 2
+        });
+        
+        console.log('Map created:', map);
+        
+        // Test 2: Image loading
+        const img = new Image();
+        img.onload = function() {
+            console.log('Image loaded successfully:', this.width, 'x', this.height);
+            const bounds = [[0, 0], [this.height, this.width]];
+            L.imageOverlay('map.webp', bounds).addTo(map);
+            map.fitBounds(bounds);
+            console.log('Image overlay added and bounds set');
+        };
+        img.onerror = function() {
+            console.error('Failed to load image, trying PNG fallback...');
+            const imgPng = new Image();
+            imgPng.onload = function() {
+                console.log('PNG loaded successfully:', this.width, 'x', this.height);
+                const bounds = [[0, 0], [this.height, this.width]];
+                L.imageOverlay('map.png', bounds).addTo(map);
+                map.fitBounds(bounds);
+                console.log('PNG overlay added and bounds set');
+            };
+            imgPng.onerror = function() {
+                console.error('Both WebP and PNG failed to load');
+            };
+            imgPng.src = 'map.png';
+        };
+        img.src = 'map.webp';
+        
+        // Test 3: Data loading
+        fetch('../data/markers.json')
+            .then(response => {
+                console.log('Markers fetch response:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Markers data loaded:', data);
+                
+                // Add test marker
+                if (data.markers && data.markers.length > 0) {
+                    const marker = data.markers[0];
+                    L.marker([marker.y, marker.x])
+                        .addTo(map)
+                        .bindPopup(marker.name);
+                    console.log('Test marker added:', marker.name);
+                }
+            })
+            .catch(error => console.error('Error loading markers:', error));
+            
+        fetch('../data/config.json')
+            .then(response => {
+                console.log('Config fetch response:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Config data loaded:', data);
+            })
+            .catch(error => console.error('Error loading config:', error));
+    </script>
+</body>
+</html>

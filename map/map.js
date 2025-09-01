@@ -67,19 +67,48 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadInitialData() {
         try {
-            const [markersRes, terrainRes, configRes] = await Promise.all([
-                fetch('../data/markers.json').catch(() => ({ json: () => ({ markers: [] }) })),
-                fetch('../data/terrain.geojson').catch(() => ({ json: () => ({ features: [] }) })),
-                fetch('../data/config.json').catch(() => ({ json: () => ({}) }))
-            ]);
+            // Load markers
+            let markersData = { markers: [] };
+            try {
+                const markersRes = await fetch('../data/markers.json');
+                if (markersRes.ok) {
+                    markersData = await markersRes.json();
+                }
+            } catch (error) {
+                console.warn('Could not load markers.json, using empty array');
+            }
 
-            const markersData = await markersRes.json();
-            const terrainData = await terrainRes.json();
-            const remoteConfig = await configRes.json();
+            // Load terrain
+            let terrainData = { type: 'FeatureCollection', features: [] };
+            try {
+                const terrainRes = await fetch('../data/terrain.geojson');
+                if (terrainRes.ok) {
+                    terrainData = await terrainRes.json();
+                }
+            } catch (error) {
+                console.warn('Could not load terrain.geojson, using empty features');
+            }
+
+            // Load config
+            let remoteConfig = {};
+            try {
+                const configRes = await fetch('../data/config.json');
+                if (configRes.ok) {
+                    remoteConfig = await configRes.json();
+                }
+            } catch (error) {
+                console.warn('Could not load config.json, using defaults');
+            }
 
             Object.assign(config, remoteConfig);
             state.markers = markersData.markers || [];
             state.terrain = terrainData;
+
+            console.log('Loaded data:', {
+                markers: state.markers.length,
+                terrain: state.terrain.features.length,
+                config: remoteConfig
+            });
 
             renderMarkers();
             setupOverlays();
@@ -92,10 +121,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- MARKERS ---
     function renderMarkers() {
-        state.markers.forEach(markerData => {
+        console.log('Rendering markers:', state.markers.length);
+        state.markers.forEach((markerData, index) => {
+            console.log(`Marker ${index}:`, markerData);
             if (markerData.public || state.isDmMode) {
+                console.log(`Adding marker: ${markerData.name} at [${markerData.y}, ${markerData.x}]`);
                 const marker = L.marker([markerData.y, markerData.x]).addTo(map);
                 marker.on('click', () => openInfoSidebar(markerData));
+            } else {
+                console.log(`Skipping private marker: ${markerData.name}`);
             }
         });
     }
@@ -124,13 +158,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- OVERLAYS ---
     function setupOverlays() {
+        console.log('Setting up overlays:', config.overlays, 'bounds:', originalMapBounds);
         if (config.overlays && originalMapBounds) {
             // Use the original map bounds for overlays to ensure proper sizing
             if (config.overlays.regions) {
+                console.log('Adding regions overlay:', config.overlays.regions);
                 state.overlays.regions = L.imageOverlay(`../${config.overlays.regions}`, originalMapBounds, { opacity: 0.7 }).addTo(map);
                 toggleRegions.checked = true;
             }
             if (config.overlays.borders) {
+                console.log('Adding borders overlay:', config.overlays.borders);
                 state.overlays.borders = L.imageOverlay(`../${config.overlays.borders}`, originalMapBounds, { opacity: 0.8 }).addTo(map);
                 toggleBorders.checked = true;
             }
@@ -318,6 +355,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- DM MODE ---
     function setupDmMode() {
         if (!state.isDmMode) return;
+        
+        console.log('Setting up DM mode controls...');
 
         map.pm.addControls({
             position: 'topleft',
