@@ -352,8 +352,24 @@ document.addEventListener('DOMContentLoaded', () => {
         if (state.routePolyline) { map.removeLayer(state.routePolyline); state.routePolyline = null; }
         updateRouteDisplay();
         if (state.route.length < 2) { updateRouteSummaryEmpty(); return; }
+
+        // Show loading summary while computing legs
+        const summaryDiv = document.getElementById('route-summary');
+        if (summaryDiv) {
+            summaryDiv.innerHTML = '<p>Calculating route…</p>';
+        }
+
+        // Track pending asynchronous leg computations to avoid race conditions
+        let pendingLegs = state.route.length - 1;
+
         for (let i=1;i<state.route.length;i++) {
-            calculateLegPath(state.route[i-1], state.route[i], i === state.route.length -1);
+            calculateLegPath(state.route[i-1], state.route[i], () => {
+                pendingLegs--;
+                if (pendingLegs === 0) {
+                    // All legs finished (success or fallback)
+                    updateRouteSummaryFromLegs();
+                }
+            });
         }
     }
 
@@ -457,7 +473,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    function calculateLegPath(start, end, isFinalLeg) {
+    // calculateLegPath now accepts a completion callback instead of relying on 'final leg' heuristic
+    function calculateLegPath(start, end, onComplete) {
         if (!pathfindingGrid) buildPathfindingGrid();
         const startCell = worldToGridCoords(start.x, start.y);
         const endCell = worldToGridCoords(end.x, end.y);
@@ -479,7 +496,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 state.routePolylines.push(polyline);
                 state.routeLegs.push({ from: start, to: end, distanceKm: straightLineKm, fallback: true });
             }
-            if (isFinalLeg) updateRouteSummaryFromLegs();
+            if (typeof onComplete === 'function') onComplete();
         });
         easystar.calculate();
     }
