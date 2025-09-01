@@ -733,12 +733,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 const statusBtn = container.querySelector('#dm-status-btn');
                 
                 loginBtn.addEventListener('click', async () => {
-                    if (window.gitClient.isAuthenticated) {
-                        window.gitClient.logout();
-                    } else {
-                        await window.gitClient.login();
+                    try {
+                        if (window.gitClient.isAuthenticated) {
+                            window.gitClient.logout();
+                        } else {
+                            // On-demand initialize if DM mode not active or init not yet done
+                            if (!window.gitClient.initialized) {
+                                try {
+                                    await window.gitClient.initialize();
+                                } catch (e) {
+                                    console.warn('Deferred identity init failed:', e);
+                                }
+                            }
+                            await window.gitClient.login();
+                        }
+                    } catch (e) {
+                        console.error('Login button error:', e);
+                        showNotification('Authentication unavailable (see console).', 'error');
+                    } finally {
+                        updateAuthUI();
                     }
-                    updateAuthUI();
                 });
 
                 statusBtn.addEventListener('click', () => {

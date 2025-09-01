@@ -9,36 +9,37 @@ class GitGatewayClient {
         this.user = null;
         this.token = null;
         this.isAuthenticated = false;
+        this.initialized = false; // track whether identity events have been bound
     }
 
     async initialize() {
-        // Initialize Netlify Identity
-        if (window.netlifyIdentity) {
-            await this.setupNetlifyIdentity();
-        } else {
+        if (this.initialized) return; // avoid double binding
+        if (!window.netlifyIdentity) {
             throw new Error('Netlify Identity not loaded');
         }
+        await this.setupNetlifyIdentity();
     }
 
     setupNetlifyIdentity() {
         return new Promise((resolve) => {
-            netlifyIdentity.on('init', (user) => {
-                if (user) {
+            try {
+                netlifyIdentity.on('init', (user) => {
+                    if (user) this.handleUserLogin(user);
+                    this.initialized = true;
+                    resolve();
+                });
+                netlifyIdentity.on('login', (user) => {
                     this.handleUserLogin(user);
-                }
+                    netlifyIdentity.close();
+                });
+                netlifyIdentity.on('logout', () => {
+                    this.handleUserLogout();
+                });
+                netlifyIdentity.init();
+            } catch (e) {
+                console.error('Failed to set up Netlify Identity:', e);
                 resolve();
-            });
-
-            netlifyIdentity.on('login', (user) => {
-                this.handleUserLogin(user);
-                netlifyIdentity.close();
-            });
-
-            netlifyIdentity.on('logout', () => {
-                this.handleUserLogout();
-            });
-
-            netlifyIdentity.init();
+            }
         });
     }
 
@@ -57,8 +58,25 @@ class GitGatewayClient {
     }
 
     async login() {
+        if (!window.netlifyIdentity) {
+            alert('Authentication not available: Netlify Identity script failed to load.');
+            return;
+        }
+        if (!this.initialized) {
+            // Try to initialize on-demand
+            try {
+                await this.initialize();
+            } catch (e) {
+                console.warn('Identity init failed on login attempt:', e);
+            }
+        }
         if (!this.isAuthenticated) {
-            netlifyIdentity.open();
+            try {
+                netlifyIdentity.open();
+            } catch (e) {
+                alert('Could not open login widget. See console for details.');
+                console.error(e);
+            }
         }
     }
 
