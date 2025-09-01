@@ -33,7 +33,52 @@ document.addEventListener('DOMContentLoaded', () => {
         overlays: {},
         isLiveCMS: false, // Will be set to true when authenticated for live saving
         routePolyline: null, // active rendered route
+        dirty: { markers: false, terrain: false }, // track unsaved edits in DM session
     };
+
+    /*
+     * MODE OVERVIEW
+     * ------------------------------------------------------------
+     * Player Mode (default – no ?dm query param):
+     *   - Read-only map: markers & terrain rendered; no editing controls.
+     *   - Routing UI enabled (currently simplified to direct-leg distance).
+     *   - "Add to Route" button appears in marker info sidebar.
+     *   - No publish / export controls are shown.
+     *
+     * DM Mode (?dm in query string):
+     *   - Full authoring tools enabled via Leaflet-Geoman (draw markers, polygons, polylines).
+     *   - Routing UI is hidden to reduce clutter while editing world content.
+     *   - Batch editing workflow: Edits set state.dirty.{markers|terrain}; nothing is written until
+     *     the user clicks the publish (⬆️) button (if authenticated) or exports JSON (💾) manually.
+     *   - Authentication controls (👤 / 📡) manage Netlify Identity + Git Gateway for live saving.
+     *
+     * TERRAIN KINDS & TRAVEL COST SEMANTICS
+     * ------------------------------------------------------------
+     *   road      => fast travel corridor (cost 0.5x) – visually solid blue, overrides other costs
+     *   river     => slow crossing / alignment (treated as difficult, cost 3x, dashed blue line)
+     *   ocean     => impassable (excluded from pathfinding acceptable tiles, filled deep blue)
+     *   difficult => generic hindering terrain (cost 3x, orange dashed / translucent fill)
+     *   blocked   => impassable (like ocean but colored red)
+     *
+     * Pathfinding Grid Precedence (highest -> lowest):
+     *   1. Impassable (blocked & ocean polygons)
+     *   2. Roads (line proximity) override difficult / river costs
+     *   3. Difficult polygons & river lines (increase cost)
+     *   4. Normal ground (baseline cost 1)
+     *
+     * Wiki Links
+     * ------------------------------------------------------------
+     * Markers can optionally specify marker.wikiSlug (form field). If provided we link directly to
+     * /wiki/<slug>/. Otherwise we infer location pages for settlement/landmark types.
+     */
+
+    function markDirty(type) {
+        if (!state.dirty[type]) {
+            state.dirty[type] = true;
+            showNotification(`${type} changed (not published)`, 'info');
+            updatePublishUI();
+        }
+    }
 
     // --- UI ELEMENTS ---
     const routeSidebar = document.getElementById('route-sidebar');
@@ -201,6 +246,11 @@ document.addEventListener('DOMContentLoaded', () => {
             setupOverlays();
             await setupDmMode();
 
+            // Hide route UI in DM mode
+            if (state.isDmMode && routeSidebar) {
+                routeSidebar.style.display = 'none';
+            }
+
         } catch (error) {
             console.error("Error loading initial data:", error);
         }
@@ -247,6 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- SIDEBARS ---
     function openInfoSidebar(data) {
         const wikiLink = generateWikiLink(data);
+        const addRouteBtn = state.isDmMode ? '' : `<button class="add-to-route" data-id="${data.id}">Add to Route</button>`;
         const content = `
             <h2>${data.name}</h2>
             <p>${data.summary}</p>
@@ -254,34 +305,31 @@ document.addEventListener('DOMContentLoaded', () => {
             ${data.faction ? `<p><strong>Faction:</strong> ${data.faction}</p>` : ''}
             ${data.images && data.images.length > 0 ? data.images.map(img => `<img src="../${img}" alt="${data.name}" style="width:100%;">`).join('') : ''}
             ${wikiLink ? `<a href="${wikiLink}" class="wiki-link" target="_blank">📚 View in Wiki</a>` : ''}
-            <button class="add-to-route" data-id="${data.id}">Add to Route</button>
+            ${addRouteBtn}
         `;
         document.getElementById('info-content').innerHTML = content;
         infoSidebar.classList.add('open');
 
-        document.querySelector('.add-to-route').addEventListener('click', (e) => {
-            const markerId = e.target.dataset.id;
-            const marker = state.markers.find(m => m.id === markerId);
-            if (marker) {
-                addToRoute(marker);
-            }
-        });
+        if (!state.isDmMode) {
+            document.querySelector('.add-to-route').addEventListener('click', (e) => {
+                const markerId = e.target.dataset.id;
+                const marker = state.markers.find(m => m.id === markerId);
+                if (marker) {
+                    addToRoute(marker);
+                }
+            });
+        }
     }
     
     function generateWikiLink(markerData) {
-        // Try to find matching wiki page based on marker ID or name
-        const possiblePaths = [
-            `/wiki/locations-regions/${markerData.id}/`,
-            `/wiki/characters/${markerData.id}/`,
-            `/wiki/nations-factions/${markerData.id}/`,
-        ];
-        
-        // For now, assume locations-regions for map markers
-        // TODO: This could be enhanced to actually check if pages exist
-        if (markerData.type && ['city', 'town', 'village', 'fortress', 'ruin', 'landmark'].includes(markerData.type)) {
+        // 1. Explicit slug override
+        if (markerData.wikiSlug) {
+            return `/wiki/${markerData.wikiSlug.replace(/^\/wiki\//,'').replace(/\/+/g,'/')}/`;
+        }
+        // 2. Infer by type (extendable)
+        if (markerData.type && ['city','town','village','fortress','ruin','landmark','dungeon'].includes(markerData.type)) {
             return `/wiki/locations-regions/${markerData.id}/`;
         }
-        
         return null;
     }
 
@@ -307,7 +355,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- ROUTE PLANNING ---
     function addToRoute(marker) {
-        console.log('Adding to route:', marker.name, 'isDmMode:', state.isDmMode);
+        if (state.isDmMode) {
+            return; // routing disabled in DM mode
+        }
+        console.log('Adding to route:', marker.name);
         state.route.push(marker);
         routeSidebar.classList.add('open');
         recomputeRoute();
@@ -360,48 +411,36 @@ document.addEventListener('DOMContentLoaded', () => {
         updateRouteDisplay();
         if (state.route.length < 2) { updateRouteSummaryEmpty(); return; }
 
-        // Show loading summary while computing legs
-        const summaryDiv = document.getElementById('route-summary');
-        if (summaryDiv) {
-            summaryDiv.innerHTML = '<p>Computing route...</p>';
+        // Always compute synchronously with direct line segments for now
+        console.info('Computing route distances using direct pixel distance (175px = 100km).');
+
+        for (let i = 1; i < state.route.length; i++) {
+            const start = state.route[i - 1];
+            const end = state.route[i];
+            const straightLineKm = computeDirectKm(start, end);
+            console.debug(`Leg ${i}: ${start.name} -> ${end.name} = ${straightLineKm.toFixed(2)} km`);
+
+            const straightPath = [[start.y, start.x], [end.y, end.x]];
+            const polyline = L.polyline(straightPath, {
+                color: '#204d8c',
+                weight: 3,
+                dashArray: '6,6',
+                pane: 'routePane'
+            }).addTo(map);
+            state.routePolylines.push(polyline);
+            state.routeLegs.push({ from: start, to: end, distanceKm: straightLineKm, mode: 'direct' });
         }
 
-        // CRITICAL FIX: For now, bypass pathfinding entirely and use simple straight lines
-        // This will ensure the route always completes and shows a summary
-        console.warn('Using simple route mode - all straight lines');
-        console.log('Route to compute:', state.route.length, 'stops');
-        
-        // Create all straight-line legs immediately
-        for (let i=1; i<state.route.length; i++) {
-            const start = state.route[i-1];
-            const end = state.route[i];
-            const straightLineDistance = Math.sqrt(Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2));
-            const straightLineKm = straightLineDistance * config.kmPerPixel;
-            
-            console.log(`Creating direct route leg ${i}: ${start.name} -> ${end.name} (${straightLineKm.toFixed(2)} km)`);
-            
-            // Create a straight line polyline
-            const straightPath = [[start.y, start.x], [end.y, end.x]]; // already [lat,lng]
-            const polyline = L.polyline(straightPath, { 
-                color: 'blue', 
-                weight: 3, 
-                dashArray: '5,5', 
-                pane: 'routePane' 
-            }).addTo(map);
-            
-            state.routePolylines.push(polyline);
-            state.routeLegs.push({ 
-                from: start, 
-                to: end, 
-                distanceKm: straightLineKm, 
-                fallback: true
-            });
-        }
-        
-        console.log('Route legs created:', state.routeLegs.length);
-        // Immediately update the summary with all legs
         updateRouteSummaryFromLegs();
-        console.log('Route summary updated');
+        console.info('Route summary updated (direct mode).');
+    }
+
+    // Helper: compute km between two marker objects using config.kmPerPixel
+    function computeDirectKm(a, b) {
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const distPx = Math.sqrt(dx * dx + dy * dy);
+        return distPx * config.kmPerPixel;
     }
 
     // --- PATHFINDING (A*) ---
@@ -419,18 +458,19 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log(`Building ${cols}x${rows} grid for map size ${mapWidth}x${mapHeight}...`);
         console.log('Terrain features available:', state.terrain.features.length);
 
-        // Define tile types (EasyStar needs integer IDs, not cost values)
-        const TILE_NORMAL = 1;
-        const TILE_ROAD = 2;
-        const TILE_DIFFICULT = 3;
-        // TILE_BLOCKED is not in acceptableTiles, so it can't be traversed
+    // Define tile types (EasyStar needs integer IDs, not cost values)
+    const TILE_NORMAL = 1;
+    const TILE_ROAD = 2;
+    const TILE_DIFFICULT = 3; // difficult land or river
+    const TILE_OCEAN = 4; // treated as blocked/impassable by not being acceptable
+    // NOTE: We don't add TILE_OCEAN to acceptable tiles so it's impassable
 
         const grid = Array(rows).fill(null).map(() => Array(cols).fill(TILE_NORMAL));
 
         // Only process terrain if we have features
         if (state.terrain.features && state.terrain.features.length > 0) {
-            const blockedFeatures = state.terrain.features.filter(f => f.properties.kind === 'blocked');
-            const difficultFeatures = state.terrain.features.filter(f => f.properties.kind === 'difficult');
+            const blockedFeatures = state.terrain.features.filter(f => f.properties.kind === 'blocked' || f.properties.kind === 'ocean');
+            const difficultFeatures = state.terrain.features.filter(f => f.properties.kind === 'difficult' || f.properties.kind === 'river');
             const roadFeatures = state.terrain.features.filter(f => f.properties.kind === 'road');
 
             console.log('Terrain features - Blocked:', blockedFeatures.length, 'Difficult:', difficultFeatures.length, 'Roads:', roadFeatures.length);
@@ -440,22 +480,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     const [worldX, worldY] = gridToWorldCoords(c, r);
                     const point = turf.point([worldX, worldY]);
                     let tileType = TILE_NORMAL;
-                    let isBlocked = false;
 
-                    // Check for blocked polygons (highest priority)
+                    // 1. Blocked & ocean polygons: mark as ocean/blocked sentinel (we store TILE_OCEAN for debugging but exclude from acceptable tiles)
+                    let isImpassable = false;
                     for (const feature of blockedFeatures) {
                         if (feature.geometry.type === 'Polygon' && turf.booleanPointInPolygon(point, feature)) {
-                            isBlocked = true;
+                            isImpassable = true;
+                            tileType = TILE_OCEAN; // Use ocean/blocked sentinel
                             break;
                         }
                     }
-
-                    if (isBlocked) {
-                        // Don't set blocked tiles in grid - EasyStar handles this by not including them in acceptableTiles
-                        continue; // Leave as TILE_NORMAL but EasyStar won't traverse it
+                    if (isImpassable) {
+                        grid[r][c] = tileType; // Keep sentinel (not acceptable)
+                        continue;
                     }
 
-                    // Check for roads (second priority)
+                    // 2. Roads override everything except impassable
                     let onRoad = false;
                     for (const feature of roadFeatures) {
                         const distance = turf.pointToLineDistance(point, feature, { units: 'pixels' });
@@ -466,7 +506,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     }
 
-                    // Check for difficult terrain (lowest priority)
+                    // 3. Difficult & rivers apply only if not on road
                     if (!onRoad) {
                         for (const feature of difficultFeatures) {
                             if (feature.geometry.type === 'Polygon' && turf.booleanPointInPolygon(point, feature)) {
@@ -493,14 +533,14 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Configure EasyStar properly
         easystar.setGrid(grid);
-        easystar.setAcceptableTiles([TILE_NORMAL, TILE_ROAD, TILE_DIFFICULT]);
-        easystar.setTileCost(TILE_NORMAL, 1.0);
-        easystar.setTileCost(TILE_ROAD, 0.5);
-        easystar.setTileCost(TILE_DIFFICULT, 3.0);
+    easystar.setAcceptableTiles([TILE_NORMAL, TILE_ROAD, TILE_DIFFICULT]); // ocean/blocked excluded
+    easystar.setTileCost(TILE_NORMAL, 1.0);
+    easystar.setTileCost(TILE_ROAD, 0.5);
+    easystar.setTileCost(TILE_DIFFICULT, 3.0); // includes rivers
         easystar.enableDiagonals();
         easystar.disableCornerCutting();
 
-        pathfindingGrid = { cols, rows, width: mapWidth, height: mapHeight, TILE_NORMAL, TILE_ROAD, TILE_DIFFICULT };
+        pathfindingGrid = { cols, rows, width: mapWidth, height: mapHeight, TILE_NORMAL, TILE_ROAD, TILE_DIFFICULT, TILE_OCEAN };
     }
 
 
@@ -655,25 +695,44 @@ document.addEventListener('DOMContentLoaded', () => {
         // Add authentication controls
     // Auth controls already added above
 
-        // Add logic for saving markers and terrain
-        const saveButton = L.Control.extend({
-            options: {
-                position: 'topleft'
-            },
+        // Add publish & download controls (batch model)
+        const publishControls = L.Control.extend({
+            options: { position: 'topleft' },
             onAdd: function () {
-                const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
-                const button = L.DomUtil.create('a', 'leaflet-control-button', container);
-                button.innerHTML = state.isLiveCMS ? 'Export' : 'Save Data';
-                button.title = state.isLiveCMS ? 
-                    'Export data as backup (auto-saves to repo)' : 
-                    'Export markers and terrain data';
-                button.onclick = () => {
-                    exportData();
-                };
+                const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control dm-publish-controls');
+                container.style.display = 'flex';
+                container.style.flexDirection = 'column';
+                container.innerHTML = `
+                  <a class="leaflet-control-button" id="dm-download-json" title="Download current markers & terrain JSON">💾</a>
+                  <a class="leaflet-control-button" id="dm-publish-json" title="Commit changes to repo (requires login)">⬆️</a>
+                  <span class="dm-dirty-indicator" style="display:none; background:#d9534f; color:#fff; font-size:10px; padding:2px 4px; text-align:center;">UNSAVED</span>
+                `;
+                setTimeout(updatePublishUI, 50);
                 return container;
             }
         });
-        map.addControl(new saveButton());
+        map.addControl(new publishControls());
+
+        function updatePublishUI() {
+            const dirty = state.dirty.markers || state.dirty.terrain;
+            const publishBtn = document.getElementById('dm-publish-json');
+            const downloadBtn = document.getElementById('dm-download-json');
+            const badge = document.querySelector('.dm-dirty-indicator');
+            if (downloadBtn) {
+                downloadBtn.onclick = () => exportData();
+            }
+            if (publishBtn) {
+                publishBtn.style.opacity = window.gitClient.isAuthenticated ? '1' : '0.5';
+                publishBtn.style.pointerEvents = window.gitClient.isAuthenticated ? 'auto' : 'none';
+                publishBtn.onclick = async () => {
+                    if (!dirty) { showNotification('No changes to publish', 'info'); return; }
+                    await publishAll();
+                };
+            }
+            if (badge) {
+                badge.style.display = dirty ? 'block' : 'none';
+            }
+        }
 
         // Add bulk import button
         const importButton = L.Control.extend({
@@ -724,6 +783,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 container.innerHTML = `
                     <div class="leaflet-bar leaflet-control">
                         <a class="leaflet-control-button terrain-mode-btn" data-mode="road" title="Paint Roads">🛤️</a>
+                        <a class="leaflet-control-button terrain-mode-btn" data-mode="river" title="Paint Rivers">🌊</a>
+                        <a class="leaflet-control-button terrain-mode-btn" data-mode="ocean" title="Paint Ocean/Sea">🌐</a>
                         <a class="leaflet-control-button terrain-mode-btn" data-mode="difficult" title="Paint Difficult Terrain">🏔️</a>
                         <a class="leaflet-control-button terrain-mode-btn" data-mode="blocked" title="Paint Blocked Areas">🚫</a>
                         <a class="leaflet-control-button" id="clear-terrain-mode" title="Normal Drawing">✏️</a>
@@ -911,6 +972,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const type = formData.get('marker-type');
         const faction = formData.get('marker-faction');
         const isPublic = formData.get('marker-public') === 'on';
+    const wikiSlug = formData.get('marker-wiki-slug');
 
         // Validation
         if (!id || !name || !summary) {
@@ -940,25 +1002,14 @@ document.addEventListener('DOMContentLoaded', () => {
             summary,
             images: [],
             public: isPublic,
+            wikiSlug: wikiSlug ? wikiSlug.trim() || undefined : undefined,
         };
 
         state.markers.push(newMarkerData);
         pendingMarker.on('click', () => openInfoSidebar(newMarkerData));
         
-        // Auto-save after creating marker
-        if (state.isLiveCMS) {
-            try {
-                const saved = await saveLiveData('markers');
-                if (!saved) {
-                    showNotification('Live save failed - marker created locally only', 'warning');
-                }
-            } catch (error) {
-                console.error('Live save error:', error);
-                showNotification('Live save failed - marker created locally only', 'warning');
-            }
-        } else {
-            setTimeout(() => exportData(), 100);
-        }
+        // Batch editing mode: mark dirty instead of immediate save
+        markDirty('markers');
         
         document.getElementById('marker-creation-modal').classList.add('hidden');
         pendingMarker = null;
@@ -1035,12 +1086,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         showNotification(`${terrainType} terrain added`, 'success');
         
-        // Auto-save after creating terrain
-        if (state.isLiveCMS) {
-            await saveLiveData('terrain');
-        } else {
-            setTimeout(() => exportData(), 100);
-        }
+        // Batch editing mode
+        markDirty('terrain');
         
         pendingTerrain = null;
     }
@@ -1050,33 +1097,53 @@ document.addEventListener('DOMContentLoaded', () => {
             road: {
                 color: '#4a90e2',
                 weight: 4,
-                opacity: 0.8,
-                fillColor: '#4a90e2',
-                fillOpacity: 0.3
+                opacity: 0.9,
+                dashArray: '0',
+            },
+            river: {
+                color: '#1f78d1',
+                weight: 4,
+                opacity: 0.85,
+                dashArray: '6,4'
+            },
+            ocean: {
+                color: '#0d3c66',
+                weight: 2,
+                opacity: 0.6,
+                fillColor: '#0d3c66',
+                fillOpacity: 0.35,
             },
             difficult: {
                 color: '#f5a623',
                 weight: 3,
-                opacity: 0.8,
+                opacity: 0.85,
                 fillColor: '#f5a623',
-                fillOpacity: 0.3
+                fillOpacity: 0.25,
+                dashArray: '4,4'
             },
             blocked: {
                 color: '#d0021b',
                 weight: 3,
-                opacity: 0.8,
+                opacity: 0.9,
                 fillColor: '#d0021b',
-                fillOpacity: 0.4
+                fillOpacity: 0.4,
+                dashArray: '2,6'
             }
         };
 
-        if (layer.setStyle) {
+        if (layer.setStyle && styles[terrainType]) {
             layer.setStyle(styles[terrainType]);
+        } else if (terrainType === 'road' && layer.setStyle) {
+            layer.setStyle(styles.road);
         }
-        
-        // Add popup with terrain info
-        layer.bindPopup(`<b>${terrainType.charAt(0).toUpperCase() + terrainType.slice(1)} Terrain</b><br>
-                        <small>Click to edit or delete</small>`);
+
+        // Add popup with terrain info & cost descriptor
+        const costLabel = terrainType === 'road' ? '0.5x cost (faster)' :
+            (terrainType === 'river' ? '3x cost (slow water crossing)' :
+            (terrainType === 'ocean' ? 'Impassable' :
+            (terrainType === 'difficult' ? '3x cost' :
+            (terrainType === 'blocked' ? 'Impassable' : 'Normal'))));
+        layer.bindPopup(`<b>${terrainType.charAt(0).toUpperCase() + terrainType.slice(1)}</b><br><small>${costLabel}</small>`);
     }
 
     function renderExistingTerrain() {
@@ -1202,14 +1269,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Show results
         if (imported > 0) {
-            showNotification(`Successfully imported ${imported} markers!`, 'success');
-            
-            // Auto-save after import
-            if (state.isLiveCMS) {
-                await saveLiveData('markers');
-            } else {
-                setTimeout(() => exportData(), 100);
-            }
+            showNotification(`Imported ${imported} markers (not published yet)`, 'success');
+            markDirty('markers');
         }
         
         if (errors.length > 0) {
@@ -1302,6 +1363,30 @@ document.addEventListener('DOMContentLoaded', () => {
         download(terrainBlob, 'terrain.geojson');
     }
 
+    async function publishAll() {
+        if (!window.gitClient.isAuthenticated) {
+            showNotification('Login required to publish', 'error');
+            return;
+        }
+        showNotification('Publishing changes...', 'info');
+        try {
+            if (state.dirty.markers) {
+                await window.gitClient.saveMarkersData({ markers: state.markers });
+            }
+            if (state.dirty.terrain) {
+                await window.gitClient.saveTerrainData(state.terrain);
+            }
+            await window.gitClient.triggerRedeploy();
+            state.dirty.markers = false;
+            state.dirty.terrain = false;
+            updatePublishUI();
+            showNotification('Published & site rebuild triggered', 'success');
+        } catch (e) {
+            console.error(e);
+            showNotification('Publish failed (see console)', 'error');
+        }
+    }
+
     function download(blob, filename) {
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
@@ -1309,5 +1394,24 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
+    }
+
+    // After DOMContentLoaded setup, add a small utility to ensure Netlify Identity modal not hidden
+    if (window.netlifyIdentity) {
+      // Sometimes Leaflet panes create unexpected stacking contexts; we can force widget open/close for z-index test
+      window.ensureIdentityVisible = function() {
+        const overlay = document.querySelector('.netlify-identity-overlay');
+        if (overlay) {
+          overlay.style.zIndex = '10000';
+        }
+        const modal = document.querySelector('.netlify-identity-modal');
+        if (modal) {
+          modal.style.zIndex = '10001';
+        }
+      };
+      // Hook events
+      window.netlifyIdentity.on('init', window.ensureIdentityVisible);
+      window.netlifyIdentity.on('login', window.ensureIdentityVisible);
+      window.netlifyIdentity.on('open', window.ensureIdentityVisible);
     }
 });

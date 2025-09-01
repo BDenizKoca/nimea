@@ -24,6 +24,8 @@
         <h4>Legend</h4>
         <ul>
             <li><span class="legend-swatch legend-road"></span> Road (0.5x cost)</li>
+            <li><span class="legend-swatch legend-river"></span> River (3x cost)</li>
+            <li><span class="legend-swatch legend-ocean"></span> Ocean/Sea (Impassable)</li>
             <li><span class="legend-swatch legend-diff"></span> Difficult (3x cost)</li>
             <li><span class="legend-swatch legend-block"></span> Blocked (Impassable)</li>
             <li><span class="legend-swatch legend-route"></span> Route Path</li>
@@ -82,6 +84,12 @@
                 <div class="form-group">
                     <label for="marker-summary">Summary *</label>
                     <textarea id="marker-summary" rows="3" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="marker-wiki-slug">Wiki Slug Override</label>
+                    <input type="text" id="marker-wiki-slug" placeholder="Optional: e.g., empire-of-aurelius">
+                    <small>If provided, links directly to /wiki/&lt;slug&gt;/ . Otherwise auto-generated.</small>
                 </div>
                 
                 <div class="form-group">
