@@ -58,6 +58,7 @@ function setupImageInsertionHelper() {
   // Wait for the editor to be ready
   setTimeout(() => {
     addImageInsertionButton();
+    overrideDefaultImageInsertion();
   }, 2000);
 }
 
@@ -94,31 +95,45 @@ function addImageInsertionButton() {
       right: 10px;
       z-index: 1000;
       background: #fff;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      padding: 2px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      border: 2px solid #3f51b5;
+      border-radius: 6px;
+      padding: 3px;
+      box-shadow: 0 4px 12px rgba(63, 81, 181, 0.3);
     `;
     
     const imageButton = document.createElement('button');
-    imageButton.innerHTML = '🖼️ Insert Image';
+    imageButton.innerHTML = '🖼️ Enhanced Image Insert';
     imageButton.type = 'button';
+    imageButton.title = 'Insert image with alignment and sizing options';
     imageButton.style.cssText = `
-      background: #3f51b5;
+      background: linear-gradient(135deg, #3f51b5, #5c6bc0);
       color: white;
       border: none;
-      padding: 6px 12px;
-      border-radius: 3px;
+      padding: 8px 16px;
+      border-radius: 4px;
       cursor: pointer;
-      font-size: 12px;
+      font-size: 13px;
       font-weight: bold;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      transition: all 0.2s ease;
     `;
     
     imageButton.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      console.log('🎯 Image button clicked, opening modal...');
+      console.log('🎯 Enhanced image button clicked, opening modal...');
       showImageInsertionModal(editor);
+    });
+    
+    // Add hover effects
+    imageButton.addEventListener('mouseenter', () => {
+      imageButton.style.transform = 'translateY(-1px)';
+      imageButton.style.boxShadow = '0 4px 8px rgba(0,0,0,0.3)';
+    });
+    
+    imageButton.addEventListener('mouseleave', () => {
+      imageButton.style.transform = 'translateY(0)';
+      imageButton.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
     });
     
     buttonContainer.appendChild(imageButton);
@@ -133,6 +148,223 @@ function addImageInsertionButton() {
   
   // Re-run periodically to catch new editors
   setTimeout(addImageInsertionButton, 3000);
+  
+  // Show helpful notification about enhanced image insertion
+  setTimeout(showImageInsertionNotification, 5000);
+}
+
+function overrideDefaultImageInsertion() {
+  console.log('🔧 Setting up default image insertion override...');
+  
+  // Override any existing image buttons with our enhanced workflow
+  const checkAndOverride = () => {
+    // Look for default CMS image insertion buttons
+    const imageButtons = document.querySelectorAll(
+      'button[title*="image" i], button[aria-label*="image" i], ' +
+      'button[data-testid*="image"], .cms-editor-visual-button, ' +
+      '.toolbar-button, button[class*="image"], button[class*="toolbar"]'
+    );
+    
+    console.log(`🔍 Found ${imageButtons.length} potential image buttons to override`);
+    
+    imageButtons.forEach((button, index) => {
+      if (button.dataset.overridden) return;
+      
+      // Check if this is likely an image insertion button
+      const buttonText = button.textContent?.toLowerCase() || '';
+      const buttonTitle = button.title?.toLowerCase() || '';
+      const buttonClass = button.className?.toLowerCase() || '';
+      const buttonAriaLabel = button.getAttribute('aria-label')?.toLowerCase() || '';
+      
+      const isImageButton = 
+        buttonText.includes('image') || 
+        buttonTitle.includes('image') || 
+        buttonClass.includes('image') || 
+        buttonAriaLabel.includes('image') ||
+        button.innerHTML.includes('img') ||
+        button.innerHTML.includes('🖼') ||
+        button.innerHTML.includes('picture');
+      
+      if (isImageButton) {
+        console.log(`🎯 Overriding image button ${index}:`, {
+          text: buttonText,
+          title: buttonTitle,
+          class: buttonClass,
+          ariaLabel: buttonAriaLabel
+        });
+        
+        button.dataset.overridden = 'true';
+        
+        // Store original click handler
+        const originalClick = button.onclick;
+        
+        // Override the click behavior
+        button.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('🚫 Default image button clicked, opening enhanced modal instead');
+          
+          // Find the nearest editor
+          const editor = findNearestEditor(button);
+          if (editor) {
+            showImageInsertionModal(editor);
+          } else {
+            console.error('❌ Could not find editor for image insertion');
+            alert('Please click the "🖼️ Insert Image" button in the editor instead');
+          }
+        };
+        
+        // Add event listener for better compatibility
+        button.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('🚫 Default image button clicked (addEventListener), opening enhanced modal instead');
+          
+          const editor = findNearestEditor(button);
+          if (editor) {
+            showImageInsertionModal(editor);
+          }
+        }, { capture: true });
+        
+        // Visual enhancement to make it clear this is enhanced
+        button.style.position = 'relative';
+        
+        // Add a small indicator
+        if (!button.querySelector('.enhanced-indicator')) {
+          const indicator = document.createElement('span');
+          indicator.className = 'enhanced-indicator';
+          indicator.textContent = '✨';
+          indicator.style.cssText = `
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            font-size: 10px;
+            background: #3f51b5;
+            color: white;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+          `;
+          button.appendChild(indicator);
+        }
+      }
+    });
+  };
+  
+  // Run immediately and periodically
+  checkAndOverride();
+  setInterval(checkAndOverride, 2000);
+}
+
+function findNearestEditor(button) {
+  console.log('🔍 Finding nearest editor for button:', button);
+  
+  // Try to find the closest CodeMirror editor
+  let element = button;
+  while (element && element !== document.body) {
+    // Look for CodeMirror in current element
+    const codeMirror = element.querySelector('.CodeMirror');
+    if (codeMirror) {
+      console.log('✅ Found CodeMirror editor');
+      return codeMirror;
+    }
+    
+    // Check if current element is CodeMirror
+    if (element.classList?.contains('CodeMirror')) {
+      console.log('✅ Current element is CodeMirror editor');
+      return element;
+    }
+    
+    element = element.parentElement;
+  }
+  
+  // Fallback: find any CodeMirror editor on the page
+  const allEditors = document.querySelectorAll('.CodeMirror');
+  if (allEditors.length > 0) {
+    console.log('⚠️ Using fallback: first available editor');
+    return allEditors[0];
+  }
+  
+  console.log('❌ No CodeMirror editor found');
+  return null;
+}
+
+function showImageInsertionNotification() {
+  // Only show if we haven't shown it before in this session
+  if (sessionStorage.getItem('imageNotificationShown')) return;
+  
+  console.log('💡 Showing image insertion notification...');
+  
+  // Create notification
+  const notification = document.createElement('div');
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #3f51b5, #5c6bc0);
+    color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    z-index: 10001;
+    max-width: 350px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    animation: slideIn 0.3s ease-out;
+  `;
+  
+  notification.innerHTML = `
+    <div style="display: flex; align-items: flex-start; gap: 10px;">
+      <span style="font-size: 24px;">🖼️</span>
+      <div>
+        <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: bold;">Enhanced Image Insertion Available!</h3>
+        <p style="margin: 0 0 10px 0; font-size: 14px; line-height: 1.4; opacity: 0.9;">
+          Look for the <strong>"🖼️ Enhanced Image Insert"</strong> button in the top-right corner of editors for advanced image options.
+        </p>
+        <button onclick="this.parentElement.parentElement.parentElement.remove(); sessionStorage.setItem('imageNotificationShown', 'true');" 
+                style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+          Got it!
+        </button>
+      </div>
+    </div>
+  `;
+  
+  // Add animation styles
+  if (!document.querySelector('#notification-styles')) {
+    const style = document.createElement('style');
+    style.id = 'notification-styles';
+    style.textContent = `
+      @keyframes slideIn {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+  
+  document.body.appendChild(notification);
+  
+  // Auto-dismiss after 8 seconds
+  setTimeout(() => {
+    if (notification.parentElement) {
+      notification.style.animation = 'slideIn 0.3s ease-out reverse';
+      setTimeout(() => {
+        if (notification.parentElement) {
+          notification.remove();
+          sessionStorage.setItem('imageNotificationShown', 'true');
+        }
+      }, 300);
+    }
+  }, 8000);
 }
 
 function showImageInsertionModal(editor) {
