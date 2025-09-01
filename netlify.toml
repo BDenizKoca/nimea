@@ -5,6 +5,12 @@
 [build.environment]
   NODE_VERSION = "18"
 
+# Netlify Identity redirects
+[[redirects]]
+  from = "/.netlify/identity/*"
+  to = "/.netlify/identity/:splat"
+  status = 200
+
 # Redirect admin to the admin panel
 [[redirects]]
   from = "/admin"
