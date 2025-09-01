@@ -1,8 +1,8 @@
 ---
 layout: base.njk
-name: "Varkas the Dragonslayer"
-slug: "varkas-dragonslayer"
-summary: "A legendary warrior known for slaying the ancient red dragon Fyrax."
+name: Varkas the Dragonslayer
+slug: varkas-dragonslayer
+summary: A legendary warrior known for slaying the ancient red dragon Fyrax. tast
 public: true
 ---
 
