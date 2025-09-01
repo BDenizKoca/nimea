@@ -95,7 +95,7 @@ function setupImageEditingHelper() {
 function addImageInsertionButton() {
   console.log('🖼️ Adding image insertion buttons...');
   
-  // Find all markdown editors with multiple selectors
+  // First try the standard approach
   const markdownEditors = document.querySelectorAll(
     '[data-testid="richtext"] .CodeMirror, .CodeMirror, ' +
     '.nc-controlPane-widget .CodeMirror, ' +
@@ -103,7 +103,7 @@ function addImageInsertionButton() {
     'div[data-testid="markdown"] .CodeMirror'
   );
   
-  console.log(`📝 Found ${markdownEditors.length} editors to enhance`);
+  console.log(`📝 Found ${markdownEditors.length} CodeMirror editors`);
   
   // Also try to find editors without CodeMirror
   const textAreas = document.querySelectorAll(
@@ -112,24 +112,39 @@ function addImageInsertionButton() {
     '.cms-editor-visual textarea'
   );
   
-  console.log(`📝 Found ${textAreas.length} textareas to enhance`);
+  console.log(`📝 Found ${textAreas.length} textareas`);
   
-  [...markdownEditors, ...textAreas].forEach((editor, index) => {
-    if (editor.dataset.imageHelperAdded) {
-      console.log(`⏭️ Editor ${index} already has image helper`);
-      return; // Don't add multiple times
+  // New approach: Look for any container that might hold an editor
+  const possibleEditorContainers = document.querySelectorAll(
+    '.nc-controlPane-widget, ' +
+    '[data-testid="richtext"], ' +
+    '.cms-editor-visual, ' +
+    'div[class*="editor"], ' +
+    'div[class*="markdown"], ' +
+    'div[class*="widget"]'
+  );
+  
+  console.log(`📦 Found ${possibleEditorContainers.length} possible editor containers`);
+  
+  const allTargets = [...markdownEditors, ...textAreas, ...possibleEditorContainers];
+  
+  allTargets.forEach((target, index) => {
+    if (target.dataset.imageHelperAdded) {
+      console.log(`⏭️ Target ${index} already has image helper`);
+      return;
     }
-    editor.dataset.imageHelperAdded = 'true';
+    target.dataset.imageHelperAdded = 'true';
     
-    console.log(`➕ Adding image insertion button to editor ${index}`);
+    console.log(`➕ Adding image insertion button to target ${index}`, target);
     
     // Create image insertion button
     const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'enhanced-image-button-container';
     buttonContainer.style.cssText = `
       position: absolute;
       top: 10px;
       right: 10px;
-      z-index: 1000;
+      z-index: 10000 !important;
       background: #fff;
       border: 2px solid #3f51b5;
       border-radius: 6px;
@@ -141,6 +156,7 @@ function addImageInsertionButton() {
     imageButton.innerHTML = '🖼️ Enhanced Image Insert';
     imageButton.type = 'button';
     imageButton.title = 'Insert image with alignment and sizing options';
+    imageButton.className = 'enhanced-image-button';
     imageButton.style.cssText = `
       background: linear-gradient(135deg, #3f51b5, #5c6bc0);
       color: white;
@@ -158,6 +174,13 @@ function addImageInsertionButton() {
       e.preventDefault();
       e.stopPropagation();
       console.log('🎯 Enhanced image button clicked, opening modal...');
+      
+      // Find the best editor target
+      const editor = target.querySelector('.CodeMirror') || 
+                    target.querySelector('textarea') ||
+                    target.querySelector('[contenteditable]') ||
+                    target;
+      
       showImageInsertionModal(editor);
     });
     
@@ -174,22 +197,60 @@ function addImageInsertionButton() {
     
     buttonContainer.appendChild(imageButton);
     
-    // Add to editor container - try different approaches
-    const editorContainer = editor.closest('.CodeMirror') || 
-                           editor.closest('.nc-controlPane-widget') ||
-                           editor.closest('[data-testid="richtext"]') ||
-                           editor.closest('.cms-editor-visual') ||
-                           editor.parentElement ||
-                           editor;
+    // Try multiple approaches to add the button
+    target.style.position = 'relative';
+    target.appendChild(buttonContainer);
     
-    if (editorContainer) {
-      editorContainer.style.position = 'relative';
-      editorContainer.appendChild(buttonContainer);
-      console.log(`✅ Successfully added image button to editor ${index}`);
-    } else {
-      console.log(`❌ Could not find container for editor ${index}`);
-    }
+    console.log(`✅ Successfully added image button to target ${index}`);
   });
+  
+  // If we didn't find any suitable targets, try a fallback approach
+  if (allTargets.length === 0) {
+    console.log('🚨 No suitable targets found, trying fallback approach...');
+    
+    // Add button to the body as a floating button
+    const existingFloatingButton = document.querySelector('.floating-enhanced-image-button');
+    if (!existingFloatingButton) {
+      const floatingButton = document.createElement('button');
+      floatingButton.className = 'floating-enhanced-image-button';
+      floatingButton.innerHTML = '🖼️ Enhanced Image Insert';
+      floatingButton.style.cssText = `
+        position: fixed;
+        top: 100px;
+        right: 20px;
+        z-index: 10001;
+        background: linear-gradient(135deg, #3f51b5, #5c6bc0);
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: bold;
+        box-shadow: 0 4px 12px rgba(63, 81, 181, 0.3);
+        transition: all 0.2s ease;
+      `;
+      
+      floatingButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        console.log('🎯 Floating enhanced image button clicked');
+        
+        // Find any available editor
+        const editor = document.querySelector('.CodeMirror') ||
+                      document.querySelector('textarea') ||
+                      document.querySelector('[contenteditable]');
+        
+        if (editor) {
+          showImageInsertionModal(editor);
+        } else {
+          alert('Please open an entry for editing first, then use this button to insert images.');
+        }
+      });
+      
+      document.body.appendChild(floatingButton);
+      console.log('✅ Added floating enhanced image button');
+    }
+  }
   
   // Re-run periodically to catch new editors
   setTimeout(addImageInsertionButton, 3000);
@@ -203,26 +264,12 @@ function overrideDefaultImageInsertion() {
   
   // Override any existing image buttons with our enhanced workflow
   const checkAndOverride = () => {
-    // Look for default CMS image insertion buttons with broader selectors
-    const imageButtons = document.querySelectorAll(
-      'button[title*="image" i], button[aria-label*="image" i], ' +
-      'button[data-testid*="image"], .cms-editor-visual-button, ' +
-      '.toolbar-button, button[class*="image"], button[class*="toolbar"], ' +
-      'button[class*="nc-"], .nc-toolbarButton, .cms-toolbar-button, ' +
-      'button[type="button"] svg[class*="image"], ' +
-      'button[type="button"] svg[class*="picture"], ' +
-      'button svg + span:contains("Image"), ' +
-      'button:has(svg[viewBox*="24"]):has(path[d*="M"])'
-    );
-    
-    console.log(`🔍 Found ${imageButtons.length} potential image buttons to override`);
-    
-    // Also check for buttons that might have image icons
-    const allButtons = document.querySelectorAll('button[type="button"]');
-    console.log(`🔍 Scanning ${allButtons.length} buttons for image-related content...`);
+    // Get ALL buttons on the page
+    const allButtons = document.querySelectorAll('button');
+    console.log(`🔍 Scanning ${allButtons.length} buttons for image functionality...`);
     
     allButtons.forEach((button, index) => {
-      if (button.dataset.overridden) return;
+      if (button.dataset.overridden === 'true') return;
       
       // Check if this is likely an image insertion button
       const buttonText = button.textContent?.toLowerCase() || '';
@@ -231,100 +278,103 @@ function overrideDefaultImageInsertion() {
       const buttonAriaLabel = button.getAttribute('aria-label')?.toLowerCase() || '';
       const buttonHTML = button.innerHTML.toLowerCase();
       
-      const isImageButton = 
+      // More aggressive detection - look for any SVG with path elements (common for icons)
+      const hasSVG = buttonHTML.includes('<svg') && buttonHTML.includes('<path');
+      const hasImageKeywords = 
         buttonText.includes('image') || 
         buttonTitle.includes('image') || 
         buttonClass.includes('image') || 
-        buttonAriaLabel.includes('image') ||
-        buttonHTML.includes('img') ||
-        buttonHTML.includes('🖼') ||
-        buttonHTML.includes('picture') ||
-        // Look for common SVG patterns for image icons
-        (buttonHTML.includes('<svg') && buttonHTML.includes('path') && buttonHTML.includes('M')) ||
-        // Look for Decap CMS specific patterns
-        buttonClass.includes('nc-') ||
-        buttonClass.includes('toolbar');
+        buttonAriaLabel.includes('image');
       
-      if (isImageButton) {
+      // Check if this might be a toolbar button (common location for image buttons)
+      const isToolbarButton = 
+        buttonClass.includes('toolbar') ||
+        buttonClass.includes('nc-') ||
+        button.closest('.toolbar') ||
+        button.closest('[class*="toolbar"]') ||
+        button.closest('[class*="nc-"]');
+      
+      // If it has an SVG and is in a toolbar-like context, it might be an image button
+      const mightBeImageButton = hasImageKeywords || (hasSVG && isToolbarButton);
+      
+      if (mightBeImageButton) {
         console.log(`🎯 Potentially overriding button ${index}:`, {
-          text: buttonText,
+          text: buttonText.substring(0, 30),
           title: buttonTitle,
-          class: buttonClass,
-          ariaLabel: buttonAriaLabel,
-          html: buttonHTML.substring(0, 100) + '...'
+          class: buttonClass.substring(0, 50),
+          hasSVG: hasSVG,
+          isToolbarButton: isToolbarButton,
+          element: button
         });
         
         button.dataset.overridden = 'true';
         
-        // Store original click handler
+        // Create a wrapper to intercept clicks
         const originalClick = button.onclick;
+        const originalListeners = button.cloneNode(true);
         
-        // Override the click behavior
-        button.onclick = (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          console.log('🚫 Default image button clicked, opening enhanced modal instead');
-          
-          // Find the nearest editor
-          const editor = findNearestEditor(button);
-          if (editor) {
-            showImageInsertionModal(editor);
-          } else {
-            console.error('❌ Could not find editor for image insertion');
-            // Try to find any available editor as fallback
-            const anyEditor = document.querySelector('.CodeMirror, textarea[data-testid="markdown"]');
-            if (anyEditor) {
-              showImageInsertionModal(anyEditor);
-            } else {
-              alert('Please click the "🖼️ Enhanced Image Insert" button in the editor instead');
-            }
-          }
-        };
-        
-        // Add event listener for better compatibility
+        // Override ALL click events
         button.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          console.log('🚫 Default image button clicked (addEventListener), opening enhanced modal instead');
+          // Check if this might actually be an image button by looking at the context
+          const isLikelyImageButton = 
+            hasImageKeywords || 
+            (hasSVG && (isToolbarButton || button.closest('.editor')));
           
-          const editor = findNearestEditor(button) || document.querySelector('.CodeMirror, textarea[data-testid="markdown"]');
-          if (editor) {
-            showImageInsertionModal(editor);
+          if (isLikelyImageButton) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            
+            console.log('🚫 Intercepted potential image button click, opening enhanced modal');
+            
+            // Find any available editor
+            const editor = findNearestEditor(button) || 
+                          document.querySelector('.CodeMirror') ||
+                          document.querySelector('textarea') ||
+                          document.querySelector('[contenteditable]');
+            
+            if (editor) {
+              showImageInsertionModal(editor);
+            } else {
+              console.error('❌ No editor found');
+              alert('Enhanced image insertion available! Please look for the "🖼️ Enhanced Image Insert" button in the editor.');
+            }
+            
+            return false;
           }
-        }, { capture: true });
+        }, { capture: true, passive: false });
         
         // Visual enhancement to make it clear this is enhanced
-        button.style.position = 'relative';
-        
-        // Add a small indicator
         if (!button.querySelector('.enhanced-indicator')) {
           const indicator = document.createElement('span');
           indicator.className = 'enhanced-indicator';
           indicator.textContent = '✨';
           indicator.style.cssText = `
             position: absolute;
-            top: -5px;
-            right: -5px;
-            font-size: 10px;
+            top: -3px;
+            right: -3px;
+            font-size: 8px;
             background: #3f51b5;
             color: white;
             border-radius: 50%;
-            width: 16px;
-            height: 16px;
+            width: 14px;
+            height: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 1000;
+            pointer-events: none;
           `;
+          button.style.position = 'relative';
           button.appendChild(indicator);
         }
       }
     });
   };
   
-  // Run immediately and periodically
+  // Run immediately and very frequently to catch dynamic content
   checkAndOverride();
-  setInterval(checkAndOverride, 2000);
+  setInterval(checkAndOverride, 1000);
 }
 
 function findNearestEditor(button) {
@@ -462,6 +512,56 @@ function addDebugIndicator() {
 
 // Call debug indicator when script loads
 setTimeout(addDebugIndicator, 1000);
+
+// Add comprehensive debugging
+function debugCMSStructure() {
+  console.log('🔍 === CMS STRUCTURE DEBUG ===');
+  
+  // Log all textareas
+  const textareas = document.querySelectorAll('textarea');
+  console.log(`📝 Found ${textareas.length} textareas:`, textareas);
+  
+  // Log all CodeMirror instances
+  const codeMirrors = document.querySelectorAll('.CodeMirror');
+  console.log(`📝 Found ${codeMirrors.length} CodeMirror instances:`, codeMirrors);
+  
+  // Log all buttons
+  const buttons = document.querySelectorAll('button');
+  console.log(`🔘 Found ${buttons.length} buttons total`);
+  
+  // Log buttons with potential image-related content
+  buttons.forEach((btn, i) => {
+    const text = btn.textContent?.toLowerCase() || '';
+    const html = btn.innerHTML;
+    const className = btn.className;
+    const title = btn.title;
+    
+    if (html.includes('svg') || text.includes('image') || className.includes('toolbar') || title.includes('image')) {
+      console.log(`🎯 Button ${i}:`, {
+        text: text.substring(0, 50),
+        html: html.substring(0, 100),
+        className: className,
+        title: title,
+        element: btn
+      });
+    }
+  });
+  
+  // Log any elements with data-testid
+  const testElements = document.querySelectorAll('[data-testid]');
+  console.log(`🧪 Found ${testElements.length} elements with data-testid:`, 
+    Array.from(testElements).map(el => el.getAttribute('data-testid')));
+  
+  // Log elements that might be editors
+  const possibleEditors = document.querySelectorAll('div[contenteditable], .editor, .markdown-editor, .rich-text-editor');
+  console.log(`✏️ Found ${possibleEditors.length} possible editors:`, possibleEditors);
+  
+  console.log('🔍 === END DEBUG ===');
+}
+
+// Run debug after a delay to catch dynamically loaded content
+setTimeout(debugCMSStructure, 3000);
+setTimeout(debugCMSStructure, 10000);
 
 function showImageInsertionModal(editor) {
   console.log('🎬 Opening image insertion modal...');
