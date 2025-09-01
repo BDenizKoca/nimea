@@ -1,0 +1,112 @@
+backend:
+  name: test-repo
+  branch: main
+
+# Use our custom server for persistence
+local_backend:
+  url: http://localhost:8081/api/v1
+
+media_folder: "images"
+public_folder: "/images"
+
+# Display instructions for editors
+publish_mode: editorial_workflow
+
+collections:
+  - name: "player-characters"
+    label: "Player Characters"
+    folder: "wiki/player-characters"
+    create: true
+    identifier_field: "name"
+    slug: "{{slug}}"
+    editor:
+      preview: true
+    fields:
+      - { label: "Layout", name: "layout", widget: "hidden", default: "base.njk" }
+      - { label: "Name", name: "name", widget: "string" }
+      - { label: "Slug", name: "slug", widget: "string", hint: "URL-friendly version of the name (e.g., 'varkas-dragonslayer')" }
+      - { label: "Summary", name: "summary", widget: "text", hint: "A brief description (1-2 sentences)" }
+      - { label: "Public", name: "public", widget: "boolean", default: true }
+      - { label: "Body", name: "body", widget: "markdown", hint: "The main content of the page" }
+
+  - name: "characters"
+    label: "Characters"
+    folder: "wiki/characters"
+    create: true
+    identifier_field: "name"
+    slug: "{{slug}}"
+    editor:
+      preview: true
+    fields:
+      - { label: "Layout", name: "layout", widget: "hidden", default: "base.njk" }
+      - { label: "Name", name: "name", widget: "string" }
+      - { label: "Slug", name: "slug", widget: "string", hint: "URL-friendly version of the name (e.g., 'varkas-dragonslayer')" }
+      - { label: "Summary", name: "summary", widget: "text", hint: "A brief description (1-2 sentences)" }
+      - { label: "Public", name: "public", widget: "boolean", default: true }
+      - { label: "Body", name: "body", widget: "markdown", hint: "The main content of the page" }
+
+  - name: "nations-factions"
+    label: "Nations & Factions"
+    folder: "wiki/nations-factions"
+    create: true
+    identifier_field: "name"
+    slug: "{{slug}}"
+    editor:
+      preview: true
+    fields:
+      - { label: "Layout", name: "layout", widget: "hidden", default: "base.njk" }
+      - { label: "Name", name: "name", widget: "string" }
+      - { label: "Slug", name: "slug", widget: "string", hint: "URL-friendly version of the name (e.g., 'empire-of-aurelius')" }
+      - { label: "Summary", name: "summary", widget: "text", hint: "A brief description (1-2 sentences)" }
+      - { label: "Public", name: "public", widget: "boolean", default: true }
+      - { label: "Body", name: "body", widget: "markdown", hint: "The main content of the page" }
+
+  - name: "locations-regions"
+    label: "Locations & Regions"
+    folder: "wiki/locations-regions"
+    create: true
+    identifier_field: "name"
+    slug: "{{slug}}"
+    editor:
+      preview: true
+    fields:
+      - { label: "Layout", name: "layout", widget: "hidden", default: "base.njk" }
+      - { label: "Name", name: "name", widget: "string" }
+      - { label: "Slug", name: "slug", widget: "string", hint: "URL-friendly version of the name (e.g., 'aurelium')" }
+      - { label: "Summary", name: "summary", widget: "text", hint: "A brief description (1-2 sentences)" }
+      - { label: "Map ID", name: "map_id", widget: "string", required: false, hint: "Identifier to link this location on the map (optional)" }
+      - { label: "Public", name: "public", widget: "boolean", default: true }
+      - { label: "Body", name: "body", widget: "markdown", hint: "The main content of the page" }
+
+  - name: "gods-religions"
+    label: "Gods & Religions"
+    folder: "wiki/gods-religions"
+    create: true
+    identifier_field: "name"
+    slug: "{{slug}}"
+    editor:
+      preview: true
+    fields:
+      - { label: "Layout", name: "layout", widget: "hidden", default: "base.njk" }
+      - { label: "Name", name: "name", widget: "string" }
+      - { label: "Slug", name: "slug", widget: "string", hint: "URL-friendly version of the name (e.g., 'solara-goddess-of-light')" }
+      - { label: "Summary", name: "summary", widget: "text", hint: "A brief description (1-2 sentences)" }
+      - { label: "Public", name: "public", widget: "boolean", default: true }
+      - { label: "Body", name: "body", widget: "markdown", hint: "The main content of the page" }
+
+  - name: "magic-powers"
+    label: "Magic & Powers"
+    folder: "wiki/magic-powers"
+    create: true
+    identifier_field: "name"
+    slug: "{{slug}}"
+    editor:
+      preview: true
+    fields:
+      - { label: "Layout", name: "layout", widget: "hidden", default: "base.njk" }
+      - { label: "Name", name: "name", widget: "string" }
+      - { label: "Slug", name: "slug", widget: "string", hint: "URL-friendly version of the name (e.g., 'elemental-magic')" }
+      - { label: "Summary", name: "summary", widget: "text", hint: "A brief description (1-2 sentences)" }
+      - { label: "Public", name: "public", widget: "boolean", default: true }
+      - { label: "Body", name: "body", widget: "markdown", hint: "The main content of the page" }
+

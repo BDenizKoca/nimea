@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} | Nimea</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <nav>
+                <a href="/">Home</a> |
+                <a href="/wiki/">Wiki</a> |
+                <a href="/map/">Map</a>
+            </nav>
+        </header>
+        <main>
+            {{ content | safe }}
+        </main>
+    </div>
+</body>
+</html>
