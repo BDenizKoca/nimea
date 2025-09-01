@@ -48,6 +48,9 @@ window.addEventListener('DOMContentLoaded', (event) => {
     
     // Image Click-to-Edit functionality
     setupImageEditingHelper();
+    
+    // Enhance sync scroll functionality
+    enhanceSyncScroll();
   }
 });
 
@@ -603,4 +606,99 @@ function showImageEditModal(codeMirror, lineNumber, imageMatch) {
   
   // Focus the URL input
   editImageUrlInput.focus();
+}
+
+function enhanceSyncScroll() {
+  // Wait for the CMS interface to load
+  setTimeout(() => {
+    setupSyncScrollEnhancement();
+  }, 3000);
+}
+
+function setupSyncScrollEnhancement() {
+  // Look for editor and preview panes
+  const editorPane = document.querySelector('[data-testid="editor-pane"]') || 
+                     document.querySelector('.cms-editor-visual-root') ||
+                     document.querySelector('.CodeMirror-scroll');
+  
+  const previewPane = document.querySelector('[data-testid="preview-pane"]') || 
+                      document.querySelector('.cms-preview-pane') ||
+                      document.querySelector('.cms-editor-preview');
+  
+  if (editorPane && previewPane) {
+    console.log('🔄 Sync scroll enhancement: Editor and preview panes found');
+    
+    // Check if sync scroll button exists
+    const syncButton = document.querySelector('[data-testid="sync-scroll-button"]') ||
+                       document.querySelector('.cms-editor-sync-scroll') ||
+                       Array.from(document.querySelectorAll('button')).find(btn => 
+                         btn.textContent.includes('sync') || btn.title?.includes('sync')
+                       );
+    
+    if (syncButton) {
+      console.log('✅ Sync scroll button found and should be working');
+      
+      // Add visual feedback to sync button
+      syncButton.style.transition = 'all 0.2s ease';
+      
+      // Enhance the sync button with better visual feedback
+      const originalBg = getComputedStyle(syncButton).backgroundColor;
+      
+      syncButton.addEventListener('mouseenter', () => {
+        if (!syncButton.classList.contains('active')) {
+          syncButton.style.backgroundColor = '#3f51b5';
+          syncButton.style.color = 'white';
+        }
+      });
+      
+      syncButton.addEventListener('mouseleave', () => {
+        if (!syncButton.classList.contains('active')) {
+          syncButton.style.backgroundColor = originalBg;
+          syncButton.style.color = '';
+        }
+      });
+    } else {
+      console.log('⚠️ Sync scroll button not found - may be using different interface');
+      
+      // Try to create our own sync scroll functionality
+      implementCustomSyncScroll(editorPane, previewPane);
+    }
+  } else {
+    console.log('ℹ️ Editor or preview pane not found yet, retrying...');
+    // Retry after a delay
+    setTimeout(setupSyncScrollEnhancement, 2000);
+  }
+}
+
+function implementCustomSyncScroll(editorPane, previewPane) {
+  console.log('🔧 Implementing custom sync scroll functionality');
+  
+  let isScrolling = false;
+  
+  // Add scroll listeners
+  editorPane.addEventListener('scroll', () => {
+    if (isScrolling) return;
+    isScrolling = true;
+    
+    const scrollPercent = editorPane.scrollTop / (editorPane.scrollHeight - editorPane.clientHeight);
+    const targetScrollTop = scrollPercent * (previewPane.scrollHeight - previewPane.clientHeight);
+    
+    previewPane.scrollTop = targetScrollTop;
+    
+    setTimeout(() => { isScrolling = false; }, 50);
+  });
+  
+  previewPane.addEventListener('scroll', () => {
+    if (isScrolling) return;
+    isScrolling = true;
+    
+    const scrollPercent = previewPane.scrollTop / (previewPane.scrollHeight - previewPane.clientHeight);
+    const targetScrollTop = scrollPercent * (editorPane.scrollHeight - editorPane.clientHeight);
+    
+    editorPane.scrollTop = targetScrollTop;
+    
+    setTimeout(() => { isScrolling = false; }, 50);
+  });
+  
+  console.log('✅ Custom sync scroll implemented');
 }
