@@ -9,7 +9,7 @@ public: true
 ---
 # Skribas Seravel
 
-Skribas Seravel is one of the most respected scholars in all of Nimea, known for his extensive writings on the history, cultures, and magical phenomena of the realm. test
+Skribas Seravel is one of the most respected scholars in all of Nimea, known for his extensive writings on the history, cultures, and magical phenomena of the realm.
 
 ## Background
 
@@ -22,11 +22,3 @@ His most famous work, "The Comprehensive Chronicle of the Five Kingdoms," spans 
 ## Current Status
 
 Now in his seventies, Skribas resides in the Great Library of Silverkeep, where he continues his research and mentors promising young scholars. He is always eager to hear tales from travelers who might bring new information for his chronicles.
-
-![rw](/images/regions.png "sas")
-
-asdasdasdasd
-
-
-
-## test 2

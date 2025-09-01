@@ -1,23 +1,16 @@
 {
-  "name": "mapprogram",
+  "name": "nimea-wiki",
   "version": "1.0.0",
+  "description": "Interactive map and wiki for the fantasy realm of Nimea",
   "main": "index.js",
   "scripts": {
     "start": "eleventy --serve",
-    "build": "eleventy",
-    "cms": "node cms-server.js",
-    "dev": "concurrently \"npm run start\" \"npm run cms\""
+    "build": "eleventy"
   },
-  "keywords": [],
+  "keywords": ["wiki", "fantasy", "map", "eleventy"],
   "author": "",
   "license": "ISC",
-  "description": "",
   "devDependencies": {
-    "@11ty/eleventy": "^3.1.2",
-    "concurrently": "^9.2.1"
-  },
-  "dependencies": {
-    "cors": "^2.8.5",
-    "express": "^5.1.0"
+    "@11ty/eleventy": "^3.1.2"
   }
 }
