@@ -684,42 +684,263 @@ function showImageInsertionModal(editor) {
   browseMediaBtn.addEventListener('click', () => {
     console.log('📁 Browse media button clicked');
     
-    // Try to trigger the CMS media library
-    if (window.CMS && window.CMS.getWidget) {
-      try {
-        // This is a simplified approach - the actual implementation may vary
-        // depending on how Decap CMS exposes the media library
-        console.log('🔧 Attempting to open CMS media library...');
+    // Store reference to our modal for later use
+    const ourModal = modal;
+    const ourImageUrlInput = imageUrlInput;
+    
+    // Create a media selection helper overlay
+    const mediaHelper = document.createElement('div');
+    mediaHelper.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      z-index: 10001;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-family: sans-serif;
+    `;
+    
+    mediaHelper.innerHTML = `
+      <div style="background: #333; padding: 30px; border-radius: 8px; max-width: 500px; text-align: center;">
+        <h3 style="margin-top: 0; color: #fff;">📁 Media Library Integration</h3>
+        <p style="margin-bottom: 25px; color: #ccc; line-height: 1.5;">
+          I'll help you access the media library and auto-copy the selected image path!
+        </p>
+        <div style="display: flex; gap: 15px; justify-content: center;">
+          <button id="openMediaBtn" style="background: #28a745; color: white; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer; font-weight: bold;">
+            🚀 Open Media Library
+          </button>
+          <button id="cancelMediaBtn" style="background: #6c757d; color: white; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer;">
+            Cancel
+          </button>
+        </div>
+        <div style="margin-top: 20px; padding: 15px; background: #444; border-radius: 4px; font-size: 12px; color: #bbb;">
+          <strong>How it works:</strong><br>
+          1. Click "Open Media Library" to browse/upload images<br>
+          2. Select your image in the CMS media library<br>
+          3. I'll detect the selection and auto-copy the path<br>
+          4. You'll return to the enhanced image modal with the path filled
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(mediaHelper);
+    
+    // Cancel button
+    mediaHelper.querySelector('#cancelMediaBtn').addEventListener('click', () => {
+      document.body.removeChild(mediaHelper);
+    });
+    
+    // Open media button
+    mediaHelper.querySelector('#openMediaBtn').addEventListener('click', () => {
+      console.log('🚀 Opening CMS media library...');
+      
+      // Hide our helper overlay but keep it in DOM for reference
+      mediaHelper.style.display = 'none';
+      
+      // Try to find and click the media library button
+      const mediaButtons = document.querySelectorAll(`
+        button[title*="Choose" i], 
+        button[aria-label*="Choose" i], 
+        button[title*="Browse" i],
+        button[title*="Media" i],
+        button[aria-label*="Media" i],
+        button:has(svg[class*="folder"]),
+        button:has(svg[class*="image"]),
+        .cms-file-control button,
+        [data-testid*="media"] button,
+        [data-testid*="image"] button
+      `);
+      
+      let mediaLibraryOpened = false;
+      
+      // Enhanced detection for media buttons
+      for (let btn of mediaButtons) {
+        const btnText = btn.textContent?.toLowerCase() || '';
+        const btnHTML = btn.innerHTML.toLowerCase();
+        const btnTitle = btn.title?.toLowerCase() || '';
+        const btnAriaLabel = btn.getAttribute('aria-label')?.toLowerCase() || '';
         
-        // Try to find and click the existing media library button
-        const mediaButtons = document.querySelectorAll('button[title*="media" i], button[aria-label*="media" i], button:has(svg)');
-        let mediaLibraryOpened = false;
+        const isMediaButton = 
+          btnText.includes('choose') || btnText.includes('browse') || btnText.includes('media') ||
+          btnTitle.includes('choose') || btnTitle.includes('browse') || btnTitle.includes('media') ||
+          btnAriaLabel.includes('choose') || btnAriaLabel.includes('browse') || btnAriaLabel.includes('media') ||
+          btnHTML.includes('folder') || btnHTML.includes('upload') || btnHTML.includes('file');
         
-        for (let btn of mediaButtons) {
-          const btnText = btn.textContent?.toLowerCase() || '';
-          const btnHTML = btn.innerHTML.toLowerCase();
+        if (isMediaButton) {
+          console.log('🎯 Found media library button, clicking...', btn);
           
-          if (btnText.includes('media') || btnHTML.includes('folder') || btnHTML.includes('upload')) {
-            console.log('🎯 Found potential media button, clicking...', btn);
-            btn.click();
-            mediaLibraryOpened = true;
-            break;
-          }
+          // Set up observer to detect when media library opens
+          setupMediaLibraryObserver(ourModal, ourImageUrlInput, mediaHelper);
+          
+          btn.click();
+          mediaLibraryOpened = true;
+          break;
         }
-        
-        if (!mediaLibraryOpened) {
-          // Fallback: show a helpful message
-          alert('📁 Media Library Tip:\\n\\n1. Click "Choose an image" or the media button in the normal CMS interface\\n2. Upload or select your image\\n3. Copy the image path (e.g., /images/filename.jpg)\\n4. Paste it back into this enhanced modal\\n\\nThis gives you the best of both worlds: easy media management + enhanced alignment/sizing options!');
-        }
-        
-      } catch (error) {
-        console.error('❌ Error accessing media library:', error);
-        alert('📁 To use the media library:\\n\\n1. Close this modal\\n2. Use the regular CMS image button to upload/select an image\\n3. Copy the image path\\n4. Reopen this enhanced modal and paste the path\\n\\nThis ensures you get the upload functionality plus our enhanced options!');
       }
-    } else {
-      alert('📁 Media Library Integration:\\n\\n1. Close this modal temporarily\\n2. Use the regular CMS interface to upload your image\\n3. Copy the image path (e.g., /images/filename.jpg)\\n4. Reopen this enhanced modal and paste the path\\n\\nThis workflow gives you both upload capability and enhanced formatting options!');
-    }
+      
+      if (!mediaLibraryOpened) {
+        // Show fallback instructions
+        document.body.removeChild(mediaHelper);
+        showMediaLibraryInstructions();
+      }
+    });
+    
+    // Close on overlay click
+    mediaHelper.addEventListener('click', (e) => {
+      if (e.target === mediaHelper) {
+        document.body.removeChild(mediaHelper);
+      }
+    });
   });
+
+// Setup observer to detect media library interactions
+function setupMediaLibraryObserver(originalModal, imageUrlInput, mediaHelper) {
+  console.log('👁️ Setting up media library observer...');
+  
+  let checkCount = 0;
+  const maxChecks = 50; // Check for 25 seconds
+  
+  const checkForMediaSelection = () => {
+    checkCount++;
+    
+    // Look for media library elements that might indicate a selection
+    const mediaLibrary = document.querySelector('.cms-media-library') || 
+                         document.querySelector('[class*="media"]') ||
+                         document.querySelector('[data-testid*="media"]');
+    
+    if (mediaLibrary) {
+      console.log('📁 Media library detected, watching for selections...');
+      
+      // Watch for clicks on media items
+      const mediaItems = mediaLibrary.querySelectorAll('img, [class*="media-item"], [data-testid*="media-item"]');
+      
+      mediaItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+          console.log('🖼️ Media item clicked:', item);
+          
+          // Try to extract image path from various sources
+          let imagePath = null;
+          
+          if (item.tagName === 'IMG') {
+            imagePath = item.src || item.getAttribute('data-src');
+          } else {
+            const img = item.querySelector('img');
+            if (img) {
+              imagePath = img.src || img.getAttribute('data-src');
+            }
+          }
+          
+          // Convert absolute URL to relative path if needed
+          if (imagePath) {
+            try {
+              const url = new URL(imagePath);
+              imagePath = url.pathname; // Convert to relative path
+            } catch (e) {
+              // Already a relative path, keep as is
+            }
+            
+            console.log('📋 Extracted image path:', imagePath);
+            
+            // Wait a bit for the media library to process the selection
+            setTimeout(() => {
+              // Auto-fill the path in our enhanced modal
+              imageUrlInput.value = imagePath;
+              imageUrlInput.dispatchEvent(new Event('input', { bubbles: true }));
+              
+              // Clean up helper overlay
+              if (mediaHelper && mediaHelper.parentElement) {
+                document.body.removeChild(mediaHelper);
+              }
+              
+              // Show success message
+              showMediaSelectionSuccess(imagePath);
+            }, 500);
+          }
+        });
+      });
+    }
+    
+    // Continue checking if we haven't reached max checks
+    if (checkCount < maxChecks) {
+      setTimeout(checkForMediaSelection, 500);
+    } else {
+      // Cleanup after timeout
+      if (mediaHelper && mediaHelper.parentElement) {
+        document.body.removeChild(mediaHelper);
+      }
+      console.log('⏰ Media library observer timeout');
+    }
+  };
+  
+  // Start checking after a short delay
+  setTimeout(checkForMediaSelection, 1000);
+}
+
+function showMediaSelectionSuccess(imagePath) {
+  // Create success notification
+  const notification = document.createElement('div');
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #28a745;
+    color: white;
+    padding: 15px 20px;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 10002;
+    font-family: sans-serif;
+    font-size: 14px;
+    max-width: 400px;
+  `;
+  
+  notification.innerHTML = `
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span style="font-size: 18px;">✅</span>
+      <div>
+        <strong>Image Selected!</strong><br>
+        <small style="opacity: 0.9;">Path auto-copied: ${imagePath}</small>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(notification);
+  
+  // Auto-remove after 3 seconds
+  setTimeout(() => {
+    if (notification.parentElement) {
+      notification.remove();
+    }
+  }, 3000);
+}
+
+function showMediaLibraryInstructions() {
+  alert(`📁 Media Library Access
+
+I couldn't find the media library button automatically. Here's how to use it:
+
+OPTION 1 - Manual Integration:
+1. Look for a "Choose image" or "Browse" button in the CMS interface
+2. Click it to open the media library
+3. Upload or select your image
+4. Copy the image path (e.g., /images/filename.jpg)
+5. Return to this enhanced modal and paste the path
+
+OPTION 2 - Quick Upload:
+1. Close this modal temporarily  
+2. Use the regular CMS image insertion to upload
+3. Copy the markdown that gets inserted
+4. Delete that insertion and reopen this enhanced modal
+5. Paste just the path part into the URL field
+
+This workflow gives you both upload capability and enhanced formatting options!`);
+}
   
   // Update preview function
   function updatePreview() {
@@ -828,36 +1049,68 @@ function showImageInsertionModal(editor) {
 
 function insertTextIntoEditor(editor, text) {
   console.log('📝 Attempting to insert text into editor:', text);
+  console.log('🎯 Editor element received:', editor);
   
-  // Get CodeMirror instance
+  // Method 1: Try CodeMirror first (most common in Decap CMS)
   let codeMirror;
-  if (editor.CodeMirror) {
+  
+  // Direct CodeMirror instance
+  if (editor && editor.CodeMirror) {
     codeMirror = editor.CodeMirror;
-    console.log('✅ Found CodeMirror instance on editor element');
-  } else {
-    // Try to find CodeMirror instance
-    const cmElement = editor.closest('.CodeMirror');
+    console.log('✅ Found direct CodeMirror instance');
+  } 
+  // Look for CodeMirror in element hierarchy
+  else if (editor) {
+    const cmElement = editor.closest('.CodeMirror') || editor.querySelector('.CodeMirror');
     if (cmElement && cmElement.CodeMirror) {
       codeMirror = cmElement.CodeMirror;
-      console.log('✅ Found CodeMirror instance on parent element');
+      console.log('✅ Found CodeMirror instance in hierarchy');
+    }
+  }
+  
+  // Try to find ANY CodeMirror on page as fallback
+  if (!codeMirror) {
+    const allCM = document.querySelectorAll('.CodeMirror');
+    for (let cm of allCM) {
+      if (cm.CodeMirror) {
+        codeMirror = cm.CodeMirror;
+        console.log('✅ Found CodeMirror instance as fallback');
+        break;
+      }
     }
   }
   
   if (codeMirror) {
     try {
-      // Insert at cursor position
       const cursor = codeMirror.getCursor();
-      console.log('📍 Cursor position:', cursor);
+      console.log('📍 Current cursor position:', cursor);
       
-      // Add some spacing if not at beginning of line
+      // Get current line content to determine spacing
+      const currentLine = codeMirror.getLine(cursor.line) || '';
+      const lineIsEmpty = currentLine.trim().length === 0;
+      const atLineStart = cursor.ch === 0;
+      
+      // Smart spacing: add appropriate newlines
       let textToInsert = text;
-      if (cursor.ch > 0) {
+      if (!lineIsEmpty && !atLineStart) {
+        // Middle or end of non-empty line
         textToInsert = '\n\n' + text + '\n\n';
+      } else if (!lineIsEmpty && atLineStart) {
+        // Start of non-empty line
+        textToInsert = text + '\n\n';
       } else {
+        // Empty line
         textToInsert = text + '\n\n';
       }
       
       codeMirror.replaceRange(textToInsert, cursor);
+      
+      // Position cursor after inserted text
+      const newCursor = { 
+        line: cursor.line + textToInsert.split('\n').length - 1, 
+        ch: textToInsert.split('\n').pop().length 
+      };
+      codeMirror.setCursor(newCursor);
       codeMirror.focus();
       
       console.log('✅ Successfully inserted text via CodeMirror');
@@ -865,46 +1118,108 @@ function insertTextIntoEditor(editor, text) {
     } catch (error) {
       console.error('❌ Error inserting text via CodeMirror:', error);
     }
-  } else {
-    console.log('⚠️ CodeMirror not found, trying fallback methods...');
+  }
+  
+  // Method 2: Fallback to textarea approach
+  console.log('⚠️ CodeMirror not found, trying textarea fallback...');
+  
+  // Find textarea in various ways
+  const textareas = [
+    editor?.querySelector('textarea'),
+    document.querySelector('textarea[data-testid="markdown"]'),
+    document.querySelector('textarea[class*="editor"]'),
+    document.querySelector('textarea[class*="cms"]'),
+    ...document.querySelectorAll('textarea')
+  ].filter(Boolean);
+  
+  for (let textarea of textareas) {
+    if (!textarea) continue;
     
-    // Fallback: try to find textarea and insert
-    const textarea = editor.querySelector('textarea') || 
-                     editor.closest('.form-control') || 
-                     document.querySelector('textarea[data-testid="markdown"]') ||
-                     document.querySelector('textarea');
-    
-    if (textarea) {
-      try {
-        const start = textarea.selectionStart;
-        const end = textarea.selectionEnd;
-        const value = textarea.value;
-        
-        // Add some spacing
-        let textToInsert = text;
-        if (start > 0 && value[start - 1] !== '\n') {
-          textToInsert = '\n\n' + text + '\n\n';
-        } else {
-          textToInsert = text + '\n\n';
-        }
-        
-        textarea.value = value.substring(0, start) + textToInsert + value.substring(end);
-        textarea.selectionStart = textarea.selectionEnd = start + textToInsert.length;
-        textarea.focus();
-        
-        // Trigger change event
-        textarea.dispatchEvent(new Event('input', { bubbles: true }));
-        textarea.dispatchEvent(new Event('change', { bubbles: true }));
-        
-        console.log('✅ Successfully inserted text via textarea fallback');
-        return true;
-      } catch (error) {
-        console.error('❌ Error inserting text via textarea fallback:', error);
+    try {
+      const start = textarea.selectionStart || 0;
+      const end = textarea.selectionEnd || 0;
+      const value = textarea.value || '';
+      
+      console.log('📝 Textarea state:', { start, end, valueLength: value.length });
+      
+      // Smart spacing for textarea
+      let textToInsert = text;
+      if (start > 0 && value[start - 1] !== '\n') {
+        textToInsert = '\n\n' + text + '\n\n';
+      } else {
+        textToInsert = text + '\n\n';
       }
+      
+      // Insert text
+      const newValue = value.substring(0, start) + textToInsert + value.substring(end);
+      textarea.value = newValue;
+      
+      // Position cursor after inserted text
+      const newCursorPos = start + textToInsert.length;
+      textarea.selectionStart = textarea.selectionEnd = newCursorPos;
+      textarea.focus();
+      
+      // Trigger all relevant events to ensure CMS detects the change
+      ['input', 'change', 'keyup', 'paste'].forEach(eventType => {
+        textarea.dispatchEvent(new Event(eventType, { bubbles: true }));
+      });
+      
+      // Also try triggering React-style events
+      const nativeInputValue = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value');
+      if (nativeInputValue && nativeInputValue.set) {
+        nativeInputValue.set.call(textarea, newValue);
+        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      
+      console.log('✅ Successfully inserted text via textarea fallback');
+      return true;
+    } catch (error) {
+      console.error('❌ Error with textarea:', error);
+      continue;
     }
   }
   
-  console.error('❌ Could not find any editor to insert text into');
+  // Method 3: Last resort - try contenteditable
+  console.log('⚠️ Trying contenteditable fallback...');
+  const editableElements = document.querySelectorAll('[contenteditable="true"]');
+  
+  for (let editable of editableElements) {
+    try {
+      // Insert at current selection
+      const selection = window.getSelection();
+      if (selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        range.deleteContents();
+        
+        const textNode = document.createTextNode('\n\n' + text + '\n\n');
+        range.insertNode(textNode);
+        
+        // Move cursor after inserted text
+        range.setStartAfter(textNode);
+        range.setEndAfter(textNode);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        
+        editable.focus();
+        
+        // Trigger change events
+        editable.dispatchEvent(new Event('input', { bubbles: true }));
+        
+        console.log('✅ Successfully inserted text via contenteditable fallback');
+        return true;
+      }
+    } catch (error) {
+      console.error('❌ Error with contenteditable:', error);
+      continue;
+    }
+  }
+  
+  console.error('❌ All insertion methods failed');
+  console.log('🔍 Available elements on page:');
+  console.log('CodeMirror elements:', document.querySelectorAll('.CodeMirror').length);
+  console.log('Textarea elements:', document.querySelectorAll('textarea').length);
+  console.log('Contenteditable elements:', document.querySelectorAll('[contenteditable]').length);
+  
   return false;
 }
 
