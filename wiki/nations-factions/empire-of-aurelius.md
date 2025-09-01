@@ -1,8 +1,9 @@
 ---
 layout: base.njk
-name: "Empire of Aurelius"
-slug: "empire-of-aurelius"
-summary: "The largest and most powerful human nation in Nimea, known for its disciplined legions and grand cities."
+name: Empire of Aurelius
+slug: empire-of-aurelius
+summary: The largest and most powerful human nation in Nimea, known for its
+  disciplined legions and grand cities.a
 public: true
 ---
 
