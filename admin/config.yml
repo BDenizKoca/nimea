@@ -7,11 +7,11 @@ site_url: https://nimea-wiki.netlify.app
 media_folder: "images"
 public_folder: "./images"
 
-# Configure image uploads
-media_library:
-  name: uploadcare
-  config:
-    publicKey: "YOUR_UPLOADCARE_PUBLIC_KEY" # Replace with your public key
+# Use Netlify's default file upload (no API key needed)
+# media_library:
+#   name: uploadcare
+#   config:
+#     publicKey: "YOUR_UPLOADCARE_PUBLIC_KEY" # Replace with your public key
 
 # Enable rich text editor features for better image insertion
 editor:
