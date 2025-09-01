@@ -1,7 +1,6 @@
 backend:
-  name: github
-  repo: BDenizKoca/nimea # Replace with your repo path
-  branch: main # Branch to update (optional; defaults to master)
+  name: git-gateway
+  branch: main
 
 media_folder: "images"
 public_folder: "/images"
