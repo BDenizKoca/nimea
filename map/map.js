@@ -307,6 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- ROUTE PLANNING ---
     function addToRoute(marker) {
+        console.log('Adding to route:', marker.name, 'isDmMode:', state.isDmMode);
         state.route.push(marker);
         routeSidebar.classList.add('open');
         recomputeRoute();
@@ -345,6 +346,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function recomputeRoute() {
+        console.log('recomputeRoute called, current state:', {
+            routeLength: state.route.length,
+            isDmMode: state.isDmMode,
+            routeStops: state.route.map(r => r.name)
+        });
+        
         // Clear existing leg polylines
         state.routePolylines.forEach(pl => map.removeLayer(pl));
         state.routePolylines = [];
