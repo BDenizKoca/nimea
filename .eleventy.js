@@ -4,7 +4,8 @@ module.exports = function(eleventyConfig) {
   eleventyConfig.addPassthroughCopy("overlays");
   eleventyConfig.addPassthroughCopy("images");
   eleventyConfig.addPassthroughCopy("data");
-  eleventyConfig.addPassthroughCopy("map.png");
+  eleventyConfig.addPassthroughCopy("map");
+  eleventyConfig.addPassthroughCopy("map.webp");
 
   return {
     dir: {

@@ -23,6 +23,13 @@ jobs:
       - name: Build site
         run: npm run build
 
+      - name: Debug - List built files
+        run: |
+          echo "Contents of _site directory:"
+          ls -la _site
+          echo "Contents of root directory:"
+          ls -la
+
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
