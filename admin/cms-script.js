@@ -42,5 +42,267 @@ window.addEventListener('DOMContentLoaded', (event) => {
         }, 1000);
       },
     });
+
+    // Custom Image Insertion Helper
+    setupImageInsertionHelper();
   }
 });
+
+function setupImageInsertionHelper() {
+  // Wait for the editor to be ready
+  setTimeout(() => {
+    addImageInsertionButton();
+  }, 2000);
+}
+
+function addImageInsertionButton() {
+  // Find all markdown editors
+  const markdownEditors = document.querySelectorAll('[data-testid="richtext"] .CodeMirror, .CodeMirror');
+  
+  markdownEditors.forEach((editor, index) => {
+    if (editor.dataset.imageHelperAdded) return; // Don't add multiple times
+    editor.dataset.imageHelperAdded = 'true';
+    
+    // Create image insertion button
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.cssText = `
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 1000;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 2px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    `;
+    
+    const imageButton = document.createElement('button');
+    imageButton.innerHTML = '🖼️ Insert Image';
+    imageButton.type = 'button';
+    imageButton.style.cssText = `
+      background: #3f51b5;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: bold;
+    `;
+    
+    imageButton.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      showImageInsertionModal(editor);
+    });
+    
+    buttonContainer.appendChild(imageButton);
+    
+    // Add to editor container
+    const editorContainer = editor.closest('.CodeMirror') || editor;
+    editorContainer.style.position = 'relative';
+    editorContainer.appendChild(buttonContainer);
+  });
+  
+  // Re-run periodically to catch new editors
+  setTimeout(addImageInsertionButton, 3000);
+}
+
+function showImageInsertionModal(editor) {
+  // Create modal overlay
+  const modal = document.createElement('div');
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  `;
+  
+  // Create modal content
+  const modalContent = document.createElement('div');
+  modalContent.style.cssText = `
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  `;
+  
+  modalContent.innerHTML = `
+    <h2 style="margin-top: 0; color: #333; font-family: sans-serif;">🖼️ Insert Image</h2>
+    
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Image URL or Path:</label>
+      <input type="text" id="imageUrl" placeholder="/images/filename.jpg" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+      <small style="color: #666; font-size: 12px;">Upload images first, then reference them like: /images/filename.jpg</small>
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Alt Text (Description):</label>
+      <input type="text" id="altText" placeholder="Describe the image" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Alignment:</label>
+      <select id="alignment" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+        <option value="">Default (block)</option>
+        <option value="image-left">Float Left</option>
+        <option value="image-right">Float Right</option>
+        <option value="image-center">Center</option>
+      </select>
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Size:</label>
+      <select id="size" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+        <option value="">Default</option>
+        <option value="image-small">Small (200px)</option>
+        <option value="image-medium">Medium (400px)</option>
+        <option value="image-large">Large (600px)</option>
+      </select>
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+      <h3 style="color: #333; font-size: 16px; margin-bottom: 10px;">Preview:</h3>
+      <div id="previewContainer" style="background: #f5f5f5; padding: 15px; border-radius: 4px; font-family: monospace; font-size: 12px; color: #333;">
+        ![Alt text](/images/filename.jpg)
+      </div>
+    </div>
+    
+    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+      <button id="cancelBtn" style="padding: 10px 20px; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer;">Cancel</button>
+      <button id="insertBtn" style="padding: 10px 20px; border: none; background: #3f51b5; color: white; border-radius: 4px; cursor: pointer; font-weight: bold;">Insert Image</button>
+    </div>
+  `;
+  
+  modal.appendChild(modalContent);
+  document.body.appendChild(modal);
+  
+  // Set up event listeners
+  const imageUrlInput = modal.querySelector('#imageUrl');
+  const altTextInput = modal.querySelector('#altText');
+  const alignmentSelect = modal.querySelector('#alignment');
+  const sizeSelect = modal.querySelector('#size');
+  const previewContainer = modal.querySelector('#previewContainer');
+  const cancelBtn = modal.querySelector('#cancelBtn');
+  const insertBtn = modal.querySelector('#insertBtn');
+  
+  // Update preview function
+  function updatePreview() {
+    const url = imageUrlInput.value || '/images/filename.jpg';
+    const alt = altTextInput.value || 'Alt text';
+    const alignment = alignmentSelect.value;
+    const size = sizeSelect.value;
+    
+    let classes = [];
+    if (alignment) classes.push(alignment);
+    if (size) classes.push(size);
+    
+    const classString = classes.length > 0 ? `{.${classes.join(' .')}}` : '';
+    const markdown = `![${alt}](${url})${classString}`;
+    
+    previewContainer.textContent = markdown;
+  }
+  
+  // Set up event listeners for real-time preview
+  imageUrlInput.addEventListener('input', updatePreview);
+  altTextInput.addEventListener('input', updatePreview);
+  alignmentSelect.addEventListener('change', updatePreview);
+  sizeSelect.addEventListener('change', updatePreview);
+  
+  // Cancel button
+  cancelBtn.addEventListener('click', () => {
+    document.body.removeChild(modal);
+  });
+  
+  // Insert button
+  insertBtn.addEventListener('click', () => {
+    const url = imageUrlInput.value.trim();
+    const alt = altTextInput.value.trim();
+    
+    if (!url) {
+      alert('Please enter an image URL or path');
+      return;
+    }
+    
+    if (!alt) {
+      alert('Please enter alt text for accessibility');
+      return;
+    }
+    
+    const alignment = alignmentSelect.value;
+    const size = sizeSelect.value;
+    
+    let classes = [];
+    if (alignment) classes.push(alignment);
+    if (size) classes.push(size);
+    
+    const classString = classes.length > 0 ? `{.${classes.join(' .')}}` : '';
+    const markdown = `![${alt}](${url})${classString}`;
+    
+    // Insert into editor
+    insertTextIntoEditor(editor, markdown);
+    
+    // Close modal
+    document.body.removeChild(modal);
+  });
+  
+  // Close on overlay click
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      document.body.removeChild(modal);
+    }
+  });
+  
+  // Focus the URL input
+  imageUrlInput.focus();
+}
+
+function insertTextIntoEditor(editor, text) {
+  // Get CodeMirror instance
+  let codeMirror;
+  if (editor.CodeMirror) {
+    codeMirror = editor.CodeMirror;
+  } else {
+    // Try to find CodeMirror instance
+    const cmElement = editor.closest('.CodeMirror');
+    if (cmElement && cmElement.CodeMirror) {
+      codeMirror = cmElement.CodeMirror;
+    }
+  }
+  
+  if (codeMirror) {
+    // Insert at cursor position
+    const cursor = codeMirror.getCursor();
+    codeMirror.replaceRange(text, cursor);
+    codeMirror.focus();
+  } else {
+    // Fallback: try to find textarea and insert
+    const textarea = editor.querySelector('textarea') || 
+                     editor.closest('.form-control') || 
+                     document.querySelector('textarea[data-testid="markdown"]');
+    
+    if (textarea) {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const value = textarea.value;
+      
+      textarea.value = value.substring(0, start) + text + value.substring(end);
+      textarea.selectionStart = textarea.selectionEnd = start + text.length;
+      textarea.focus();
+      
+      // Trigger change event
+      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  }
+}
