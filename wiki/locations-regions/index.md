@@ -9,4 +9,6 @@ This section contains information about the various locations, cities, dungeons,
 
 ## Notable Locations
 
-- [Aurelium](/wiki/locations-regions/aurelium/) - The capital city of the Empire of Aurelius
+{% for location in collections.locations_regions %}
+- [{{ location.data.name }}]({{ location.url }}) - {{ location.data.summary }}
+{% endfor %}

@@ -9,5 +9,8 @@ This section contains information about the notable NPCs in the world of Nimea.
 
 ## Notable Characters
 
-- [Varkas the Dragonslayer](varkas-dragonslayer/)
-- [Skribas Seravel](skribas-seravel/)
+{% for character in collections.characters %}
+{%- if character.data.public %}
+- [{{ character.data.name }}]({{ character.data.slug }}/) - {{ character.data.summary }}
+{%- endif %}
+{% endfor %}

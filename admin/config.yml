@@ -12,8 +12,8 @@ media_library:
   config:
     publicKey: "YOUR_UPLOADCARE_PUBLIC_KEY" # Replace with your public key
 
-# Display instructions for editors
-publish_mode: editorial_workflow
+# Simple publish mode - changes go live immediately
+# publish_mode: editorial_workflow
 
 collections:
   - name: "player-characters"
