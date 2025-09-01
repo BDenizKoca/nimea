@@ -3,7 +3,7 @@ layout: base.njk
 name: Skribas Seravel
 slug: skribas-seravel
 summary: A renowned scholar and chronicler of Nimean history.
-cover_image: /images/chatgpt-image-aug-22-2025-04_30_51-pm.png
+cover_image: /images/chatgpt_image_11_may_2025_02_44_04.png
 portrait_image: ""
 public: true
 ---
