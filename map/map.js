@@ -259,65 +259,73 @@ document.addEventListener('DOMContentLoaded', () => {
         const cols = Math.floor(mapWidth / config.gridCellSize);
         const rows = Math.floor(mapHeight / config.gridCellSize);
 
-        console.log(`Building ${cols}x${rows} grid...`);
+        console.log(`Building ${cols}x${rows} grid for map size ${mapWidth}x${mapHeight}...`);
+        console.log('Terrain features available:', state.terrain.features.length);
 
         const grid = Array(rows).fill(null).map(() => Array(cols).fill(config.terrainCosts.normal));
 
-        const blockedFeatures = state.terrain.features.filter(f => f.properties.kind === 'blocked');
-        const difficultFeatures = state.terrain.features.filter(f => f.properties.kind === 'difficult');
-        const roadFeatures = state.terrain.features.filter(f => f.properties.kind === 'road');
+        // Only process terrain if we have features
+        if (state.terrain.features && state.terrain.features.length > 0) {
+            const blockedFeatures = state.terrain.features.filter(f => f.properties.kind === 'blocked');
+            const difficultFeatures = state.terrain.features.filter(f => f.properties.kind === 'difficult');
+            const roadFeatures = state.terrain.features.filter(f => f.properties.kind === 'road');
 
-        for (let r = 0; r < rows; r++) {
-            for (let c = 0; c < cols; c++) {
-                const [worldY, worldX] = gridToWorldCoords(c, r);
-                const point = turf.point([worldX, worldY]);
-                let cost = config.terrainCosts.normal;
-                let isBlocked = false;
+            console.log('Terrain features - Blocked:', blockedFeatures.length, 'Difficult:', difficultFeatures.length, 'Roads:', roadFeatures.length);
 
-                // Check for blocked polygons
-                for (const feature of blockedFeatures) {
-                    if (feature.geometry.type === 'Polygon' && turf.booleanPointInPolygon(point, feature)) {
-                        isBlocked = true;
-                        break;
-                    }
-                }
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const [worldY, worldX] = gridToWorldCoords(c, r);
+                    const point = turf.point([worldX, worldY]);
+                    let cost = config.terrainCosts.normal;
+                    let isBlocked = false;
 
-                if (isBlocked) {
-                    grid[r][c] = Infinity; // Using Infinity for blocked
-                    continue;
-                }
-
-                // Check for roads (LineString)
-                let onRoad = false;
-                for (const feature of roadFeatures) {
-                    // Use a buffer to make roads easier to snap to
-                    const distance = turf.pointToLineDistance(point, feature, { units: 'pixels' });
-                    if (distance < config.gridCellSize / 2) {
-                        cost = config.terrainCosts.road;
-                        onRoad = true;
-                        break;
-                    }
-                }
-                if (onRoad) {
-                    grid[r][c] = cost;
-                    continue;
-                }
-
-                // Check for difficult terrain (Polygon or LineString buffer)
-                for (const feature of difficultFeatures) {
-                     if (feature.geometry.type === 'Polygon' && turf.booleanPointInPolygon(point, feature)) {
-                        cost = config.terrainCosts.difficult;
-                        break;
-                    } else if (feature.geometry.type === 'LineString') {
-                        const distance = turf.pointToLineDistance(point, feature, { units: 'pixels' });
-                        if (distance < config.gridCellSize) { // Larger buffer for difficult terrain lines
-                             cost = config.terrainCosts.difficult;
-                             break;
+                    // Check for blocked polygons
+                    for (const feature of blockedFeatures) {
+                        if (feature.geometry.type === 'Polygon' && turf.booleanPointInPolygon(point, feature)) {
+                            isBlocked = true;
+                            break;
                         }
                     }
+
+                    if (isBlocked) {
+                        grid[r][c] = Infinity; // Using Infinity for blocked
+                        continue;
+                    }
+
+                    // Check for roads (LineString)
+                    let onRoad = false;
+                    for (const feature of roadFeatures) {
+                        // Use a buffer to make roads easier to snap to
+                        const distance = turf.pointToLineDistance(point, feature, { units: 'pixels' });
+                        if (distance < config.gridCellSize / 2) {
+                            cost = config.terrainCosts.road;
+                            onRoad = true;
+                            break;
+                        }
+                    }
+                    if (onRoad) {
+                        grid[r][c] = cost;
+                        continue;
+                    }
+
+                    // Check for difficult terrain (Polygon or LineString buffer)
+                    for (const feature of difficultFeatures) {
+                         if (feature.geometry.type === 'Polygon' && turf.booleanPointInPolygon(point, feature)) {
+                            cost = config.terrainCosts.difficult;
+                            break;
+                        } else if (feature.geometry.type === 'LineString') {
+                            const distance = turf.pointToLineDistance(point, feature, { units: 'pixels' });
+                            if (distance < config.gridCellSize) { // Larger buffer for difficult terrain lines
+                                 cost = config.terrainCosts.difficult;
+                                 break;
+                            }
+                        }
+                    }
+                     grid[r][c] = cost;
                 }
-                 grid[r][c] = cost;
             }
+        } else {
+            console.log('No terrain features found, using default costs');
         }
 
         console.log("Grid build complete.");
@@ -329,30 +337,52 @@ document.addEventListener('DOMContentLoaded', () => {
         easystar.enableDiagonals();
         easystar.disableCornerCutting();
 
-
         pathfindingGrid = { cols, rows, width: mapWidth, height: mapHeight };
     }
 
 
     function calculateAndDisplayPath() {
+        console.log('calculateAndDisplayPath called, route length:', state.route.length);
+        
         if (!pathfindingGrid) {
+            console.log('Building pathfinding grid...');
             buildPathfindingGrid();
         }
 
         const start = state.route[state.route.length - 2];
         const end = state.route[state.route.length - 1];
+        
+        console.log('Route from:', start.name, 'to:', end.name);
+        console.log('Start coords:', start.x, start.y);
+        console.log('End coords:', end.x, end.y);
 
         const startCell = worldToGridCoords(start.x, start.y);
         const endCell = worldToGridCoords(end.x, end.y);
+        
+        console.log('Grid coords - Start:', startCell, 'End:', endCell);
 
+        // Fallback: if pathfinding fails, show straight line distance
+        const straightLineDistance = Math.sqrt(Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2));
+        const straightLineKm = straightLineDistance * config.kmPerPixel;
+        
+        console.log('Straight line distance:', straightLineKm.toFixed(2), 'km');
+
+        // Try EasyStar pathfinding
         easystar.findPath(startCell.x, startCell.y, endCell.x, endCell.y, (path) => {
-            if (path) {
-                const pixelPath = path.map(p => gridToWorldCoords(p.x, p.y));
-                const polyline = L.polyline(pixelPath, { color: 'red' }).addTo(map);
-                map.fitBounds(polyline.getBounds());
+            if (path && path.length > 0) {
+                console.log('Path found with', path.length, 'steps');
+                const pixelPath = path.map(p => {
+                    const coords = gridToWorldCoords(p.x, p.y);
+                    return [coords[0], coords[1]]; // [lat, lng] for Leaflet
+                });
+                const polyline = L.polyline(pixelPath, { color: 'red', weight: 3 }).addTo(map);
                 updateRouteSummary(pixelPath);
             } else {
-                console.log("No path found.");
+                console.log("No path found via A*, using straight line");
+                // Fallback to straight line
+                const straightPath = [[start.y, start.x], [end.y, end.x]];
+                const polyline = L.polyline(straightPath, { color: 'blue', weight: 3, dashArray: '5, 5' }).addTo(map);
+                updateRouteSummarySimple(straightLineKm);
             }
         });
         easystar.calculate();
@@ -376,16 +406,39 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateRouteSummary(pixelPath) {
         let totalDistancePx = 0;
         for (let i = 1; i < pixelPath.length; i++) {
-            totalDistancePx += map.distance(pixelPath[i-1], pixelPath[i]);
+            const p1 = L.latLng(pixelPath[i-1][0], pixelPath[i-1][1]);
+            const p2 = L.latLng(pixelPath[i][0], pixelPath[i][1]);
+            totalDistancePx += map.distance(p1, p2);
         }
         const totalKm = totalDistancePx * config.kmPerPixel;
 
+        console.log('Route calculation - Total pixels:', totalDistancePx.toFixed(2), 'Total km:', totalKm.toFixed(2));
+
         const summaryDiv = document.getElementById('route-summary');
         summaryDiv.innerHTML = `
-            <p>Total Distance: ${totalKm.toFixed(2)} km</p>
-            <p>Walk: ${(totalKm / config.profiles.walk.speed).toFixed(1)} days</p>
-            <p>Wagon: ${(totalKm / config.profiles.wagon.speed).toFixed(1)} days</p>
-            <p>Horse: ${(totalKm / config.profiles.horse.speed).toFixed(1)} days</p>
+            <h3>Route Summary</h3>
+            <p><strong>Total Distance:</strong> ${totalKm.toFixed(2)} km</p>
+            <div class="travel-times">
+                <p><strong>Walking:</strong> ${(totalKm / config.profiles.walk.speed).toFixed(1)} days</p>
+                <p><strong>Wagon:</strong> ${(totalKm / config.profiles.wagon.speed).toFixed(1)} days</p>
+                <p><strong>Horse:</strong> ${(totalKm / config.profiles.horse.speed).toFixed(1)} days</p>
+            </div>
+        `;
+    }
+
+    function updateRouteSummarySimple(totalKm) {
+        console.log('Simple route calculation - Total km:', totalKm.toFixed(2));
+
+        const summaryDiv = document.getElementById('route-summary');
+        summaryDiv.innerHTML = `
+            <h3>Route Summary (Direct)</h3>
+            <p><strong>Total Distance:</strong> ${totalKm.toFixed(2)} km</p>
+            <div class="travel-times">
+                <p><strong>Walking:</strong> ${(totalKm / config.profiles.walk.speed).toFixed(1)} days</p>
+                <p><strong>Wagon:</strong> ${(totalKm / config.profiles.wagon.speed).toFixed(1)} days</p>
+                <p><strong>Horse:</strong> ${(totalKm / config.profiles.horse.speed).toFixed(1)} days</p>
+            </div>
+            <p><em>Note: Direct line (pathfinding failed)</em></p>
         `;
     }
 
