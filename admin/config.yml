@@ -1,10 +1,7 @@
 backend:
-  name: test-repo
-  branch: main
-
-# Use our custom server for persistence
-local_backend:
-  url: http://localhost:8081/api/v1
+  name: github
+  repo: BDenizKoca/nimea # Replace with your repo path
+  branch: main # Branch to update (optional; defaults to master)
 
 media_folder: "images"
 public_folder: "/images"
