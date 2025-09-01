@@ -15,6 +15,8 @@ Skribas Seravel is one of the most respected scholars in all of Nimea, known for
 
 Born in the coastal city of Azurehaven, Skribas showed an early aptitude for learning and documentation. He studied at the Grand Academy of Arcane Arts for twelve years before embarking on a lifelong journey to document the history and wonders of Nimea.
 
+![text](/images/regions.png "text")
+
 ## Works
 
 His most famous work, "The Comprehensive Chronicle of the Five Kingdoms," spans twenty-seven volumes and is considered the definitive historical text in academic circles. He has also written extensively on magical theory, ancient ruins, and the various cultures that inhabit the realm.
