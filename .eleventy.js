@@ -6,10 +6,11 @@ module.exports = function(eleventyConfig) {
   eleventyConfig.addPassthroughCopy("data");
   eleventyConfig.addPassthroughCopy("map");
   eleventyConfig.addPassthroughCopy("map.webp");
-  eleventyConfig.addPassthroughCopy(".nojekyll");
-  eleventyConfig.addPassthroughCopy("auth.html");
-  eleventyConfig.addPassthroughCopy("auth-redirect.html");
-  eleventyConfig.addPassthroughCopy("callback.html");
+  // Remove GitHub Pages specific files
+  // eleventyConfig.addPassthroughCopy(".nojekyll");
+  // eleventyConfig.addPassthroughCopy("auth.html");
+  // eleventyConfig.addPassthroughCopy("auth-redirect.html");
+  // eleventyConfig.addPassthroughCopy("callback.html");
 
   // Add collections for wiki sections
   eleventyConfig.addCollection("characters", function(collection) {
@@ -36,11 +37,11 @@ module.exports = function(eleventyConfig) {
     return collection.getFilteredByGlob("wiki/magic-powers/*.md").filter(item => !item.inputPath.includes('index.md'));
   });
 
-  // Add a pathPrefix if we're deploying to GitHub Pages
-  const pathPrefix = process.env.GITHUB_ACTIONS ? '/nimea/' : '/';
+  // Remove GitHub Pages specific path prefix
+  // const pathPrefix = process.env.GITHUB_ACTIONS ? '/nimea/' : '/';
 
   return {
-    pathPrefix,
+    // pathPrefix,
     dir: {
       input: ".",
       includes: "_includes",

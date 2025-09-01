@@ -1,11 +1,8 @@
 backend:
-  name: github
-  repo: BDenizKoca/nimea
+  name: git-gateway
   branch: main
-  base_url: https://decap-cms-oauth-provider.netlify.app
-  auth_endpoint: auth
 
-site_url: https://bdenizkoca.github.io/nimea
+site_url: https://nimea-wiki.netlify.app
 
 media_folder: "images"
 public_folder: "./images"
