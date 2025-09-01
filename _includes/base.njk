@@ -23,6 +23,13 @@
                 <img src="{{ cover_image | url }}" alt="Cover image for {{ title or name }}" />
             </div>
             {% endif %}
+            
+            {% if portrait_image %}
+            <div class="portrait-image">
+                <img src="{{ portrait_image | url }}" alt="Portrait of {{ title or name }}" />
+            </div>
+            {% endif %}
+            
             {{ content | safe }}
         </main>
     </div>

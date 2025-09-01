@@ -64,15 +64,51 @@ a:hover {
     mask-image: none;
 }
 
+/* Portrait image styles */
+.portrait-image {
+    float: right;
+    margin: 0 0 2rem 2rem;
+    max-width: 300px;
+    border: 3px solid #d3c0a5;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    clear: right;
+}
+
+.portrait-image img {
+    width: 100%;
+    height: auto;
+    max-height: 400px;
+    object-fit: cover;
+    display: block;
+    border: none;
+    border-image: none;
+    -webkit-mask-image: none;
+    mask-image: none;
+}
+
+/* If both cover and portrait exist, adjust portrait positioning */
+.cover-image + .portrait-image {
+    margin-top: -1rem;
+}
+
 /* Responsive cover images */
 @media (max-width: 600px) {
     .cover-image img {
         height: 200px;
     }
+    
+    .portrait-image {
+        float: none;
+        margin: 1rem auto;
+        max-width: 250px;
+        display: block;
+    }
 }
 
-/* Inline image styles for content */
-main img:not(.cover-image img) {
+/* Enhanced inline image styles for content */
+main img:not(.cover-image img):not(.portrait-image img) {
     max-width: 100%;
     height: auto;
     border: 2px solid #d3c0a5;
@@ -81,26 +117,64 @@ main img:not(.cover-image img) {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-/* Image alignment classes for content */
+/* Advanced image alignment classes for content */
 .image-left {
     float: left;
-    margin: 0 1rem 1rem 0;
+    margin: 0 1.5rem 1rem 0;
     max-width: 300px;
 }
 
 .image-right {
     float: right;
-    margin: 0 0 1rem 1rem;
+    margin: 0 0 1rem 1.5rem;
     max-width: 300px;
 }
 
 .image-center {
     display: block;
-    margin: 1rem auto;
+    margin: 1.5rem auto;
     text-align: center;
+}
+
+.image-small {
+    max-width: 200px;
+}
+
+.image-medium {
+    max-width: 400px;
+}
+
+.image-large {
+    max-width: 600px;
+    width: 100%;
+}
+
+/* Image with caption */
+.image-with-caption {
+    text-align: center;
+    margin: 1.5rem 0;
+}
+
+.image-with-caption img {
+    margin-bottom: 0.5rem;
+}
+
+.image-with-caption .caption {
+    font-style: italic;
+    font-size: 0.9rem;
+    color: #666;
+    margin-top: 0.5rem;
 }
 
 /* Clear floats after images */
 .clear {
     clear: both;
+}
+
+/* Ensure text flows properly around portrait images */
+.portrait-image + p,
+.portrait-image + h1,
+.portrait-image + h2,
+.portrait-image + h3 {
+    margin-top: 0;
 }

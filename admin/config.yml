@@ -34,7 +34,8 @@ collections:
       - { label: "Name", name: "name", widget: "string" }
       - { label: "Slug", name: "slug", widget: "string", hint: "URL-friendly version of the name (e.g., 'varkas-dragonslayer')" }
       - { label: "Summary", name: "summary", widget: "text", hint: "A brief description (1-2 sentences)" }
-      - { label: "Cover Image", name: "cover_image", widget: "image", required: false, hint: "Optional cover image for this character" }
+      - { label: "Cover Image", name: "cover_image", widget: "image", required: false, hint: "Optional widescreen cover image for this character" }
+      - { label: "Portrait Image", name: "portrait_image", widget: "image", required: false, hint: "Optional vertical portrait image for this character" }
       - { label: "Public", name: "public", widget: "boolean", default: true }
       - { label: "Body", name: "body", widget: "markdown", hint: "The main content of the page" }
 
@@ -51,7 +52,8 @@ collections:
       - { label: "Name", name: "name", widget: "string" }
       - { label: "Slug", name: "slug", widget: "string", hint: "URL-friendly version of the name (e.g., 'varkas-dragonslayer')" }
       - { label: "Summary", name: "summary", widget: "text", hint: "A brief description (1-2 sentences)" }
-      - { label: "Cover Image", name: "cover_image", widget: "image", required: false, hint: "Optional cover image for this character" }
+      - { label: "Cover Image", name: "cover_image", widget: "image", required: false, hint: "Optional widescreen cover image for this character" }
+      - { label: "Portrait Image", name: "portrait_image", widget: "image", required: false, hint: "Optional vertical portrait image for this character" }
       - { label: "Public", name: "public", widget: "boolean", default: true }
       - { label: "Body", name: "body", widget: "markdown", hint: "The main content of the page" }
 
@@ -103,7 +105,8 @@ collections:
       - { label: "Name", name: "name", widget: "string" }
       - { label: "Slug", name: "slug", widget: "string", hint: "URL-friendly version of the name (e.g., 'solara-goddess-of-light')" }
       - { label: "Summary", name: "summary", widget: "text", hint: "A brief description (1-2 sentences)" }
-      - { label: "Cover Image", name: "cover_image", widget: "image", required: false, hint: "Optional cover image for this deity/religion" }
+      - { label: "Cover Image", name: "cover_image", widget: "image", required: false, hint: "Optional widescreen cover image for this deity/religion" }
+      - { label: "Portrait Image", name: "portrait_image", widget: "image", required: false, hint: "Optional vertical portrait image for this deity" }
       - { label: "Public", name: "public", widget: "boolean", default: true }
       - { label: "Body", name: "body", widget: "markdown", hint: "The main content of the page" }
 
