@@ -115,6 +115,30 @@ Thornhold,2000,1500,fortress,Empire,Mountain fortress,true"></textarea>
         </div>
     </div>
 
+    <!-- Terrain Type Selection Modal -->
+    <div class="modal hidden" id="terrain-type-modal">
+        <div class="modal-content">
+            <h3>Select Terrain Type</h3>
+            <div class="terrain-options">
+                <button type="button" class="terrain-btn road-btn" data-type="road">
+                    🛤️ Road<br>
+                    <small>Faster travel (0.5x cost)</small>
+                </button>
+                <button type="button" class="terrain-btn difficult-btn" data-type="difficult">
+                    🏔️ Difficult<br>
+                    <small>Slower travel (3x cost)</small>
+                </button>
+                <button type="button" class="terrain-btn blocked-btn" data-type="blocked">
+                    🚫 Blocked<br>
+                    <small>Impassable terrain</small>
+                </button>
+            </div>
+            <div class="form-actions">
+                <button type="button" id="cancel-terrain">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <div class="leaflet-top leaflet-right">
         <div class="leaflet-control-layers leaflet-control" id="overlay-toggles">
             <label><input type="checkbox" id="toggle-regions"> Regions</label>

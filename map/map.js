@@ -391,6 +391,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- DM MODE ---
     let pendingMarker = null; // Store marker being created
+    let pendingTerrain = null; // Store terrain being created
+    let currentTerrainMode = null; // Track current terrain painting mode
 
     function setupDmMode() {
         if (!state.isDmMode) return;
@@ -401,9 +403,13 @@ document.addEventListener('DOMContentLoaded', () => {
             position: 'topleft',
             drawMarker: true,
             drawPolygon: true,
+            drawPolyline: true,
             editMode: true,
             removalMode: true,
         });
+
+        // Add terrain mode selector
+        addTerrainModeControls();
 
         // Add logic for saving markers and terrain
         const saveButton = L.Control.extend({
@@ -444,15 +450,72 @@ document.addEventListener('DOMContentLoaded', () => {
         // Set up modal form handlers
         setupMarkerCreationModal();
         setupBulkImportModal();
+        setupTerrainTypeModal();
 
         map.on('pm:create', (e) => {
             if (e.shape === 'Marker') {
                 pendingMarker = e.layer;
                 openMarkerCreationModal(pendingMarker.getLatLng());
-            } else if (e.shape === 'Polygon') {
-                handleTerrainCreation(e.layer);
+            } else if (e.shape === 'Polygon' || e.shape === 'Line') {
+                pendingTerrain = e.layer;
+                openTerrainTypeModal();
             }
         });
+
+        // Load existing terrain and style it
+        renderExistingTerrain();
+    }
+
+    function addTerrainModeControls() {
+        // Add terrain painting mode controls
+        const terrainControls = L.Control.extend({
+            options: {
+                position: 'topleft'
+            },
+            onAdd: function () {
+                const container = L.DomUtil.create('div', 'terrain-controls');
+                container.innerHTML = `
+                    <div class="leaflet-bar leaflet-control">
+                        <a class="leaflet-control-button terrain-mode-btn" data-mode="road" title="Paint Roads">🛤️</a>
+                        <a class="leaflet-control-button terrain-mode-btn" data-mode="difficult" title="Paint Difficult Terrain">🏔️</a>
+                        <a class="leaflet-control-button terrain-mode-btn" data-mode="blocked" title="Paint Blocked Areas">🚫</a>
+                        <a class="leaflet-control-button" id="clear-terrain-mode" title="Normal Drawing">✏️</a>
+                    </div>
+                `;
+                
+                // Add click handlers
+                container.addEventListener('click', (e) => {
+                    const button = e.target.closest('.terrain-mode-btn');
+                    if (button) {
+                        const mode = button.dataset.mode;
+                        setTerrainMode(mode);
+                        
+                        // Update button states
+                        container.querySelectorAll('.terrain-mode-btn').forEach(btn => btn.classList.remove('active'));
+                        button.classList.add('active');
+                    }
+                    
+                    if (e.target.id === 'clear-terrain-mode') {
+                        clearTerrainMode();
+                        container.querySelectorAll('.terrain-mode-btn').forEach(btn => btn.classList.remove('active'));
+                    }
+                });
+
+                return container;
+            }
+        });
+        
+        map.addControl(new terrainControls());
+    }
+
+    function setTerrainMode(mode) {
+        currentTerrainMode = mode;
+        showNotification(`Terrain mode: ${mode}. Draw polygons/lines to paint terrain.`, 'success');
+    }
+
+    function clearTerrainMode() {
+        currentTerrainMode = null;
+        showNotification('Normal drawing mode enabled', 'success');
     }
 
     function setupMarkerCreationModal() {
@@ -570,6 +633,117 @@ document.addEventListener('DOMContentLoaded', () => {
             map.removeLayer(layer);
             showNotification('Invalid terrain type', 'error');
         }
+    }
+
+    function setupTerrainTypeModal() {
+        const modal = document.getElementById('terrain-type-modal');
+        const terrainButtons = modal.querySelectorAll('.terrain-btn');
+        const cancelBtn = document.getElementById('cancel-terrain');
+
+        // Terrain type selection
+        terrainButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const terrainType = button.dataset.type;
+                saveTerrainWithType(terrainType);
+                modal.classList.add('hidden');
+            });
+        });
+
+        // Cancel button
+        cancelBtn.addEventListener('click', () => {
+            if (pendingTerrain) {
+                map.removeLayer(pendingTerrain);
+                pendingTerrain = null;
+            }
+            modal.classList.add('hidden');
+        });
+
+        // Close modal on background click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                cancelBtn.click();
+            }
+        });
+    }
+
+    function openTerrainTypeModal() {
+        const modal = document.getElementById('terrain-type-modal');
+        
+        // If we have a current terrain mode set, use it automatically
+        if (currentTerrainMode) {
+            saveTerrainWithType(currentTerrainMode);
+            return;
+        }
+        
+        modal.classList.remove('hidden');
+    }
+
+    function saveTerrainWithType(terrainType) {
+        if (!pendingTerrain) return;
+
+        const feature = pendingTerrain.toGeoJSON();
+        feature.properties.kind = terrainType;
+        state.terrain.features.push(feature);
+        
+        // Style the terrain visually
+        styleTerrainLayer(pendingTerrain, terrainType);
+        
+        showNotification(`${terrainType} terrain added`, 'success');
+        setTimeout(() => exportData(), 100);
+        
+        pendingTerrain = null;
+    }
+
+    function styleTerrainLayer(layer, terrainType) {
+        const styles = {
+            road: {
+                color: '#4a90e2',
+                weight: 4,
+                opacity: 0.8,
+                fillColor: '#4a90e2',
+                fillOpacity: 0.3
+            },
+            difficult: {
+                color: '#f5a623',
+                weight: 3,
+                opacity: 0.8,
+                fillColor: '#f5a623',
+                fillOpacity: 0.3
+            },
+            blocked: {
+                color: '#d0021b',
+                weight: 3,
+                opacity: 0.8,
+                fillColor: '#d0021b',
+                fillOpacity: 0.4
+            }
+        };
+
+        if (layer.setStyle) {
+            layer.setStyle(styles[terrainType]);
+        }
+        
+        // Add popup with terrain info
+        layer.bindPopup(`<b>${terrainType.charAt(0).toUpperCase() + terrainType.slice(1)} Terrain</b><br>
+                        <small>Click to edit or delete</small>`);
+    }
+
+    function renderExistingTerrain() {
+        console.log('Rendering existing terrain:', state.terrain.features.length, 'features');
+        
+        state.terrain.features.forEach(feature => {
+            const terrainType = feature.properties.kind;
+            
+            if (feature.geometry.type === 'Polygon') {
+                const coords = feature.geometry.coordinates[0].map(coord => [coord[1], coord[0]]);
+                const polygon = L.polygon(coords).addTo(map);
+                styleTerrainLayer(polygon, terrainType);
+            } else if (feature.geometry.type === 'LineString') {
+                const coords = feature.geometry.coordinates.map(coord => [coord[1], coord[0]]);
+                const polyline = L.polyline(coords).addTo(map);
+                styleTerrainLayer(polyline, terrainType);
+            }
+        });
     }
 
     function showNotification(message, type = 'success') {

@@ -264,3 +264,100 @@ body, html {
         opacity: 1;
     }
 }
+
+/* Terrain selection styling */
+.terrain-options {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.terrain-btn {
+    padding: 20px;
+    border: 3px solid transparent;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.terrain-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.road-btn {
+    background: #4a90e2;
+    color: white;
+    border-color: #357abd;
+}
+
+.road-btn:hover {
+    background: #357abd;
+}
+
+.difficult-btn {
+    background: #f5a623;
+    color: white;
+    border-color: #e8930c;
+}
+
+.difficult-btn:hover {
+    background: #e8930c;
+}
+
+.blocked-btn {
+    background: #d0021b;
+    color: white;
+    border-color: #b8001a;
+}
+
+.blocked-btn:hover {
+    background: #b8001a;
+}
+
+.terrain-btn small {
+    display: block;
+    margin-top: 5px;
+    font-size: 12px;
+    opacity: 0.9;
+}
+
+/* Terrain controls styling */
+.terrain-controls .leaflet-control-button {
+    width: 32px;
+    height: 32px;
+    line-height: 30px;
+    text-align: center;
+    font-size: 16px;
+    text-decoration: none;
+    color: #333;
+    background: white;
+    border-bottom: 1px solid #ccc;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.terrain-controls .leaflet-control-button:hover {
+    background: #f4f4f4;
+}
+
+.terrain-controls .leaflet-control-button.active {
+    background: #007cba;
+    color: white;
+}
+
+.terrain-controls .leaflet-control-button:first-child {
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+}
+
+.terrain-controls .leaflet-control-button:last-child {
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 4px;
+    border-bottom: none;
+}
