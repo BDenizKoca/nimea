@@ -104,10 +104,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!sidebarEl) return;
         const open = sidebarEl.classList.toggle('open');
         if (btnEl) btnEl.setAttribute('aria-expanded', open ? 'true' : 'false');
-        // Auto-close the other panel on mobile to save space
+        // Auto-close the other panel on narrow screens to save space
         if (isNarrow() && open) {
-            if (sidebarEl === routeSidebar) { infoSidebar.classList.remove('open'); mobileInfoBtn && mobileInfoBtn.setAttribute('aria-expanded','false'); }
-            if (sidebarEl === infoSidebar) { routeSidebar.classList.remove('open'); mobileRouteBtn && mobileRouteBtn.setAttribute('aria-expanded','false'); }
+            if (sidebarEl === routeSidebar) {
+                infoSidebar.classList.remove('open');
+            } else if (sidebarEl === infoSidebar) {
+                routeSidebar.classList.remove('open');
+            }
         }
     }
 
@@ -463,15 +466,15 @@ document.addEventListener('DOMContentLoaded', () => {
         easystar.findPath(startCell.x, startCell.y, endCell.x, endCell.y, (path) => {
             if (path && path.length > 0) {
                 const pixelPath = path.map(p => {
-                    const coords = gridToWorldCoords(p.x, p.y);
-                    return [coords[0], coords[1]];
+                    const coords = gridToWorldCoords(p.x, p.y); // [x, y]
+                    return [coords[1], coords[0]]; // Leaflet expects [lat (y), lng (x)]
                 });
                 const polyline = L.polyline(pixelPath, { color: 'red', weight: 3, pane: 'routePane' }).addTo(map);
                 state.routePolylines.push(polyline);
                 const distanceKm = computePixelPathKm(pixelPath);
                 state.routeLegs.push({ from: start, to: end, distanceKm });
             } else {
-                const straightPath = [[start.y, start.x], [end.y, end.x]];
+                const straightPath = [[start.y, start.x], [end.y, end.x]]; // already [lat,lng]
                 const polyline = L.polyline(straightPath, { color: 'blue', weight: 3, dashArray: '5,5', pane: 'routePane' }).addTo(map);
                 state.routePolylines.push(polyline);
                 state.routeLegs.push({ from: start, to: end, distanceKm: straightLineKm, fallback: true });
