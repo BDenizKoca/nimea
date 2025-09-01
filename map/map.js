@@ -616,6 +616,10 @@ document.addEventListener('DOMContentLoaded', () => {
     async function setupDmMode() {
         // Always add authentication controls so login is discoverable
         addAuthenticationControls();
+        
+        // CRITICAL: Always render terrain in both modes for consistency
+        renderExistingTerrain();
+        
         if (!state.isDmMode) {
             return; // Skip the rest if not in DM mode
         }
