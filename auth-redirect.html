@@ -1,4 +1,4 @@
-a<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -36,6 +36,14 @@ a<!DOCTYPE html>
       text-decoration: none;
       margin-top: 15px;
     }
+    #details {
+      display: none;
+    }
+    .toggle-button {
+      background-color: #6f42c1;
+      cursor: pointer;
+      border: none;
+    }
   </style>
 </head>
 <body>
@@ -45,14 +53,14 @@ a<!DOCTYPE html>
     <h2>Authentication Status</h2>
     <div id="status">Checking authentication status...</div>
     
-    <div id="details" style="display:none;">
+    <div id="details">
       <h3>Details</h3>
       <pre id="debug-info"></pre>
     </div>
     
     <div id="actions">
       <a href="/nimea/admin/" class="button">Return to CMS</a>
-      <button onclick="toggleDetails()" class="button" style="background-color:#6f42c1;cursor:pointer;border:none;">Toggle Debug Info</button>
+      <button onclick="toggleDetails()" class="button toggle-button">Toggle Debug Info</button>
     </div>
   </div>
   
