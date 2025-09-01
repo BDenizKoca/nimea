@@ -1,4 +1,142 @@
-Of course. Here is a tidied, brief, and precise version of your plan, incorporating feedback and the new map size information.
+
+# Big picture
+
+* **One static site** that serves two experiences:
+
+  * **/map** — your full-page interactive map with markers, routes, and overlays.
+  * **/wiki** — a lightweight, chaptered wiki with entries for **Characters, Locations, Factions, Gods & Religions, Artifacts, Events**.
+* **Single repo, static hosting** (GitHub Pages or Cloudflare Pages). No databases, no accounts.
+
+# Tech stack
+
+* **Eleventy (11ty)** as the static site generator for the wiki pages and global navigation.
+* **Leaflet** app lives at **/map** and reads JSON files from `/data` (markers, terrain, config).
+* **Shared data contract**:
+
+  * `data/markers.json` is the source of truth for map pins.
+  * Each wiki entry for a place sets `map_id` so the page can deep-link to the map.
+
+# Information architecture
+
+```
+/map                    # interactive map UI
+/wiki                   # wiki home (search + chapter links)
+/wiki/locations/        # locations index (cards)
+/wiki/locations/varkas/ # a location entry
+/wiki/characters/...
+/wiki/factions/...
+/wiki/gods/...
+/wiki/artifacts/...
+/wiki/events/...
+```
+
+# Content model (front matter)
+
+Each entry is a Markdown file with structured front matter. Minimal fields:
+
+```yaml
+slug: varkas
+chapter: locations
+name: Varkas
+summary: "Başkent, yıkık bir kutsal şehrin üzerine inşa edildi."
+tags: [Kuruntar, city]
+images:
+  - /images/varkas_1.jpg
+  - /images/varkas_2.jpg
+map_id: varkas            # must match markers.json
+map_coords: { x: 1234, y: 987 }  # optional override
+related:
+  factions: [kuruntar]
+  people: [skribas-seravel]
+```
+
+# Backlinks and relations
+
+* **Auto-backlinks at build time**: during the Eleventy build, scan all entries and compile a reverse index from `slug`, `map_id`, and `related` to render a small **“Also appears in…”** panel on each page.
+* **Related cards**: show `related` entries as small cards at the bottom.
+
+# “Show on map” integration
+
+* On any geo-tied page, render a button: **Show on map**.
+* Link format: `/map?focus=varkas` where `focus` matches the marker `id`.
+* The map page reads the query, pans to that marker, opens its sidebar, and highlights it.
+
+# Markers data contract (map ↔ wiki)
+
+In `data/markers.json`:
+
+```json
+{
+  "markers": [
+    {
+      "id": "varkas",
+      "name": "Varkas",
+      "x": 1234,
+      "y": 987,
+      "type": "city",
+      "wiki": "/wiki/locations/varkas/",
+      "summary": "Başkent, yıkık bir kutsal şehrin üzerine inşa edildi.",
+      "public": true
+    }
+  ]
+}
+```
+
+* The **wiki** field ensures on-map popups can link back to the entry.
+* The **map\_id** in the wiki ensures the entry can jump to the map.
+
+# Navigation and UX
+
+* **Wiki home**: chapter tiles + search.
+* **Chapter index**: card grid filtered by tag and type.
+* **Entry page**:
+
+  * Header: title, tags, short summary.
+  * **Image gallery** (lightbox).
+  * Body: Markdown content.
+  * Row of actions: **Show on map**, **Copy map link**, optional **Add to route** (if you want route prefill).
+  * Related and backlinks sections.
+* **Map page**:
+
+  * Right sidebar shows the selected marker with name, summary, images, and **Open wiki entry**.
+  * Left sidebar is your route planner.
+
+# Search
+
+* Static search index:
+
+  * **Lunr.js** or **Pagefind** built at compile time.
+  * Index title, summary, tags, and body.
+  * Search lives on wiki home and chapter pages.
+
+# Visual design
+
+* Typography: clear serif for body, compact sans for UI.
+* Subtle parchment backdrop for wiki, consistent with the map’s manuscript vibe.
+* Iconography aligned with Nimea (spiral for Kırık, sunburst for Aevitan, mask for Vespilo).
+* Mobile: single column pages, large tap targets, gallery becomes vertical.
+
+# Editorial workflow
+
+* Add a new entry: drop a `.md` with front matter into the right chapter folder.
+* Add images to `/images/...`, reference in front matter.
+* If it’s a **Location**, add or update its marker in `data/markers.json` and reuse the same `id` as `map_id`.
+* Commit, push, publish. All backlinks and lists regenerate automatically.
+
+# Optional niceties
+
+* **Route prefill from wiki**: a “Plan trip here” button could add the location to a `route` param like `/map?route=varkas;turzak`.
+* **Player vs GM visibility**: a `public: false` field in markers and wiki entries to toggle visibility in player builds later.
+* **Image credit and alt text** fields in front matter for accessibility and citation.
+
+# MVP slice for the wiki
+
+* Chapters: **Locations, Characters, Factions, Gods**.
+* Seed entries: Varkas, Turzak, Custodis, Göçyarık, Skribas Seravel, Aevitan.
+* Backlinks generator, search, and **Show on map** button.
+* Cards with one image and summary on chapter indexes.
+
+
 
 -----
 
