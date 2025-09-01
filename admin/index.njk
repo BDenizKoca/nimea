@@ -49,9 +49,13 @@ permalink: /admin/index.html
   
   <!-- Include the script that builds the page and powers Decap CMS -->
   <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
+  <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms-lib.js"></script>
   
   <script>
     console.log('CMS admin page loaded');
+    
+    // Initialize CMS manually to override config values
+    window.CMS.init();
     
     // Add a listener for messages from the auth callback page
     window.addEventListener('message', function(event) {
@@ -81,7 +85,7 @@ permalink: /admin/index.html
       // Clear any auth tokens from localStorage
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (key && key.startsWith('netlify-cms') || key.startsWith('decap-cms')) {
+        if (key && (key.startsWith('netlify-cms') || key.startsWith('decap-cms') || key.startsWith('gh-oauth-'))) {
           localStorage.removeItem(key);
         }
       }

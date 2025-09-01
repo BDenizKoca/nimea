@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+a<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -83,9 +83,9 @@
     if (code) {
       statusElement.innerHTML = '<span class="success">✅ Authentication code received from GitHub!</span><p>Please wait while we redirect you to the CMS...</p>';
       
-      // Attempt to redirect to the actual auth handler
+      // Attempt to redirect to the actual auth handler with correct GitHub parameters
       setTimeout(() => {
-        window.location.href = `/nimea/auth.html${window.location.search}`;
+        window.location.href = `/nimea/auth.html?code=${code}&state=${state || ''}`;
       }, 2000);
     } else if (error) {
       statusElement.innerHTML = `<span class="error">❌ Authentication failed</span><p>Error: ${error}</p>`;
