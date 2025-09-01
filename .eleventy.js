@@ -6,8 +6,13 @@ module.exports = function(eleventyConfig) {
   eleventyConfig.addPassthroughCopy("data");
   eleventyConfig.addPassthroughCopy("map");
   eleventyConfig.addPassthroughCopy("map.webp");
+  eleventyConfig.addPassthroughCopy(".nojekyll");
+
+  // Add a pathPrefix if we're deploying to GitHub Pages
+  const pathPrefix = process.env.GITHUB_ACTIONS ? '/nimea/' : '/';
 
   return {
+    pathPrefix,
     dir: {
       input: ".",
       includes: "_includes",
