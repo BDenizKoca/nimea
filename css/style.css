@@ -2,9 +2,7 @@
 
 body {
     font-family: 'IM Fell English SC', serif;
-    background-image: url('/images/parchment.webp'); /* Assuming you have a parchment.webp in /images */
     background-color: #fdf6e3; /* Fallback color */
-    background-size: cover;
     color: #3a2410;
     margin: 0;
     padding: 2rem;

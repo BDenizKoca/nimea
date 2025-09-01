@@ -4,3 +4,5 @@ _site
 npm-debug.log*
 package-lock.json
 cms-server.js
+mapsitemvp.md
+PRODUCTION_PLAN.md
