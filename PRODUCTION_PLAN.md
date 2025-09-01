@@ -17,7 +17,7 @@ This document outlines the development plan for the Nimea project, based on our 
 
 ## Phase 3: Interactive Map & DM Editor
 
-- [ ] Build the core Leaflet map with the base image and overlays.
+- [x] Build the core Leaflet map with the base image and overlays.
 - [ ] Implement the in-map DM mode (`?dm=1`) for adding/editing markers.
 - [ ] Implement tools to "paint" terrain data (difficult, blocked).
 - [ ] Create "Export" functionality to save `markers.json` and `terrain.geojson`.

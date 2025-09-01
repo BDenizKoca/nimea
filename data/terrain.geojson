@@ -1,0 +1,36 @@
+{
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "properties": {
+                "kind": "road"
+            },
+            "geometry": {
+                "type": "LineString",
+                "coordinates": [
+                    [100, 900],
+                    [400, 900]
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "kind": "blocked"
+            },
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [200, 200],
+                        [500, 200],
+                        [500, 500],
+                        [200, 500],
+                        [200, 200]
+                    ]
+                ]
+            }
+        }
+    ]
+}

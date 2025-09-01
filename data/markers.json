@@ -1,0 +1,15 @@
+{
+    "markers": [
+        {
+            "id": "varkas",
+            "name": "Varkas",
+            "x": 1234,
+            "y": 987,
+            "type": "city",
+            "faction": "Kuruntar",
+            "summary": "Başkent, yıkık bir kutsal şehrin üzerine inşa edildi.",
+            "images": ["images/varkas_1.jpg", "images/varkas_2.jpg"],
+            "public": true
+        }
+    ]
+}

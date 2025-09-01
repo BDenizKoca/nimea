@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nimea Interactive Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.css" />
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="map"></div>
+
+    <div class="sidebar left-sidebar" id="route-sidebar">
+        <h2>Route Planner</h2>
+        <div id="route-stops"></div>
+        <div id="route-summary"></div>
+    </div>
+
+    <div class="sidebar right-sidebar" id="info-sidebar">
+        <button id="close-info-sidebar">&times;</button>
+        <div id="info-content"></div>
+    </div>
+
+    <div class="leaflet-top leaflet-right">
+        <div class="leaflet-control-layers leaflet-control" id="overlay-toggles">
+            <label><input type="checkbox" id="toggle-regions"> Regions</label>
+            <label><input type="checkbox" id="toggle-borders"> Borders</label>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/easystarjs@0.4.3/bin/easystar-0.4.3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+    <script src="map.js"></script>
+</body>
+</html>
