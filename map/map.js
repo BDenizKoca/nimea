@@ -29,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
         terrain: { type: 'FeatureCollection', features: [] },
         route: [],
         overlays: {},
+        isLiveCMS: false, // Will be set to true when authenticated for live saving
     };
 
     // --- UI ELEMENTS ---
@@ -394,10 +395,24 @@ document.addEventListener('DOMContentLoaded', () => {
     let pendingTerrain = null; // Store terrain being created
     let currentTerrainMode = null; // Track current terrain painting mode
 
-    function setupDmMode() {
+    async function setupDmMode() {
         if (!state.isDmMode) return;
         
         console.log('Setting up DM mode controls...');
+
+        // Initialize Git Gateway for live CMS
+        try {
+            await window.gitClient.initialize();
+            if (window.gitClient.isAuthenticated) {
+                state.isLiveCMS = true;
+                showNotification('Live CMS mode enabled - changes save directly to repository!', 'success');
+            } else {
+                showNotification('Click "Login" to enable live CMS mode', 'info');
+            }
+        } catch (error) {
+            console.warn('Git Gateway not available:', error);
+            showNotification('Offline mode - use Export button to save data', 'info');
+        }
 
         map.pm.addControls({
             position: 'topleft',
@@ -410,6 +425,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Add terrain mode selector
         addTerrainModeControls();
+        
+        // Add authentication controls
+        addAuthenticationControls();
 
         // Add logic for saving markers and terrain
         const saveButton = L.Control.extend({
@@ -419,8 +437,10 @@ document.addEventListener('DOMContentLoaded', () => {
             onAdd: function () {
                 const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
                 const button = L.DomUtil.create('a', 'leaflet-control-button', container);
-                button.innerHTML = 'Save Data';
-                button.title = 'Export markers and terrain data';
+                button.innerHTML = state.isLiveCMS ? 'Export' : 'Save Data';
+                button.title = state.isLiveCMS ? 
+                    'Export data as backup (auto-saves to repo)' : 
+                    'Export markers and terrain data';
                 button.onclick = () => {
                     exportData();
                 };
@@ -452,13 +472,13 @@ document.addEventListener('DOMContentLoaded', () => {
         setupBulkImportModal();
         setupTerrainTypeModal();
 
-        map.on('pm:create', (e) => {
+        map.on('pm:create', async (e) => {
             if (e.shape === 'Marker') {
                 pendingMarker = e.layer;
                 openMarkerCreationModal(pendingMarker.getLatLng());
             } else if (e.shape === 'Polygon' || e.shape === 'Line') {
                 pendingTerrain = e.layer;
-                openTerrainTypeModal();
+                await openTerrainTypeModal();
             }
         });
 
@@ -518,6 +538,72 @@ document.addEventListener('DOMContentLoaded', () => {
         showNotification('Normal drawing mode enabled', 'success');
     }
 
+    function addAuthenticationControls() {
+        const authControls = L.Control.extend({
+            options: {
+                position: 'topright'
+            },
+            onAdd: function () {
+                const container = L.DomUtil.create('div', 'auth-controls');
+                container.innerHTML = `
+                    <div class="leaflet-bar leaflet-control">
+                        <a class="leaflet-control-button" id="dm-login-btn" title="Login for Live CMS">👤</a>
+                        <a class="leaflet-control-button" id="dm-status-btn" title="CMS Status">📡</a>
+                    </div>
+                `;
+                
+                // Add click handlers
+                const loginBtn = container.querySelector('#dm-login-btn');
+                const statusBtn = container.querySelector('#dm-status-btn');
+                
+                loginBtn.addEventListener('click', async () => {
+                    if (window.gitClient.isAuthenticated) {
+                        window.gitClient.logout();
+                    } else {
+                        await window.gitClient.login();
+                    }
+                    updateAuthUI();
+                });
+
+                statusBtn.addEventListener('click', () => {
+                    const status = state.isLiveCMS ? 
+                        'Live CMS: Changes save to repository automatically' :
+                        'Offline Mode: Use Export button to save data';
+                    showNotification(status, 'info');
+                });
+
+                updateAuthUI();
+                return container;
+            }
+        });
+        
+        map.addControl(new authControls());
+
+        // Update UI when auth state changes
+        function updateAuthUI() {
+            const loginBtn = document.getElementById('dm-login-btn');
+            const statusBtn = document.getElementById('dm-status-btn');
+            
+            if (loginBtn) {
+                loginBtn.innerHTML = window.gitClient.isAuthenticated ? '👤✓' : '👤';
+                loginBtn.title = window.gitClient.isAuthenticated ? 'Logout' : 'Login for Live CMS';
+            }
+            
+            if (statusBtn) {
+                statusBtn.innerHTML = state.isLiveCMS ? '📡✓' : '📡';
+                statusBtn.style.color = state.isLiveCMS ? '#28a745' : '#6c757d';
+            }
+            
+            state.isLiveCMS = window.gitClient.isAuthenticated;
+        }
+
+        // Listen for auth events
+        if (window.netlifyIdentity) {
+            window.netlifyIdentity.on('login', updateAuthUI);
+            window.netlifyIdentity.on('logout', updateAuthUI);
+        }
+    }
+
     function setupMarkerCreationModal() {
         const modal = document.getElementById('marker-creation-modal');
         const form = document.getElementById('marker-form');
@@ -546,9 +632,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // Form submission
-        form.addEventListener('submit', (e) => {
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            saveMarkerFromForm();
+            await saveMarkerFromForm();
         });
 
         // Close modal on background click
@@ -574,7 +660,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('marker-name').focus();
     }
 
-    function saveMarkerFromForm() {
+    async function saveMarkerFromForm() {
         const form = document.getElementById('marker-form');
         const formData = new FormData(form);
         
@@ -613,7 +699,11 @@ document.addEventListener('DOMContentLoaded', () => {
         pendingMarker.on('click', () => openInfoSidebar(newMarkerData));
         
         // Auto-save after creating marker
-        setTimeout(() => exportData(), 100);
+        if (state.isLiveCMS) {
+            await saveLiveData('markers');
+        } else {
+            setTimeout(() => exportData(), 100);
+        }
         
         document.getElementById('marker-creation-modal').classList.add('hidden');
         pendingMarker = null;
@@ -642,9 +732,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Terrain type selection
         terrainButtons.forEach(button => {
-            button.addEventListener('click', () => {
+            button.addEventListener('click', async () => {
                 const terrainType = button.dataset.type;
-                saveTerrainWithType(terrainType);
+                await saveTerrainWithType(terrainType);
                 modal.classList.add('hidden');
             });
         });
@@ -666,19 +756,19 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function openTerrainTypeModal() {
+    async function openTerrainTypeModal() {
         const modal = document.getElementById('terrain-type-modal');
         
         // If we have a current terrain mode set, use it automatically
         if (currentTerrainMode) {
-            saveTerrainWithType(currentTerrainMode);
+            await saveTerrainWithType(currentTerrainMode);
             return;
         }
         
         modal.classList.remove('hidden');
     }
 
-    function saveTerrainWithType(terrainType) {
+    async function saveTerrainWithType(terrainType) {
         if (!pendingTerrain) return;
 
         const feature = pendingTerrain.toGeoJSON();
@@ -689,7 +779,13 @@ document.addEventListener('DOMContentLoaded', () => {
         styleTerrainLayer(pendingTerrain, terrainType);
         
         showNotification(`${terrainType} terrain added`, 'success');
-        setTimeout(() => exportData(), 100);
+        
+        // Auto-save after creating terrain
+        if (state.isLiveCMS) {
+            await saveLiveData('terrain');
+        } else {
+            setTimeout(() => exportData(), 100);
+        }
         
         pendingTerrain = null;
     }
@@ -784,8 +880,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // Process import
-        processBtn.addEventListener('click', () => {
-            processBulkImport(csvInput.value);
+        processBtn.addEventListener('click', async () => {
+            await processBulkImport(csvInput.value);
         });
 
         // Close modal on background click
@@ -802,7 +898,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('csv-input').focus();
     }
 
-    function processBulkImport(csvData) {
+    async function processBulkImport(csvData) {
         if (!csvData.trim()) {
             showNotification('Please enter CSV data', 'error');
             return;
@@ -852,7 +948,13 @@ document.addEventListener('DOMContentLoaded', () => {
         // Show results
         if (imported > 0) {
             showNotification(`Successfully imported ${imported} markers!`, 'success');
-            setTimeout(() => exportData(), 100); // Auto-save
+            
+            // Auto-save after import
+            if (state.isLiveCMS) {
+                await saveLiveData('markers');
+            } else {
+                setTimeout(() => exportData(), 100);
+            }
         }
         
         if (errors.length > 0) {
@@ -905,6 +1007,36 @@ document.addEventListener('DOMContentLoaded', () => {
             .replace(/^-|-$/g, '');
     }
 
+    // --- LIVE CMS FUNCTIONS ---
+    async function saveLiveData(dataType) {
+        if (!state.isLiveCMS || !window.gitClient.isAuthenticated) {
+            console.warn('Live CMS not available');
+            return false;
+        }
+
+        try {
+            showNotification('Saving to repository...', 'info');
+
+            if (dataType === 'markers') {
+                await window.gitClient.saveMarkersData({ markers: state.markers });
+                showNotification('Markers saved to repository!', 'success');
+            } else if (dataType === 'terrain') {
+                await window.gitClient.saveTerrainData(state.terrain);
+                showNotification('Terrain saved to repository!', 'success');
+            }
+
+            // Trigger site rebuild to update live site
+            await window.gitClient.triggerRedeploy();
+            
+            return true;
+        } catch (error) {
+            console.error('Failed to save to repository:', error);
+            showNotification(`Failed to save ${dataType}: ${error.message}`, 'error');
+            return false;
+        }
+    }
+
+    // Enhanced export with live CMS integration
     function exportData() {
         // Export markers
         const markersBlob = new Blob([JSON.stringify({ markers: state.markers }, null, 2)], { type: 'application/json' });
