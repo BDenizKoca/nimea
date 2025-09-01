@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nimea CMS - Auth</title>
+</head>
+<body>
+  <script>
+    // OAuth callback handler for GitHub
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    const state = params.get('state');
+    
+    if (code) {
+      // Send the authorization code back to the CMS
+      window.opener.postMessage(
+        {
+          type: 'authorization-github',
+          payload: { code, state }
+        },
+        window.location.origin
+      );
+      window.close();
+    } else {
+      // Handle error case
+      const error = params.get('error');
+      const errorDescription = params.get('error_description');
+      
+      window.opener.postMessage(
+        {
+          type: 'authorization-github',
+          error: error || 'unknown_error',
+          error_description: errorDescription || 'An unknown error occurred'
+        },
+        window.location.origin
+      );
+      window.close();
+    }
+  </script>
+</body>
+</html>
