@@ -5,7 +5,7 @@ backend:
 site_url: https://nimea-wiki.netlify.app
 
 media_folder: "images"
-public_folder: "./images"
+public_folder: "/images"
 
 # Use Netlify's default file upload (no API key needed)
 # media_library:

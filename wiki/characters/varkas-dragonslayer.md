@@ -3,6 +3,7 @@ layout: base.njk
 name: Varkas the Dragonslayer
 slug: varkas-dragonslayer
 summary: A legendary warrior known for slaying the ancient red dragon Fyrax. tast
+cover_image: ""
 public: true
 ---
 # Varkas the Dragonslayer
