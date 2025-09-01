@@ -81,20 +81,49 @@
       error: error || 'none',
       referrer: document.referrer || 'none',
       timestamp: new Date().toISOString(),
-      url: window.location.href
+      url: window.location.href,
+      allParams: Object.fromEntries(params.entries())
     };
     
     // Display debug information
     debugInfoElement.textContent = JSON.stringify(debugInfo, null, 2);
     
-    // Update status message
+    // Handle GitHub OAuth parameters
     if (code) {
-      statusElement.innerHTML = '<span class="success">✅ Authentication code received from GitHub!</span><p>Please wait while we redirect you to the CMS...</p>';
+      statusElement.innerHTML = '<span class="success">✅ Authentication code received from GitHub!</span><p>Please wait while we process your authentication...</p>';
       
-      // Attempt to redirect to the actual auth handler with correct GitHub parameters
-      setTimeout(() => {
-        window.location.href = `/nimea/auth.html?code=${code}&state=${state || ''}`;
-      }, 2000);
+      // If we have a window opener, we can post the message directly
+      if (window.opener) {
+        try {
+          window.opener.postMessage(
+            {
+              type: 'oauth',
+              provider: 'github',
+              code,
+              state
+            }, 
+            window.location.origin
+          );
+          statusElement.innerHTML += '<p>Authentication data sent to CMS. You can close this window.</p>';
+          
+          setTimeout(() => {
+            window.close();
+          }, 2000);
+        } catch (err) {
+          console.error("Error posting message:", err);
+          // Fallback to redirect
+          statusElement.innerHTML = '<span class="error">⚠️ Could not communicate directly with CMS.</span><p>Redirecting...</p>';
+          setTimeout(() => {
+            window.location.href = `/nimea/admin/#auth-callback?provider=github&code=${code}&state=${state || ''}`;
+          }, 1500);
+        }
+      } else {
+        // If no opener, redirect to admin with parameters
+        statusElement.innerHTML = '<span class="success">✅ Authentication code received!</span><p>Redirecting to admin...</p>';
+        setTimeout(() => {
+          window.location.href = `/nimea/admin/#auth-callback?provider=github&code=${code}&state=${state || ''}`;
+        }, 1500);
+      }
     } else if (error) {
       statusElement.innerHTML = `<span class="error">❌ Authentication failed</span><p>Error: ${error}</p>`;
       if (params.get('error_description')) {

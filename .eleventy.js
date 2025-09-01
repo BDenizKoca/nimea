@@ -9,6 +9,7 @@ module.exports = function(eleventyConfig) {
   eleventyConfig.addPassthroughCopy(".nojekyll");
   eleventyConfig.addPassthroughCopy("auth.html");
   eleventyConfig.addPassthroughCopy("auth-redirect.html");
+  eleventyConfig.addPassthroughCopy("callback.html");
 
   // Add collections for wiki sections
   eleventyConfig.addCollection("characters", function(collection) {

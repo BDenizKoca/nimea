@@ -2,8 +2,8 @@ backend:
   name: github
   repo: BDenizKoca/nimea
   branch: main
-  base_url: https://bdenizkoca.github.io
-  auth_endpoint: /nimea/auth-redirect.html
+  client_id: Ov23liPIUNxU8CSVPFIC
+  auth_endpoint: callback.html
 
 site_url: https://bdenizkoca.github.io/nimea
 

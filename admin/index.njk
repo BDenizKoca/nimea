@@ -49,13 +49,15 @@ permalink: /admin/index.html
   
   <!-- Include the script that builds the page and powers Decap CMS -->
   <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
-  <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms-lib.js"></script>
   
   <script>
     console.log('CMS admin page loaded');
     
-    // Initialize CMS manually to override config values
-    window.CMS.init();
+    // Configure CMS before init
+    if (window.CMS) {
+      // Register auth providers 
+      window.CMS.registerPreviewStyle("/nimea/css/style.css");
+    }
     
     // Add a listener for messages from the auth callback page
     window.addEventListener('message', function(event) {
