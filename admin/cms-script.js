@@ -2,10 +2,27 @@
 // It adds some additional functionality to ensure content changes are properly reflected
 
 window.addEventListener('DOMContentLoaded', (event) => {
-  // Initialize CMS
+  console.log('🚀 CMS Script loaded - DOM ready');
   
-  // If using NetlifyCMS/DecapCMS
+  // Wait for CMS to be available
+  const waitForCMS = () => {
+    if (window.CMS) {
+      console.log('✅ Decap CMS is available, initializing enhancements...');
+      initializeCMSEnhancements();
+    } else {
+      console.log('⏳ Waiting for Decap CMS to load...');
+      setTimeout(waitForCMS, 500);
+    }
+  };
+  
+  waitForCMS();
+});
+
+function initializeCMSEnhancements() {
+  // Initialize CMS
   if (window.CMS) {
+    console.log('🎯 Setting up CMS event listeners...');
+    
     // Add a listener for new entry creation
     window.CMS.registerEventListener({
       name: 'prePublish',
@@ -43,16 +60,20 @@ window.addEventListener('DOMContentLoaded', (event) => {
       },
     });
 
-    // Custom Image Insertion Helper
-    setupImageInsertionHelper();
+    // Setup enhancements with more aggressive timing
+    setTimeout(() => {
+      console.log('🔧 Setting up image insertion helper...');
+      setupImageInsertionHelper();
+      setupImageEditingHelper();
+      enhanceSyncScroll();
+    }, 2000);
     
-    // Image Click-to-Edit functionality
-    setupImageEditingHelper();
-    
-    // Enhance sync scroll functionality
-    enhanceSyncScroll();
+    // Also try periodically in case CMS loads content dynamically
+    setInterval(() => {
+      setupImageInsertionHelper();
+    }, 5000);
   }
-});
+}
 
 function setupImageInsertionHelper() {
   // Wait for the editor to be ready
@@ -74,11 +95,26 @@ function setupImageEditingHelper() {
 function addImageInsertionButton() {
   console.log('🖼️ Adding image insertion buttons...');
   
-  // Find all markdown editors
-  const markdownEditors = document.querySelectorAll('[data-testid="richtext"] .CodeMirror, .CodeMirror');
+  // Find all markdown editors with multiple selectors
+  const markdownEditors = document.querySelectorAll(
+    '[data-testid="richtext"] .CodeMirror, .CodeMirror, ' +
+    '.nc-controlPane-widget .CodeMirror, ' +
+    '.cms-editor-visual .CodeMirror, ' +
+    'div[data-testid="markdown"] .CodeMirror'
+  );
+  
   console.log(`📝 Found ${markdownEditors.length} editors to enhance`);
   
-  markdownEditors.forEach((editor, index) => {
+  // Also try to find editors without CodeMirror
+  const textAreas = document.querySelectorAll(
+    'textarea[data-testid="markdown"], ' +
+    '.nc-controlPane-widget textarea, ' +
+    '.cms-editor-visual textarea'
+  );
+  
+  console.log(`📝 Found ${textAreas.length} textareas to enhance`);
+  
+  [...markdownEditors, ...textAreas].forEach((editor, index) => {
     if (editor.dataset.imageHelperAdded) {
       console.log(`⏭️ Editor ${index} already has image helper`);
       return; // Don't add multiple times
@@ -138,12 +174,21 @@ function addImageInsertionButton() {
     
     buttonContainer.appendChild(imageButton);
     
-    // Add to editor container
-    const editorContainer = editor.closest('.CodeMirror') || editor;
-    editorContainer.style.position = 'relative';
-    editorContainer.appendChild(buttonContainer);
+    // Add to editor container - try different approaches
+    const editorContainer = editor.closest('.CodeMirror') || 
+                           editor.closest('.nc-controlPane-widget') ||
+                           editor.closest('[data-testid="richtext"]') ||
+                           editor.closest('.cms-editor-visual') ||
+                           editor.parentElement ||
+                           editor;
     
-    console.log(`✅ Successfully added image button to editor ${index}`);
+    if (editorContainer) {
+      editorContainer.style.position = 'relative';
+      editorContainer.appendChild(buttonContainer);
+      console.log(`✅ Successfully added image button to editor ${index}`);
+    } else {
+      console.log(`❌ Could not find container for editor ${index}`);
+    }
   });
   
   // Re-run periodically to catch new editors
@@ -158,16 +203,25 @@ function overrideDefaultImageInsertion() {
   
   // Override any existing image buttons with our enhanced workflow
   const checkAndOverride = () => {
-    // Look for default CMS image insertion buttons
+    // Look for default CMS image insertion buttons with broader selectors
     const imageButtons = document.querySelectorAll(
       'button[title*="image" i], button[aria-label*="image" i], ' +
       'button[data-testid*="image"], .cms-editor-visual-button, ' +
-      '.toolbar-button, button[class*="image"], button[class*="toolbar"]'
+      '.toolbar-button, button[class*="image"], button[class*="toolbar"], ' +
+      'button[class*="nc-"], .nc-toolbarButton, .cms-toolbar-button, ' +
+      'button[type="button"] svg[class*="image"], ' +
+      'button[type="button"] svg[class*="picture"], ' +
+      'button svg + span:contains("Image"), ' +
+      'button:has(svg[viewBox*="24"]):has(path[d*="M"])'
     );
     
     console.log(`🔍 Found ${imageButtons.length} potential image buttons to override`);
     
-    imageButtons.forEach((button, index) => {
+    // Also check for buttons that might have image icons
+    const allButtons = document.querySelectorAll('button[type="button"]');
+    console.log(`🔍 Scanning ${allButtons.length} buttons for image-related content...`);
+    
+    allButtons.forEach((button, index) => {
       if (button.dataset.overridden) return;
       
       // Check if this is likely an image insertion button
@@ -175,22 +229,29 @@ function overrideDefaultImageInsertion() {
       const buttonTitle = button.title?.toLowerCase() || '';
       const buttonClass = button.className?.toLowerCase() || '';
       const buttonAriaLabel = button.getAttribute('aria-label')?.toLowerCase() || '';
+      const buttonHTML = button.innerHTML.toLowerCase();
       
       const isImageButton = 
         buttonText.includes('image') || 
         buttonTitle.includes('image') || 
         buttonClass.includes('image') || 
         buttonAriaLabel.includes('image') ||
-        button.innerHTML.includes('img') ||
-        button.innerHTML.includes('🖼') ||
-        button.innerHTML.includes('picture');
+        buttonHTML.includes('img') ||
+        buttonHTML.includes('🖼') ||
+        buttonHTML.includes('picture') ||
+        // Look for common SVG patterns for image icons
+        (buttonHTML.includes('<svg') && buttonHTML.includes('path') && buttonHTML.includes('M')) ||
+        // Look for Decap CMS specific patterns
+        buttonClass.includes('nc-') ||
+        buttonClass.includes('toolbar');
       
       if (isImageButton) {
-        console.log(`🎯 Overriding image button ${index}:`, {
+        console.log(`🎯 Potentially overriding button ${index}:`, {
           text: buttonText,
           title: buttonTitle,
           class: buttonClass,
-          ariaLabel: buttonAriaLabel
+          ariaLabel: buttonAriaLabel,
+          html: buttonHTML.substring(0, 100) + '...'
         });
         
         button.dataset.overridden = 'true';
@@ -210,7 +271,13 @@ function overrideDefaultImageInsertion() {
             showImageInsertionModal(editor);
           } else {
             console.error('❌ Could not find editor for image insertion');
-            alert('Please click the "🖼️ Insert Image" button in the editor instead');
+            // Try to find any available editor as fallback
+            const anyEditor = document.querySelector('.CodeMirror, textarea[data-testid="markdown"]');
+            if (anyEditor) {
+              showImageInsertionModal(anyEditor);
+            } else {
+              alert('Please click the "🖼️ Enhanced Image Insert" button in the editor instead');
+            }
           }
         };
         
@@ -220,7 +287,7 @@ function overrideDefaultImageInsertion() {
           e.stopPropagation();
           console.log('🚫 Default image button clicked (addEventListener), opening enhanced modal instead');
           
-          const editor = findNearestEditor(button);
+          const editor = findNearestEditor(button) || document.querySelector('.CodeMirror, textarea[data-testid="markdown"]');
           if (editor) {
             showImageInsertionModal(editor);
           }
@@ -366,6 +433,35 @@ function showImageInsertionNotification() {
     }
   }, 8000);
 }
+
+// Add a simple debug indicator that the script is loaded
+function addDebugIndicator() {
+  const indicator = document.createElement('div');
+  indicator.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    background: #4CAF50;
+    color: white;
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    z-index: 10000;
+    font-family: monospace;
+  `;
+  indicator.textContent = '✅ CMS Enhancements Loaded';
+  document.body.appendChild(indicator);
+  
+  // Remove after 3 seconds
+  setTimeout(() => {
+    if (indicator.parentElement) {
+      indicator.remove();
+    }
+  }, 3000);
+}
+
+// Call debug indicator when script loads
+setTimeout(addDebugIndicator, 1000);
 
 function showImageInsertionModal(editor) {
   console.log('🎬 Opening image insertion modal...');
