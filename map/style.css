@@ -574,11 +574,14 @@ body, html {
         top: 60px;
         bottom: 0;
         height: calc(100% - 60px);
-        width: 75%;
-        max-width: 340px;
+        width: 55%;
+        max-width: 280px;
+        min-width: 220px;
         transform: translateX(-100%);
         border-radius: 0;
         box-shadow: 4px 0 18px rgba(0,0,0,0.35);
+        padding: 14px 14px 18px;
+        font-size: 13px;
     }
     .left-sidebar.open { transform: translateX(0); }
     /* Info sidebar overlays from right above route */
