@@ -77,6 +77,24 @@ body, html {
     box-shadow: 0 0 0 2px #fff inset, 0 0 0 1px var(--color-accent);
 }
 .overlay-segmented button:hover { background: #f7ede0; }
+/* Compact variant on very small screens */
+@media (max-width: 520px) {
+    #overlay-toggles { padding: 4px 8px; bottom: 12px; }
+    .overlay-segmented { gap: 2px; }
+    .overlay-segmented button {
+        padding: 4px 8px;
+        font-size: 11px;
+        min-width: auto;
+    }
+    /* Abbreviate labels using data-mode attribute */
+    .overlay-segmented button[data-mode="regions"]::after { content: "Reg"; }
+    .overlay-segmented button[data-mode="borders"]::after { content: "Bor"; }
+    .overlay-segmented button[data-mode="both"]::after { content: "Both"; }
+    .overlay-segmented button[data-mode="none"]::after { content: "None"; }
+    /* Hide original text (still accessible to screen readers) */
+    .overlay-segmented button { position: relative; }
+    .overlay-segmented button > span { display: none; }
+}
 .map-legend h4 { margin: 0 0 6px 0; font-size: 13px; color: var(--color-accent); text-align:center; }
 .map-legend ul { list-style: none; padding: 0; margin: 0 0 4px 0; }
 .map-legend li { display:flex; align-items:center; gap:6px; margin:2px 0; }
