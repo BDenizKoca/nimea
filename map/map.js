@@ -491,7 +491,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const endCell = worldToGridCoords(end.x, end.y);
         const straightLineDistance = Math.sqrt(Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2));
         const straightLineKm = straightLineDistance * config.kmPerPixel;
+        
+        console.log(`Calculating leg: ${start.name} -> ${end.name}, grid cells: (${startCell.x},${startCell.y}) -> (${endCell.x},${endCell.y})`);
+        
+        // Set a backup timer - if EasyStar doesn't call back in 2 seconds, use fallback
+        const fallbackTimer = setTimeout(() => {
+            console.warn('EasyStar timeout, using fallback route');
+            const straightPath = [[start.y, start.x], [end.y, end.x]]; // already [lat,lng]
+            const polyline = L.polyline(straightPath, { color: 'blue', weight: 3, dashArray: '5,5', pane: 'routePane' }).addTo(map);
+            state.routePolylines.push(polyline);
+            state.routeLegs.push({ from: start, to: end, distanceKm: straightLineKm, fallback: true });
+            if (typeof onComplete === 'function') onComplete();
+        }, 2000);
+        
         easystar.findPath(startCell.x, startCell.y, endCell.x, endCell.y, (path) => {
+            clearTimeout(fallbackTimer); // Cancel the fallback timer
+            console.log(`EasyStar result for ${start.name} -> ${end.name}:`, path ? `${path.length} nodes` : 'no path');
+            
             if (path && path.length > 0) {
                 const pixelPath = path.map(p => {
                     const coords = gridToWorldCoords(p.x, p.y); // [x, y]
