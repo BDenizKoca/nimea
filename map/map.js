@@ -124,6 +124,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- MARKERS ---
     function renderMarkers() {
         console.log('Rendering markers:', state.markers.length);
+        
+        // Clean up existing markers to prevent memory leaks
+        map.eachLayer(layer => {
+            if (layer instanceof L.Marker && !layer.options.isPending) {
+                map.removeLayer(layer);
+            }
+        });
+        
         let focusMarker = null;
         
         state.markers.forEach((markerData, index) => {
@@ -402,9 +410,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function worldToGridCoords(x, y) {
+        if (!pathfindingGrid) {
+            console.warn('Grid not initialized');
+            return { x: 0, y: 0 };
+        }
+        
+        const gridX = Math.floor(x / config.gridCellSize);
+        const gridY = Math.floor(y / config.gridCellSize);
+        
+        // Clamp to grid bounds to prevent crashes
         return {
-            x: Math.floor(x / config.gridCellSize),
-            y: Math.floor(y / config.gridCellSize)
+            x: Math.max(0, Math.min(gridX, pathfindingGrid.cols - 1)),
+            y: Math.max(0, Math.min(gridY, pathfindingGrid.rows - 1))
         };
     }
 
@@ -419,9 +436,10 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateRouteSummary(pixelPath) {
         let totalDistancePx = 0;
         for (let i = 1; i < pixelPath.length; i++) {
-            const p1 = L.latLng(pixelPath[i-1][0], pixelPath[i-1][1]);
-            const p2 = L.latLng(pixelPath[i][0], pixelPath[i][1]);
-            totalDistancePx += map.distance(p1, p2);
+            // Calculate Euclidean distance in pixel space (not spherical distance!)
+            const dx = pixelPath[i][1] - pixelPath[i-1][1]; // X difference  
+            const dy = pixelPath[i][0] - pixelPath[i-1][0]; // Y difference
+            totalDistancePx += Math.sqrt(dx * dx + dy * dy);
         }
         const totalKm = totalDistancePx * config.kmPerPixel;
 
@@ -541,6 +559,7 @@ document.addEventListener('DOMContentLoaded', () => {
         map.on('pm:create', async (e) => {
             if (e.shape === 'Marker') {
                 pendingMarker = e.layer;
+                pendingMarker.options.isPending = true; // Mark to avoid cleanup
                 openMarkerCreationModal(pendingMarker.getLatLng());
             } else if (e.shape === 'Polygon' || e.shape === 'Line') {
                 pendingTerrain = e.layer;
@@ -743,6 +762,12 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // Validate ID format (alphanumeric, hyphens, underscores only)
+        if (!/^[a-zA-Z0-9_-]+$/.test(id)) {
+            showNotification('ID can only contain letters, numbers, hyphens, and underscores', 'error');
+            return;
+        }
+
         // Check for duplicate ID
         if (state.markers.some(m => m.id === id)) {
             showNotification('Marker ID already exists', 'error');
@@ -766,7 +791,15 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Auto-save after creating marker
         if (state.isLiveCMS) {
-            await saveLiveData('markers');
+            try {
+                const saved = await saveLiveData('markers');
+                if (!saved) {
+                    showNotification('Live save failed - marker created locally only', 'warning');
+                }
+            } catch (error) {
+                console.error('Live save error:', error);
+                showNotification('Live save failed - marker created locally only', 'warning');
+            }
         } else {
             setTimeout(() => exportData(), 100);
         }
