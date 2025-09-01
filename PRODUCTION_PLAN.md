@@ -26,7 +26,7 @@ This document outlines the development plan for the Nimea project, based on our 
 ## Phase 4: Integration & Interactivity
 
 - [ ] Connect the wiki and the map with a "Show on map" button (`/map?focus=<map_id>`).
-- [ ] Implement A* pathfinding using the terrain data from the map editor.
+- [x] Implement A* pathfinding using the terrain data from the map editor.
 - [ ] Build the route planning UI to display distance and travel time.
 
 ## Phase 5: Polish & Final Features

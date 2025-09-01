@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
     // --- LOAD MAP IMAGE & DATA ---
-    const mapImageUrl = 'map.png';
+    const mapImageUrl = 'map.webp';
     const img = new Image();
     img.onload = () => {
         const { width, height } = img;
@@ -173,22 +173,85 @@ document.addEventListener('DOMContentLoaded', () => {
     let easystar = new EasyStar.js();
 
     function buildPathfindingGrid() {
-        const { width, height } = map.getBounds().toBBoxString().split(',').slice(2).map(parseFloat);
-        const cols = Math.floor(width / config.gridCellSize);
-        const rows = Math.floor(height / config.gridCellSize);
+        const bounds = map.getBounds();
+        const mapWidth = bounds.getEast();
+        const mapHeight = bounds.getSouth();
+
+        const cols = Math.floor(mapWidth / config.gridCellSize);
+        const rows = Math.floor(mapHeight / config.gridCellSize);
+
+        console.log(`Building ${cols}x${rows} grid...`);
 
         const grid = Array(rows).fill(null).map(() => Array(cols).fill(config.terrainCosts.normal));
 
-        // This is a simplified grid builder. A real implementation would use Turf.js
-        // to check if a cell center is within a road, difficult, or blocked feature.
-        // For now, we just have a basic grid.
+        const blockedFeatures = state.terrain.features.filter(f => f.properties.kind === 'blocked');
+        const difficultFeatures = state.terrain.features.filter(f => f.properties.kind === 'difficult');
+        const roadFeatures = state.terrain.features.filter(f => f.properties.kind === 'road');
 
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                const [worldY, worldX] = gridToWorldCoords(c, r);
+                const point = turf.point([worldX, worldY]);
+                let cost = config.terrainCosts.normal;
+                let isBlocked = false;
+
+                // Check for blocked polygons
+                for (const feature of blockedFeatures) {
+                    if (feature.geometry.type === 'Polygon' && turf.booleanPointInPolygon(point, feature)) {
+                        isBlocked = true;
+                        break;
+                    }
+                }
+
+                if (isBlocked) {
+                    grid[r][c] = Infinity; // Using Infinity for blocked
+                    continue;
+                }
+
+                // Check for roads (LineString)
+                let onRoad = false;
+                for (const feature of roadFeatures) {
+                    // Use a buffer to make roads easier to snap to
+                    const distance = turf.pointToLineDistance(point, feature, { units: 'pixels' });
+                    if (distance < config.gridCellSize / 2) {
+                        cost = config.terrainCosts.road;
+                        onRoad = true;
+                        break;
+                    }
+                }
+                if (onRoad) {
+                    grid[r][c] = cost;
+                    continue;
+                }
+
+                // Check for difficult terrain (Polygon or LineString buffer)
+                for (const feature of difficultFeatures) {
+                     if (feature.geometry.type === 'Polygon' && turf.booleanPointInPolygon(point, feature)) {
+                        cost = config.terrainCosts.difficult;
+                        break;
+                    } else if (feature.geometry.type === 'LineString') {
+                        const distance = turf.pointToLineDistance(point, feature, { units: 'pixels' });
+                        if (distance < config.gridCellSize) { // Larger buffer for difficult terrain lines
+                             cost = config.terrainCosts.difficult;
+                             break;
+                        }
+                    }
+                }
+                 grid[r][c] = cost;
+            }
+        }
+
+        console.log("Grid build complete.");
         easystar.setGrid(grid);
-        easystar.setAcceptableTiles([config.terrainCosts.normal, config.terrainCosts.road, config.terrainCosts.difficult]);
+        const acceptableTiles = [config.terrainCosts.normal, config.terrainCosts.road, config.terrainCosts.difficult];
+        easystar.setAcceptableTiles(acceptableTiles);
         easystar.setTileCost(config.terrainCosts.road, 0.5);
         easystar.setTileCost(config.terrainCosts.difficult, 3);
+        easystar.enableDiagonals();
+        easystar.disableCornerCutting();
 
-        pathfindingGrid = { cols, rows, width, height };
+
+        pathfindingGrid = { cols, rows, width: mapWidth, height: mapHeight };
     }
 
 
