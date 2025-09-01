@@ -39,8 +39,45 @@ document.addEventListener('DOMContentLoaded', () => {
     const routeSidebar = document.getElementById('route-sidebar');
     const infoSidebar = document.getElementById('info-sidebar');
     const closeInfoSidebarBtn = document.getElementById('close-info-sidebar');
-    const toggleRegions = document.getElementById('toggle-regions');
-    const toggleBorders = document.getElementById('toggle-borders');
+    // Segmented overlay control container
+    const overlayToggleContainer = document.querySelector('#overlay-toggles .overlay-segmented');
+    let currentOverlayMode = 'both'; // both | regions | borders | none
+
+    function applyOverlayMode(mode) {
+        currentOverlayMode = mode;
+        const regionsOverlay = state.overlays.regions;
+        const bordersOverlay = state.overlays.borders;
+        if (regionsOverlay) {
+            if (mode === 'both' || mode === 'regions') {
+                map.addLayer(regionsOverlay);
+            } else {
+                map.removeLayer(regionsOverlay);
+            }
+        }
+        if (bordersOverlay) {
+            if (mode === 'both' || mode === 'borders') {
+                map.addLayer(bordersOverlay);
+            } else {
+                map.removeLayer(bordersOverlay);
+            }
+        }
+        if (overlayToggleContainer) {
+            overlayToggleContainer.querySelectorAll('button[data-mode]').forEach(btn => {
+                const active = btn.getAttribute('data-mode') === mode;
+                btn.classList.toggle('active', active);
+                btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+            });
+        }
+    }
+
+    if (overlayToggleContainer) {
+        overlayToggleContainer.addEventListener('click', (e) => {
+            const btn = e.target.closest('button[data-mode]');
+            if (!btn) return;
+            const mode = btn.getAttribute('data-mode');
+            applyOverlayMode(mode);
+        });
+    }
 
     // --- MAP INITIALIZATION ---
     const map = L.map('map', {
@@ -58,11 +95,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- MOBILE UI WIRING ---
-    const mobileRouteBtn = document.getElementById('mobile-route-btn');
-    const mobileInfoBtn = document.getElementById('mobile-info-btn');
-    const mobileOverlaysBtn = document.getElementById('mobile-overlays-btn');
-    const mobileCenterBtn = document.getElementById('mobile-center-btn');
-    const mobileDmBtn = document.getElementById('mobile-dm-btn');
     const legendToggleBtn = document.getElementById('legend-toggle');
     const legendPanel = document.getElementById('map-legend');
 
@@ -79,36 +111,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    if (mobileRouteBtn) {
-        mobileRouteBtn.addEventListener('click', () => togglePanel(routeSidebar, mobileRouteBtn));
-    }
-    if (mobileInfoBtn) {
-        mobileInfoBtn.addEventListener('click', () => togglePanel(infoSidebar, mobileInfoBtn));
-    }
-    if (mobileCenterBtn) {
-        mobileCenterBtn.addEventListener('click', () => {
-            // Fit to original bounds if known, else just set view to center.
-            if (originalMapBounds) {
-                map.fitBounds(originalMapBounds);
-            } else {
-                map.setView([map.getSize().y/2, map.getSize().x/2], 0);
-            }
-        });
-    }
-    if (mobileOverlaysBtn) {
-        mobileOverlaysBtn.addEventListener('click', () => {
-            // Simple cycle: both on -> only regions -> only borders -> both off -> both on
-            const regionsOn = state.overlays.regions && map.hasLayer(state.overlays.regions);
-            const bordersOn = state.overlays.borders && map.hasLayer(state.overlays.borders);
-            let next = 0;
-            if (regionsOn && bordersOn) next = 1; // only regions
-            else if (regionsOn && !bordersOn) next = 2; // only borders
-            else if (!regionsOn && bordersOn) next = 3; // none
-            else next = 0; // both
-            if (state.overlays.regions) { if (next === 0 || next === 1) { map.addLayer(state.overlays.regions); toggleRegions && (toggleRegions.checked = true);} else { map.removeLayer(state.overlays.regions); toggleRegions && (toggleRegions.checked = false);} }
-            if (state.overlays.borders) { if (next === 0 || next === 2) { map.addLayer(state.overlays.borders); toggleBorders && (toggleBorders.checked = true);} else { map.removeLayer(state.overlays.borders); toggleBorders && (toggleBorders.checked = false);} }
-        });
-    }
 
     if (legendToggleBtn && legendPanel) {
         legendToggleBtn.addEventListener('click', () => {
@@ -117,14 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Show DM mobile button if in DM mode
-    if (state.isDmMode && mobileDmBtn) {
-        mobileDmBtn.style.display = 'flex';
-        mobileDmBtn.addEventListener('click', () => {
-            // Focus DM controls: open info or route panel as placeholder; future: open a DM toolbar overlay
-            togglePanel(infoSidebar, mobileInfoBtn);
-        });
-    }
+    // (Removed legacy mobile toolbar buttons)
 
     window.addEventListener('resize', () => {
         // Close panels if switching modes to avoid odd positions
@@ -293,37 +288,17 @@ document.addEventListener('DOMContentLoaded', () => {
     function setupOverlays() {
         console.log('Setting up overlays:', config.overlays, 'bounds:', originalMapBounds);
         if (config.overlays && originalMapBounds) {
-            // Use the original map bounds for overlays to ensure proper sizing
             if (config.overlays.regions) {
                 console.log('Adding regions overlay:', config.overlays.regions);
                 state.overlays.regions = L.imageOverlay(`../${config.overlays.regions}`, originalMapBounds, { opacity: 0.7 }).addTo(map);
-                toggleRegions.checked = true;
             }
             if (config.overlays.borders) {
                 console.log('Adding borders overlay:', config.overlays.borders);
                 state.overlays.borders = L.imageOverlay(`../${config.overlays.borders}`, originalMapBounds, { opacity: 0.8 }).addTo(map);
-                toggleBorders.checked = true;
             }
         }
-
-        toggleRegions.addEventListener('change', (e) => {
-            if (state.overlays.regions) {
-                if (e.target.checked) {
-                    map.addLayer(state.overlays.regions);
-                } else {
-                    map.removeLayer(state.overlays.regions);
-                }
-            }
-        });
-        toggleBorders.addEventListener('change', (e) => {
-             if (state.overlays.borders) {
-                if (e.target.checked) {
-                    map.addLayer(state.overlays.borders);
-                } else {
-                    map.removeLayer(state.overlays.borders);
-                }
-            }
-        });
+        // Apply current mode (default both) after overlays are created
+        applyOverlayMode(currentOverlayMode);
     }
 
 

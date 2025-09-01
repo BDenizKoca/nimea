@@ -31,14 +31,7 @@
         <div class="legend-note">Scale: 175 px = 100 km</div>
     </div>
 
-    <!-- Mobile Action Bar -->
-    <div class="mobile-bar" id="mobile-bar">
-        <button class="m-btn" id="mobile-route-btn" aria-controls="route-sidebar" aria-expanded="false">🧭<span>Route</span></button>
-        <button class="m-btn" id="mobile-info-btn" aria-controls="info-sidebar" aria-expanded="false">ℹ️<span>Info</span></button>
-        <button class="m-btn" id="mobile-overlays-btn" aria-expanded="false">🗺️<span>Layers</span></button>
-        <button class="m-btn" id="mobile-center-btn">🎯<span>Center</span></button>
-    <button class="m-btn" id="mobile-dm-btn">⚒️<span>DM</span></button>
-    </div>
+    <!-- Overlay segmented control will appear through existing container -->
 
     <div class="sidebar left-sidebar" id="route-sidebar">
         <h2>Route Planner</h2>
@@ -161,8 +154,12 @@ Thornhold,2000,1500,fortress,Empire,Mountain fortress,true"></textarea>
 
     <div class="leaflet-top leaflet-right">
         <div class="leaflet-control-layers leaflet-control" id="overlay-toggles">
-            <label><input type="checkbox" id="toggle-regions"> Regions</label>
-            <label><input type="checkbox" id="toggle-borders"> Borders</label>
+            <div class="overlay-segmented" role="group" aria-label="Overlay visibility">
+                <button type="button" data-mode="both" class="active" aria-pressed="true">Both</button>
+                <button type="button" data-mode="regions" aria-pressed="false">Regions</button>
+                <button type="button" data-mode="borders" aria-pressed="false">Borders</button>
+                <button type="button" data-mode="none" aria-pressed="false">None</button>
+            </div>
         </div>
     </div>
 
