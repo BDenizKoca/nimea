@@ -60,27 +60,83 @@ function initializeCMSEnhancements() {
       },
     });
 
-    // Setup enhancements with more aggressive timing
+    // Setup enhancements with just the floating button
     setTimeout(() => {
-      console.log('🔧 Setting up image insertion helper...');
+      console.log('🔧 Setting up simple floating image button...');
       setupImageInsertionHelper();
       setupImageEditingHelper();
       enhanceSyncScroll();
     }, 2000);
-    
-    // Also try periodically in case CMS loads content dynamically
-    setInterval(() => {
-      setupImageInsertionHelper();
-    }, 5000);
   }
 }
 
 function setupImageInsertionHelper() {
   // Wait for the editor to be ready
   setTimeout(() => {
-    addImageInsertionButton();
-    overrideDefaultImageInsertion();
+    addFloatingImageButton();
   }, 2000);
+}
+
+function addFloatingImageButton() {
+  console.log('🖼️ Adding floating image insertion button...');
+  
+  // Remove any existing floating button
+  const existingButton = document.querySelector('.floating-enhanced-image-button');
+  if (existingButton) {
+    existingButton.remove();
+  }
+  
+  // Create a single, clean floating button
+  const floatingButton = document.createElement('button');
+  floatingButton.className = 'floating-enhanced-image-button';
+  floatingButton.innerHTML = '🖼️ Enhanced Image Insert';
+  floatingButton.title = 'Insert image with alignment and sizing options';
+  floatingButton.style.cssText = `
+    position: fixed;
+    top: 100px;
+    right: 20px;
+    z-index: 10001;
+    background: linear-gradient(135deg, #3f51b5, #5c6bc0);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    box-shadow: 0 4px 12px rgba(63, 81, 181, 0.3);
+    transition: all 0.2s ease;
+  `;
+  
+  floatingButton.addEventListener('click', (e) => {
+    e.preventDefault();
+    console.log('🎯 Floating enhanced image button clicked');
+    
+    // Find any available editor
+    const editor = document.querySelector('.CodeMirror') ||
+                  document.querySelector('textarea') ||
+                  document.querySelector('[contenteditable]');
+    
+    if (editor) {
+      showImageInsertionModal(editor);
+    } else {
+      alert('Please open an entry for editing first, then use this button to insert images.');
+    }
+  });
+  
+  // Add hover effects
+  floatingButton.addEventListener('mouseenter', () => {
+    floatingButton.style.transform = 'translateY(-2px)';
+    floatingButton.style.boxShadow = '0 6px 16px rgba(63, 81, 181, 0.4)';
+  });
+  
+  floatingButton.addEventListener('mouseleave', () => {
+    floatingButton.style.transform = 'translateY(0)';
+    floatingButton.style.boxShadow = '0 4px 12px rgba(63, 81, 181, 0.3)';
+  });
+  
+  document.body.appendChild(floatingButton);
+  console.log('✅ Added clean floating enhanced image button');
 }
 
 function setupImageEditingHelper() {
@@ -499,7 +555,7 @@ function addDebugIndicator() {
     z-index: 10000;
     font-family: monospace;
   `;
-  indicator.textContent = '✅ CMS Enhancements Loaded';
+  indicator.textContent = '✅ Enhanced Image Insertion Ready';
   document.body.appendChild(indicator);
   
   // Remove after 3 seconds
@@ -513,55 +569,10 @@ function addDebugIndicator() {
 // Call debug indicator when script loads
 setTimeout(addDebugIndicator, 1000);
 
-// Add comprehensive debugging
-function debugCMSStructure() {
-  console.log('🔍 === CMS STRUCTURE DEBUG ===');
-  
-  // Log all textareas
-  const textareas = document.querySelectorAll('textarea');
-  console.log(`📝 Found ${textareas.length} textareas:`, textareas);
-  
-  // Log all CodeMirror instances
-  const codeMirrors = document.querySelectorAll('.CodeMirror');
-  console.log(`📝 Found ${codeMirrors.length} CodeMirror instances:`, codeMirrors);
-  
-  // Log all buttons
-  const buttons = document.querySelectorAll('button');
-  console.log(`🔘 Found ${buttons.length} buttons total`);
-  
-  // Log buttons with potential image-related content
-  buttons.forEach((btn, i) => {
-    const text = btn.textContent?.toLowerCase() || '';
-    const html = btn.innerHTML;
-    const className = btn.className;
-    const title = btn.title;
-    
-    if (html.includes('svg') || text.includes('image') || className.includes('toolbar') || title.includes('image')) {
-      console.log(`🎯 Button ${i}:`, {
-        text: text.substring(0, 50),
-        html: html.substring(0, 100),
-        className: className,
-        title: title,
-        element: btn
-      });
-    }
-  });
-  
-  // Log any elements with data-testid
-  const testElements = document.querySelectorAll('[data-testid]');
-  console.log(`🧪 Found ${testElements.length} elements with data-testid:`, 
-    Array.from(testElements).map(el => el.getAttribute('data-testid')));
-  
-  // Log elements that might be editors
-  const possibleEditors = document.querySelectorAll('div[contenteditable], .editor, .markdown-editor, .rich-text-editor');
-  console.log(`✏️ Found ${possibleEditors.length} possible editors:`, possibleEditors);
-  
-  console.log('🔍 === END DEBUG ===');
-}
-
-// Run debug after a delay to catch dynamically loaded content
-setTimeout(debugCMSStructure, 3000);
-setTimeout(debugCMSStructure, 10000);
+// Show notification about the floating button
+setTimeout(() => {
+  showImageInsertionNotification();
+}, 5000);
 
 function showImageInsertionModal(editor) {
   console.log('🎬 Opening image insertion modal...');
@@ -598,18 +609,23 @@ function showImageInsertionModal(editor) {
     <h2 style="margin-top: 0; color: #333; font-family: sans-serif;">🖼️ Insert Image</h2>
     <p style="color: #666; margin-bottom: 25px;">Add an image to your content with custom alignment and sizing options.</p>
     
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+    <div style="display: grid; grid-template-columns: 1fr auto; gap: 10px; margin-bottom: 20px;">
       <div>
         <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Image URL or Path:</label>
         <input type="text" id="imageUrl" placeholder="/images/filename.jpg" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
         <small style="color: #666; font-size: 12px;">Upload images first via the media library, then reference them here</small>
       </div>
-      
-      <div>
-        <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Alt Text (Required):</label>
-        <input type="text" id="altText" placeholder="Describe the image for accessibility" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
-        <small style="color: #666; font-size: 12px;">Describes the image for screen readers and SEO</small>
+      <div style="display: flex; align-items: end;">
+        <button type="button" id="browseMediaBtn" style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 12px; white-space: nowrap;">
+          📁 Browse Media
+        </button>
       </div>
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Alt Text (Required):</label>
+      <input type="text" id="altText" placeholder="Describe the image for accessibility" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+      <small style="color: #666; font-size: 12px;">Describes the image for screen readers and SEO</small>
     </div>
     
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
@@ -662,6 +678,48 @@ function showImageInsertionModal(editor) {
   const previewContainer = modal.querySelector('#previewContainer');
   const cancelBtn = modal.querySelector('#cancelBtn');
   const insertBtn = modal.querySelector('#insertBtn');
+  const browseMediaBtn = modal.querySelector('#browseMediaBtn');
+  
+  // Media library integration
+  browseMediaBtn.addEventListener('click', () => {
+    console.log('📁 Browse media button clicked');
+    
+    // Try to trigger the CMS media library
+    if (window.CMS && window.CMS.getWidget) {
+      try {
+        // This is a simplified approach - the actual implementation may vary
+        // depending on how Decap CMS exposes the media library
+        console.log('🔧 Attempting to open CMS media library...');
+        
+        // Try to find and click the existing media library button
+        const mediaButtons = document.querySelectorAll('button[title*="media" i], button[aria-label*="media" i], button:has(svg)');
+        let mediaLibraryOpened = false;
+        
+        for (let btn of mediaButtons) {
+          const btnText = btn.textContent?.toLowerCase() || '';
+          const btnHTML = btn.innerHTML.toLowerCase();
+          
+          if (btnText.includes('media') || btnHTML.includes('folder') || btnHTML.includes('upload')) {
+            console.log('🎯 Found potential media button, clicking...', btn);
+            btn.click();
+            mediaLibraryOpened = true;
+            break;
+          }
+        }
+        
+        if (!mediaLibraryOpened) {
+          // Fallback: show a helpful message
+          alert('📁 Media Library Tip:\\n\\n1. Click "Choose an image" or the media button in the normal CMS interface\\n2. Upload or select your image\\n3. Copy the image path (e.g., /images/filename.jpg)\\n4. Paste it back into this enhanced modal\\n\\nThis gives you the best of both worlds: easy media management + enhanced alignment/sizing options!');
+        }
+        
+      } catch (error) {
+        console.error('❌ Error accessing media library:', error);
+        alert('📁 To use the media library:\\n\\n1. Close this modal\\n2. Use the regular CMS image button to upload/select an image\\n3. Copy the image path\\n4. Reopen this enhanced modal and paste the path\\n\\nThis ensures you get the upload functionality plus our enhanced options!');
+      }
+    } else {
+      alert('📁 Media Library Integration:\\n\\n1. Close this modal temporarily\\n2. Use the regular CMS interface to upload your image\\n3. Copy the image path (e.g., /images/filename.jpg)\\n4. Reopen this enhanced modal and paste the path\\n\\nThis workflow gives you both upload capability and enhanced formatting options!');
+    }
+  });
   
   // Update preview function
   function updatePreview() {
