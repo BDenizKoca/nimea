@@ -62,8 +62,10 @@ function setupImageInsertionHelper() {
 }
 
 function setupImageEditingHelper() {
+  console.log('🚀 Setting up image editing helper...');
   // Wait for the editor to be ready, then set up click handlers
   setTimeout(() => {
+    console.log('⏰ Timeout reached, adding image click handlers...');
     addImageClickHandlers();
   }, 3000);
 }
@@ -321,15 +323,23 @@ function insertTextIntoEditor(editor, text) {
 }
 
 function addImageClickHandlers() {
+  console.log('🔧 Setting up image click handlers...');
+  
   // Find all CodeMirror editors
   const editors = document.querySelectorAll('.CodeMirror');
+  console.log(`📝 Found ${editors.length} CodeMirror editors`);
   
-  editors.forEach(editor => {
+  editors.forEach((editor, index) => {
     if (editor.dataset.imageClickHandlerAdded) return;
     editor.dataset.imageClickHandlerAdded = 'true';
     
     const codeMirror = editor.CodeMirror;
-    if (!codeMirror) return;
+    if (!codeMirror) {
+      console.log(`⚠️ No CodeMirror instance found for editor ${index}`);
+      return;
+    }
+    
+    console.log(`✅ Adding click handlers to editor ${index}`);
     
     // Add click handler to CodeMirror
     codeMirror.on('cursorActivity', (cm) => {
@@ -343,15 +353,55 @@ function addImageClickHandlers() {
       }
     });
     
-    // Add double-click handler
-    codeMirror.on('dblclick', (cm, event) => {
-      const cursor = cm.getCursor();
-      const line = cm.getLine(cursor.line);
-      const imageMatch = findImageAtCursor(line, cursor.ch);
+    // Add single click handler for better UX
+    codeMirror.on('mousedown', (cm, event) => {
+      const pos = cm.coordsChar({left: event.clientX, top: event.clientY});
+      const line = cm.getLine(pos.line);
+      const imageMatch = findImageAtCursor(line, pos.ch);
       
       if (imageMatch) {
+        console.log('🖼️ Image clicked:', imageMatch);
+        // Set a timeout to distinguish between single and double clicks
+        setTimeout(() => {
+          if (!event.detail || event.detail === 1) {
+            console.log('👆 Single click detected on image');
+            // For single click, just show visual feedback
+            addImageClickIndicator(cm, pos.line, imageMatch);
+          }
+        }, 200);
+      }
+    });
+    
+    // Add double-click handler
+    codeMirror.on('dblclick', (cm, event) => {
+      console.log('👆👆 Double click detected');
+      const pos = cm.coordsChar({left: event.clientX, top: event.clientY});
+      const line = cm.getLine(pos.line);
+      const imageMatch = findImageAtCursor(line, pos.ch);
+      
+      if (imageMatch) {
+        console.log('🖼️ Image double-clicked, opening edit modal:', imageMatch);
         event.preventDefault();
-        showImageEditModal(cm, cursor.line, imageMatch);
+        showImageEditModal(cm, pos.line, imageMatch);
+      }
+    });
+    
+    // Also add a more direct click handler to the DOM element
+    editor.addEventListener('click', (event) => {
+      const cm = editor.CodeMirror;
+      if (!cm) return;
+      
+      const pos = cm.coordsChar({left: event.clientX, top: event.clientY});
+      const line = cm.getLine(pos.line);
+      const imageMatch = findImageAtCursor(line, pos.ch);
+      
+      if (imageMatch) {
+        console.log('🖱️ Direct DOM click on image detected');
+        // Show edit modal on any click within image markdown
+        if (event.detail === 2) { // Double click
+          event.preventDefault();
+          showImageEditModal(cm, pos.line, imageMatch);
+        }
       }
     });
   });
@@ -365,12 +415,16 @@ function findImageAtCursor(line, cursorPos) {
   const imageRegex = /!\[([^\]]*)\]\(([^)]+)\)(?:\{([^}]+)\})?/g;
   let match;
   
+  console.log(`🔍 Searching for images in line: "${line}" at position ${cursorPos}`);
+  
   while ((match = imageRegex.exec(line)) !== null) {
     const start = match.index;
     const end = match.index + match[0].length;
     
+    console.log(`📍 Found image: "${match[0]}" from ${start} to ${end}`);
+    
     if (cursorPos >= start && cursorPos <= end) {
-      return {
+      const imageMatch = {
         fullMatch: match[0],
         alt: match[1],
         url: match[2],
@@ -379,9 +433,12 @@ function findImageAtCursor(line, cursorPos) {
         end: end,
         line: line
       };
+      console.log('✅ Cursor is within image bounds:', imageMatch);
+      return imageMatch;
     }
   }
   
+  console.log('❌ No image found at cursor position');
   return null;
 }
 
