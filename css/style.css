@@ -178,3 +178,28 @@ main img:not(.cover-image img):not(.portrait-image img) {
 .portrait-image + h3 {
     margin-top: 0;
 }
+
+/* Map actions styling */
+.map-actions {
+    margin: 1rem 0;
+    text-align: center;
+}
+
+.show-on-map-btn {
+    display: inline-block;
+    padding: 10px 20px;
+    background: #2c5e2e;
+    color: white !important;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.show-on-map-btn:hover {
+    background: #3a7a3d;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}

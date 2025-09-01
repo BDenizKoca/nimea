@@ -31,6 +31,90 @@
         <div id="info-content"></div>
     </div>
 
+    <!-- DM Mode Marker Creation Form -->
+    <div class="modal hidden" id="marker-creation-modal">
+        <div class="modal-content">
+            <h3>Create New Marker</h3>
+            <form id="marker-form">
+                <div class="form-group">
+                    <label for="marker-name">Name *</label>
+                    <input type="text" id="marker-name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="marker-id">ID *</label>
+                    <input type="text" id="marker-id" required>
+                    <small>Auto-generated from name, but you can edit</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="marker-type">Type</label>
+                    <select id="marker-type">
+                        <option value="city">City</option>
+                        <option value="town">Town</option>
+                        <option value="village">Village</option>
+                        <option value="fortress">Fortress</option>
+                        <option value="ruin">Ruin</option>
+                        <option value="landmark">Landmark</option>
+                        <option value="dungeon">Dungeon</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="marker-faction">Faction</label>
+                    <input type="text" id="marker-faction" placeholder="e.g., Empire of Aurelius">
+                </div>
+                
+                <div class="form-group">
+                    <label for="marker-summary">Summary *</label>
+                    <textarea id="marker-summary" rows="3" required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="marker-coordinates">Coordinates</label>
+                    <input type="text" id="marker-coordinates" readonly>
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="marker-public" checked>
+                        Public (visible to players)
+                    </label>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" id="cancel-marker">Cancel</button>
+                    <button type="submit" id="save-marker">Create Marker</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bulk Import Modal for DM Mode -->
+    <div class="modal hidden" id="bulk-import-modal">
+        <div class="modal-content">
+            <h3>Bulk Import Markers</h3>
+            <div class="form-group">
+                <label for="csv-input">CSV Data</label>
+                <textarea id="csv-input" rows="10" placeholder="name,x,y,type,faction,summary,public
+Varkas,1234,987,city,Kuruntar,Ancient capital city,true
+Thornhold,2000,1500,fortress,Empire,Mountain fortress,true"></textarea>
+                <small>Format: name,x,y,type,faction,summary,public (header row optional)</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="csv-file">Or upload CSV file:</label>
+                <input type="file" id="csv-file" accept=".csv" />
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" id="cancel-import">Cancel</button>
+                <button type="button" id="process-import">Import Markers</button>
+            </div>
+        </div>
+    </div>
+
     <div class="leaflet-top leaflet-right">
         <div class="leaflet-control-layers leaflet-control" id="overlay-toggles">
             <label><input type="checkbox" id="toggle-regions"> Regions</label>

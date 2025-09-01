@@ -10,6 +10,17 @@
             "summary": "Başkent, yıkık bir kutsal şehrin üzerine inşa edildi.",
             "images": ["images/varkas_1.jpg", "images/varkas_2.jpg"],
             "public": true
+        },
+        {
+            "id": "aurelium",
+            "name": "Aurelium",
+            "x": 2000,
+            "y": 1200,
+            "type": "city",
+            "faction": "Empire of Aurelius",
+            "summary": "The magnificent capital of the Empire of Aurelius and the largest urban center in Nimea.",
+            "images": [],
+            "public": true
         }
     ]
 }

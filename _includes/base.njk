@@ -30,6 +30,12 @@
             </div>
             {% endif %}
             
+            {% if map_id %}
+            <div class="map-actions">
+                <a href="{{ '/map/?focus=' + map_id | url }}" class="show-on-map-btn">🗺️ Show on Map</a>
+            </div>
+            {% endif %}
+            
             {{ content | safe }}
         </main>
     </div>
