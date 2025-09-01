@@ -9,10 +9,16 @@ This wiki contains all the information about the world of Nimea, its inhabitants
 
 ## Recent Entries
 
-* [Varkas the Dragonslayer](characters/varkas-dragonslayer/) - A legendary warrior known for slaying the ancient red dragon Fyrax
-* [Skribas Seravel](characters/skribas-seravel/) - A renowned scholar and chronicler of Nimean history
-* [Aurelium](locations-regions/aurelium/) - The capital city of the Empire of Aurelius
-* [Empire of Aurelius](nations-factions/empire-of-aurelius/) - The largest human empire in Nimea
+{% assign allEntries = collections.characters | concat: collections.player_characters | concat: collections.locations_regions | concat: collections.nations_factions | concat: collections.gods_religions | concat: collections.magic_powers %}
+{% assign recentEntries = allEntries | sort: 'date' | reverse | slice: 0, 5 %}
+
+{% for entry in recentEntries %}
+* [{{ entry.data.name }}]({{ entry.url }}) - {{ entry.data.summary }}
+{% endfor %}
+
+{% if recentEntries.size == 0 %}
+*No entries yet. Start creating content through the [Admin Panel](/admin/)!*
+{% endif %}
 
 ## Wiki Categories
 
