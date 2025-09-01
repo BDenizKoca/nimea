@@ -362,6 +362,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // CRITICAL FIX: For now, bypass pathfinding entirely and use simple straight lines
         // This will ensure the route always completes and shows a summary
         console.warn('Using simple route mode - all straight lines');
+        console.log('Route to compute:', state.route.length, 'stops');
         
         // Create all straight-line legs immediately
         for (let i=1; i<state.route.length; i++) {
@@ -370,7 +371,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const straightLineDistance = Math.sqrt(Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2));
             const straightLineKm = straightLineDistance * config.kmPerPixel;
             
-            console.log(`Creating direct route leg: ${start.name} -> ${end.name}`);
+            console.log(`Creating direct route leg ${i}: ${start.name} -> ${end.name} (${straightLineKm.toFixed(2)} km)`);
             
             // Create a straight line polyline
             const straightPath = [[start.y, start.x], [end.y, end.x]]; // already [lat,lng]
@@ -390,8 +391,10 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
         
+        console.log('Route legs created:', state.routeLegs.length);
         // Immediately update the summary with all legs
         updateRouteSummaryFromLegs();
+        console.log('Route summary updated');
     }
 
     // --- PATHFINDING (A*) ---
