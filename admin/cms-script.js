@@ -45,6 +45,9 @@ window.addEventListener('DOMContentLoaded', (event) => {
 
     // Custom Image Insertion Helper
     setupImageInsertionHelper();
+    
+    // Image Click-to-Edit functionality
+    setupImageEditingHelper();
   }
 });
 
@@ -53,6 +56,13 @@ function setupImageInsertionHelper() {
   setTimeout(() => {
     addImageInsertionButton();
   }, 2000);
+}
+
+function setupImageEditingHelper() {
+  // Wait for the editor to be ready, then set up click handlers
+  setTimeout(() => {
+    addImageClickHandlers();
+  }, 3000);
 }
 
 function addImageInsertionButton() {
@@ -305,4 +315,292 @@ function insertTextIntoEditor(editor, text) {
       textarea.dispatchEvent(new Event('input', { bubbles: true }));
     }
   }
+}
+
+function addImageClickHandlers() {
+  // Find all CodeMirror editors
+  const editors = document.querySelectorAll('.CodeMirror');
+  
+  editors.forEach(editor => {
+    if (editor.dataset.imageClickHandlerAdded) return;
+    editor.dataset.imageClickHandlerAdded = 'true';
+    
+    const codeMirror = editor.CodeMirror;
+    if (!codeMirror) return;
+    
+    // Add click handler to CodeMirror
+    codeMirror.on('cursorActivity', (cm) => {
+      const cursor = cm.getCursor();
+      const line = cm.getLine(cursor.line);
+      const imageMatch = findImageAtCursor(line, cursor.ch);
+      
+      if (imageMatch) {
+        // Add visual indicator that this image is clickable
+        addImageClickIndicator(cm, cursor.line, imageMatch);
+      }
+    });
+    
+    // Add double-click handler
+    codeMirror.on('dblclick', (cm, event) => {
+      const cursor = cm.getCursor();
+      const line = cm.getLine(cursor.line);
+      const imageMatch = findImageAtCursor(line, cursor.ch);
+      
+      if (imageMatch) {
+        event.preventDefault();
+        showImageEditModal(cm, cursor.line, imageMatch);
+      }
+    });
+  });
+  
+  // Re-run periodically to catch new editors
+  setTimeout(addImageClickHandlers, 4000);
+}
+
+function findImageAtCursor(line, cursorPos) {
+  // Regex to match markdown images with optional CSS classes
+  const imageRegex = /!\[([^\]]*)\]\(([^)]+)\)(?:\{([^}]+)\})?/g;
+  let match;
+  
+  while ((match = imageRegex.exec(line)) !== null) {
+    const start = match.index;
+    const end = match.index + match[0].length;
+    
+    if (cursorPos >= start && cursorPos <= end) {
+      return {
+        fullMatch: match[0],
+        alt: match[1],
+        url: match[2],
+        classes: match[3] || '',
+        start: start,
+        end: end,
+        line: line
+      };
+    }
+  }
+  
+  return null;
+}
+
+function addImageClickIndicator(codeMirror, lineNumber, imageMatch) {
+  // Add a subtle highlight to indicate the image is clickable
+  const from = { line: lineNumber, ch: imageMatch.start };
+  const to = { line: lineNumber, ch: imageMatch.end };
+  
+  // Clear any existing markers first
+  const markers = codeMirror.findMarks(from, to);
+  markers.forEach(marker => marker.clear());
+  
+  // Add a subtle background highlight
+  codeMirror.markText(from, to, {
+    className: 'clickable-image-highlight',
+    title: 'Double-click to edit image properties'
+  });
+  
+  // Add CSS for the highlight if it doesn't exist
+  if (!document.querySelector('#image-highlight-style')) {
+    const style = document.createElement('style');
+    style.id = 'image-highlight-style';
+    style.textContent = `
+      .clickable-image-highlight {
+        background-color: rgba(63, 81, 181, 0.1);
+        border-radius: 3px;
+        cursor: pointer;
+      }
+      .clickable-image-highlight:hover {
+        background-color: rgba(63, 81, 181, 0.2);
+      }
+    `;
+    document.head.appendChild(style);
+  }
+}
+
+function showImageEditModal(codeMirror, lineNumber, imageMatch) {
+  // Parse existing classes
+  const existingClasses = imageMatch.classes.replace(/\./g, '').split(' ').filter(c => c);
+  
+  // Determine current alignment and size
+  let currentAlignment = '';
+  let currentSize = '';
+  
+  existingClasses.forEach(cls => {
+    if (['image-left', 'image-right', 'image-center'].includes(cls)) {
+      currentAlignment = cls;
+    }
+    if (['image-small', 'image-medium', 'image-large'].includes(cls)) {
+      currentSize = cls;
+    }
+  });
+  
+  // Create modal overlay
+  const modal = document.createElement('div');
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  `;
+  
+  // Create modal content
+  const modalContent = document.createElement('div');
+  modalContent.style.cssText = `
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  `;
+  
+  modalContent.innerHTML = `
+    <h2 style="margin-top: 0; color: #333; font-family: sans-serif;">✏️ Edit Image</h2>
+    
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Image URL:</label>
+      <input type="text" id="editImageUrl" value="${imageMatch.url}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Alt Text:</label>
+      <input type="text" id="editAltText" value="${imageMatch.alt}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Alignment:</label>
+      <select id="editAlignment" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+        <option value="" ${!currentAlignment ? 'selected' : ''}>Default (block)</option>
+        <option value="image-left" ${currentAlignment === 'image-left' ? 'selected' : ''}>Float Left</option>
+        <option value="image-right" ${currentAlignment === 'image-right' ? 'selected' : ''}>Float Right</option>
+        <option value="image-center" ${currentAlignment === 'image-center' ? 'selected' : ''}>Center</option>
+      </select>
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Size:</label>
+      <select id="editSize" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+        <option value="" ${!currentSize ? 'selected' : ''}>Default</option>
+        <option value="image-small" ${currentSize === 'image-small' ? 'selected' : ''}>Small (200px)</option>
+        <option value="image-medium" ${currentSize === 'image-medium' ? 'selected' : ''}>Medium (400px)</option>
+        <option value="image-large" ${currentSize === 'image-large' ? 'selected' : ''}>Large (600px)</option>
+      </select>
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+      <h3 style="color: #333; font-size: 16px; margin-bottom: 10px;">Preview:</h3>
+      <div id="editPreviewContainer" style="background: #f5f5f5; padding: 15px; border-radius: 4px; font-family: monospace; font-size: 12px; color: #333;">
+        ${imageMatch.fullMatch}
+      </div>
+    </div>
+    
+    <div style="display: flex; gap: 10px; justify-content: space-between;">
+      <button id="deleteImageBtn" style="padding: 10px 20px; border: 1px solid #f44336; background: #f44336; color: white; border-radius: 4px; cursor: pointer;">Delete Image</button>
+      <div style="display: flex; gap: 10px;">
+        <button id="editCancelBtn" style="padding: 10px 20px; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer;">Cancel</button>
+        <button id="updateImageBtn" style="padding: 10px 20px; border: none; background: #3f51b5; color: white; border-radius: 4px; cursor: pointer; font-weight: bold;">Update Image</button>
+      </div>
+    </div>
+  `;
+  
+  modal.appendChild(modalContent);
+  document.body.appendChild(modal);
+  
+  // Set up event listeners
+  const editImageUrlInput = modal.querySelector('#editImageUrl');
+  const editAltTextInput = modal.querySelector('#editAltText');
+  const editAlignmentSelect = modal.querySelector('#editAlignment');
+  const editSizeSelect = modal.querySelector('#editSize');
+  const editPreviewContainer = modal.querySelector('#editPreviewContainer');
+  const editCancelBtn = modal.querySelector('#editCancelBtn');
+  const updateImageBtn = modal.querySelector('#updateImageBtn');
+  const deleteImageBtn = modal.querySelector('#deleteImageBtn');
+  
+  // Update preview function
+  function updateEditPreview() {
+    const url = editImageUrlInput.value || '/images/filename.jpg';
+    const alt = editAltTextInput.value || 'Alt text';
+    const alignment = editAlignmentSelect.value;
+    const size = editSizeSelect.value;
+    
+    let classes = [];
+    if (alignment) classes.push(alignment);
+    if (size) classes.push(size);
+    
+    const classString = classes.length > 0 ? `{.${classes.join(' .')}}` : '';
+    const markdown = `![${alt}](${url})${classString}`;
+    
+    editPreviewContainer.textContent = markdown;
+  }
+  
+  // Set up event listeners for real-time preview
+  editImageUrlInput.addEventListener('input', updateEditPreview);
+  editAltTextInput.addEventListener('input', updateEditPreview);
+  editAlignmentSelect.addEventListener('change', updateEditPreview);
+  editSizeSelect.addEventListener('change', updateEditPreview);
+  
+  // Cancel button
+  editCancelBtn.addEventListener('click', () => {
+    document.body.removeChild(modal);
+  });
+  
+  // Delete button
+  deleteImageBtn.addEventListener('click', () => {
+    if (confirm('Are you sure you want to delete this image?')) {
+      const from = { line: lineNumber, ch: imageMatch.start };
+      const to = { line: lineNumber, ch: imageMatch.end };
+      codeMirror.replaceRange('', from, to);
+      document.body.removeChild(modal);
+    }
+  });
+  
+  // Update button
+  updateImageBtn.addEventListener('click', () => {
+    const url = editImageUrlInput.value.trim();
+    const alt = editAltTextInput.value.trim();
+    
+    if (!url) {
+      alert('Please enter an image URL or path');
+      return;
+    }
+    
+    if (!alt) {
+      alert('Please enter alt text for accessibility');
+      return;
+    }
+    
+    const alignment = editAlignmentSelect.value;
+    const size = editSizeSelect.value;
+    
+    let classes = [];
+    if (alignment) classes.push(alignment);
+    if (size) classes.push(size);
+    
+    const classString = classes.length > 0 ? `{.${classes.join(' .')}}` : '';
+    const newMarkdown = `![${alt}](${url})${classString}`;
+    
+    // Replace the image in the editor
+    const from = { line: lineNumber, ch: imageMatch.start };
+    const to = { line: lineNumber, ch: imageMatch.end };
+    codeMirror.replaceRange(newMarkdown, from, to);
+    
+    // Close modal
+    document.body.removeChild(modal);
+  });
+  
+  // Close on overlay click
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      document.body.removeChild(modal);
+    }
+  });
+  
+  // Focus the URL input
+  editImageUrlInput.focus();
 }
