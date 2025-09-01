@@ -9,6 +9,6 @@ This section contains information about the various locations, cities, dungeons,
 
 ## Notable Locations
 
-{% for location in collections.locations_regions %}
+{% for location in collections.locations %}
 - [{{ location.data.name }}]({{ location.url }}) - {{ location.data.summary }}
 {% endfor %}

@@ -9,6 +9,6 @@ This section contains information about the various nations, empires, and organi
 
 ## Major Nations
 
-{% for nation in collections.nations_factions %}
+{% for nation in collections.nations %}
 - [{{ nation.data.name }}]({{ nation.url }}) - {{ nation.data.summary }}
 {% endfor %}

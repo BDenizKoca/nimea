@@ -71,12 +71,20 @@ function setupImageEditingHelper() {
 }
 
 function addImageInsertionButton() {
+  console.log('🖼️ Adding image insertion buttons...');
+  
   // Find all markdown editors
   const markdownEditors = document.querySelectorAll('[data-testid="richtext"] .CodeMirror, .CodeMirror');
+  console.log(`📝 Found ${markdownEditors.length} editors to enhance`);
   
   markdownEditors.forEach((editor, index) => {
-    if (editor.dataset.imageHelperAdded) return; // Don't add multiple times
+    if (editor.dataset.imageHelperAdded) {
+      console.log(`⏭️ Editor ${index} already has image helper`);
+      return; // Don't add multiple times
+    }
     editor.dataset.imageHelperAdded = 'true';
+    
+    console.log(`➕ Adding image insertion button to editor ${index}`);
     
     // Create image insertion button
     const buttonContainer = document.createElement('div');
@@ -109,6 +117,7 @@ function addImageInsertionButton() {
     imageButton.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
+      console.log('🎯 Image button clicked, opening modal...');
       showImageInsertionModal(editor);
     });
     
@@ -118,6 +127,8 @@ function addImageInsertionButton() {
     const editorContainer = editor.closest('.CodeMirror') || editor;
     editorContainer.style.position = 'relative';
     editorContainer.appendChild(buttonContainer);
+    
+    console.log(`✅ Successfully added image button to editor ${index}`);
   });
   
   // Re-run periodically to catch new editors
@@ -125,6 +136,8 @@ function addImageInsertionButton() {
 }
 
 function showImageInsertionModal(editor) {
+  console.log('🎬 Opening image insertion modal...');
+  
   // Create modal overlay
   const modal = document.createElement('div');
   modal.style.cssText = `
@@ -146,7 +159,7 @@ function showImageInsertionModal(editor) {
     background: white;
     padding: 30px;
     border-radius: 8px;
-    max-width: 500px;
+    max-width: 600px;
     width: 90%;
     max-height: 80vh;
     overflow-y: auto;
@@ -155,53 +168,63 @@ function showImageInsertionModal(editor) {
   
   modalContent.innerHTML = `
     <h2 style="margin-top: 0; color: #333; font-family: sans-serif;">🖼️ Insert Image</h2>
+    <p style="color: #666; margin-bottom: 25px;">Add an image to your content with custom alignment and sizing options.</p>
     
-    <div style="margin-bottom: 20px;">
-      <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Image URL or Path:</label>
-      <input type="text" id="imageUrl" placeholder="/images/filename.jpg" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
-      <small style="color: #666; font-size: 12px;">Upload images first, then reference them like: /images/filename.jpg</small>
-    </div>
-    
-    <div style="margin-bottom: 20px;">
-      <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Alt Text (Description):</label>
-      <input type="text" id="altText" placeholder="Describe the image" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
-    </div>
-    
-    <div style="margin-bottom: 20px;">
-      <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Alignment:</label>
-      <select id="alignment" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
-        <option value="">Default (block)</option>
-        <option value="image-left">Float Left</option>
-        <option value="image-right">Float Right</option>
-        <option value="image-center">Center</option>
-      </select>
-    </div>
-    
-    <div style="margin-bottom: 20px;">
-      <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Size:</label>
-      <select id="size" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
-        <option value="">Default</option>
-        <option value="image-small">Small (200px)</option>
-        <option value="image-medium">Medium (400px)</option>
-        <option value="image-large">Large (600px)</option>
-      </select>
-    </div>
-    
-    <div style="margin-bottom: 20px;">
-      <h3 style="color: #333; font-size: 16px; margin-bottom: 10px;">Preview:</h3>
-      <div id="previewContainer" style="background: #f5f5f5; padding: 15px; border-radius: 4px; font-family: monospace; font-size: 12px; color: #333;">
-        ![Alt text](/images/filename.jpg)
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+      <div>
+        <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Image URL or Path:</label>
+        <input type="text" id="imageUrl" placeholder="/images/filename.jpg" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+        <small style="color: #666; font-size: 12px;">Upload images first via the media library, then reference them here</small>
+      </div>
+      
+      <div>
+        <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Alt Text (Required):</label>
+        <input type="text" id="altText" placeholder="Describe the image for accessibility" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+        <small style="color: #666; font-size: 12px;">Describes the image for screen readers and SEO</small>
       </div>
     </div>
     
-    <div style="display: flex; gap: 10px; justify-content: flex-end;">
-      <button id="cancelBtn" style="padding: 10px 20px; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer;">Cancel</button>
-      <button id="insertBtn" style="padding: 10px 20px; border: none; background: #3f51b5; color: white; border-radius: 4px; cursor: pointer; font-weight: bold;">Insert Image</button>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+      <div>
+        <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Alignment:</label>
+        <select id="alignment" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+          <option value="">Default (full width)</option>
+          <option value="image-left">Float Left (text wraps right)</option>
+          <option value="image-right">Float Right (text wraps left)</option>
+          <option value="image-center">Center (no text wrapping)</option>
+        </select>
+      </div>
+      
+      <div>
+        <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Size:</label>
+        <select id="size" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+          <option value="">Default (auto-size)</option>
+          <option value="image-small">Small (max 200px wide)</option>
+          <option value="image-medium">Medium (max 400px wide)</option>
+          <option value="image-large">Large (max 600px wide)</option>
+        </select>
+      </div>
+    </div>
+    
+    <div style="margin-bottom: 25px;">
+      <h3 style="color: #333; font-size: 16px; margin-bottom: 10px;">📋 Markdown Preview:</h3>
+      <div id="previewContainer" style="background: #f8f9fa; padding: 15px; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 13px; color: #495057; border: 1px solid #e9ecef; word-break: break-all;">
+        ![Alt text](/images/filename.jpg)
+      </div>
+      <small style="color: #666; font-size: 12px;">This is the markdown that will be inserted into your content</small>
+    </div>
+    
+    <div style="display: flex; gap: 15px; justify-content: flex-end;">
+      <button id="cancelBtn" style="padding: 12px 24px; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer; font-size: 14px; color: #666;">Cancel</button>
+      <button id="insertBtn" style="padding: 12px 24px; border: none; background: #3f51b5; color: white; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px;">Insert Image</button>
     </div>
   `;
   
   modal.appendChild(modalContent);
   document.body.appendChild(modal);
+  
+  console.log('✅ Modal created and added to DOM');
+  console.log('✅ Modal created and added to DOM');
   
   // Set up event listeners
   const imageUrlInput = modal.querySelector('#imageUrl');
@@ -214,8 +237,8 @@ function showImageInsertionModal(editor) {
   
   // Update preview function
   function updatePreview() {
-    const url = imageUrlInput.value || '/images/filename.jpg';
-    const alt = altTextInput.value || 'Alt text';
+    const url = imageUrlInput.value.trim() || '/images/filename.jpg';
+    const alt = altTextInput.value.trim() || 'Alt text';
     const alignment = alignmentSelect.value;
     const size = sizeSelect.value;
     
@@ -227,6 +250,12 @@ function showImageInsertionModal(editor) {
     const markdown = `![${alt}](${url})${classString}`;
     
     previewContainer.textContent = markdown;
+    
+    // Update insert button state
+    const hasRequiredFields = url && alt;
+    insertBtn.disabled = !hasRequiredFields;
+    insertBtn.style.opacity = hasRequiredFields ? '1' : '0.5';
+    insertBtn.style.cursor = hasRequiredFields ? 'pointer' : 'not-allowed';
   }
   
   // Set up event listeners for real-time preview
@@ -235,8 +264,12 @@ function showImageInsertionModal(editor) {
   alignmentSelect.addEventListener('change', updatePreview);
   sizeSelect.addEventListener('change', updatePreview);
   
+  // Initial preview update
+  updatePreview();
+  
   // Cancel button
   cancelBtn.addEventListener('click', () => {
+    console.log('❌ Image insertion cancelled');
     document.body.removeChild(modal);
   });
   
@@ -245,13 +278,17 @@ function showImageInsertionModal(editor) {
     const url = imageUrlInput.value.trim();
     const alt = altTextInput.value.trim();
     
+    console.log('🔍 Validating image insertion...', { url, alt });
+    
     if (!url) {
-      alert('Please enter an image URL or path');
+      alert('⚠️ Please enter an image URL or path');
+      imageUrlInput.focus();
       return;
     }
     
     if (!alt) {
-      alert('Please enter alt text for accessibility');
+      alert('⚠️ Please enter alt text for accessibility');
+      altTextInput.focus();
       return;
     }
     
@@ -265,61 +302,124 @@ function showImageInsertionModal(editor) {
     const classString = classes.length > 0 ? `{.${classes.join(' .')}}` : '';
     const markdown = `![${alt}](${url})${classString}`;
     
-    // Insert into editor
-    insertTextIntoEditor(editor, markdown);
+    console.log('📝 Inserting markdown:', markdown);
     
-    // Close modal
-    document.body.removeChild(modal);
+    // Insert into editor
+    const success = insertTextIntoEditor(editor, markdown);
+    
+    if (success) {
+      console.log('✅ Image successfully inserted');
+      // Close modal
+      document.body.removeChild(modal);
+    } else {
+      console.error('❌ Failed to insert image');
+      alert('❌ Failed to insert image. Please try again.');
+    }
   });
   
   // Close on overlay click
   modal.addEventListener('click', (e) => {
     if (e.target === modal) {
+      console.log('🖱️ Modal closed by clicking overlay');
       document.body.removeChild(modal);
     }
   });
   
-  // Focus the URL input
+  // Focus the URL input and show helpful tip
   imageUrlInput.focus();
+  
+  // Add helpful keyboard shortcuts
+  modal.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      document.body.removeChild(modal);
+    } else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      insertBtn.click();
+    }
+  });
+  
+  console.log('🎮 Event listeners set up, modal ready for interaction');
 }
 
 function insertTextIntoEditor(editor, text) {
+  console.log('📝 Attempting to insert text into editor:', text);
+  
   // Get CodeMirror instance
   let codeMirror;
   if (editor.CodeMirror) {
     codeMirror = editor.CodeMirror;
+    console.log('✅ Found CodeMirror instance on editor element');
   } else {
     // Try to find CodeMirror instance
     const cmElement = editor.closest('.CodeMirror');
     if (cmElement && cmElement.CodeMirror) {
       codeMirror = cmElement.CodeMirror;
+      console.log('✅ Found CodeMirror instance on parent element');
     }
   }
   
   if (codeMirror) {
-    // Insert at cursor position
-    const cursor = codeMirror.getCursor();
-    codeMirror.replaceRange(text, cursor);
-    codeMirror.focus();
+    try {
+      // Insert at cursor position
+      const cursor = codeMirror.getCursor();
+      console.log('📍 Cursor position:', cursor);
+      
+      // Add some spacing if not at beginning of line
+      let textToInsert = text;
+      if (cursor.ch > 0) {
+        textToInsert = '\n\n' + text + '\n\n';
+      } else {
+        textToInsert = text + '\n\n';
+      }
+      
+      codeMirror.replaceRange(textToInsert, cursor);
+      codeMirror.focus();
+      
+      console.log('✅ Successfully inserted text via CodeMirror');
+      return true;
+    } catch (error) {
+      console.error('❌ Error inserting text via CodeMirror:', error);
+    }
   } else {
+    console.log('⚠️ CodeMirror not found, trying fallback methods...');
+    
     // Fallback: try to find textarea and insert
     const textarea = editor.querySelector('textarea') || 
                      editor.closest('.form-control') || 
-                     document.querySelector('textarea[data-testid="markdown"]');
+                     document.querySelector('textarea[data-testid="markdown"]') ||
+                     document.querySelector('textarea');
     
     if (textarea) {
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      const value = textarea.value;
-      
-      textarea.value = value.substring(0, start) + text + value.substring(end);
-      textarea.selectionStart = textarea.selectionEnd = start + text.length;
-      textarea.focus();
-      
-      // Trigger change event
-      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+      try {
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const value = textarea.value;
+        
+        // Add some spacing
+        let textToInsert = text;
+        if (start > 0 && value[start - 1] !== '\n') {
+          textToInsert = '\n\n' + text + '\n\n';
+        } else {
+          textToInsert = text + '\n\n';
+        }
+        
+        textarea.value = value.substring(0, start) + textToInsert + value.substring(end);
+        textarea.selectionStart = textarea.selectionEnd = start + textToInsert.length;
+        textarea.focus();
+        
+        // Trigger change event
+        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+        textarea.dispatchEvent(new Event('change', { bubbles: true }));
+        
+        console.log('✅ Successfully inserted text via textarea fallback');
+        return true;
+      } catch (error) {
+        console.error('❌ Error inserting text via textarea fallback:', error);
+      }
     }
   }
+  
+  console.error('❌ Could not find any editor to insert text into');
+  return false;
 }
 
 function addImageClickHandlers() {
