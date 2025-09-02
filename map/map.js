@@ -70,7 +70,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // Set a specific zoom level instead of fitBounds to avoid making it too small
         const centerY = height / 2;
         const centerX = width / 2;
-        map.setView([centerY, centerX], 0); // Zoom level 0 for better overview
+        map.fitBounds(bounds, { 
+            padding: [0, 0]  // No padding - fill the entire screen
+        });
         
         loadInitialData();
     };

@@ -26,6 +26,8 @@
         // Expose public functions via the bridge
         bridge.dmModule = {
             setupDmMode,
+            saveMarkerFromForm,
+            updateMarkerPosition,
         };
         
         // Add helper functions from the main script that we need to the bridge if they aren't there
@@ -451,6 +453,23 @@
         
         console.log('Marker creation completed successfully');
         bridge.showNotification(`Marker "${name}" created successfully!`, 'success');
+    }
+
+    /**
+     * Updates an existing marker's position when dragged.
+     * @param {object} markerData - The marker data object to update
+     */
+    function updateMarkerPosition(markerData) {
+        // Find the marker in the state and update it
+        const markerIndex = bridge.state.markers.findIndex(m => m.id === markerData.id);
+        if (markerIndex !== -1) {
+            bridge.state.markers[markerIndex] = markerData;
+            bridge.markDirty('markers');
+            console.log(`Updated marker "${markerData.name}" position to [${markerData.y}, ${markerData.x}]`);
+            bridge.showNotification(`Moved "${markerData.name}"`, 'success');
+        } else {
+            console.error('Could not find marker to update:', markerData.id);
+        }
     }
 
     /**

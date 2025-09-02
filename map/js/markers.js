@@ -31,8 +31,31 @@
         
         bridge.state.markers.forEach(markerData => {
             if (markerData.public || bridge.state.isDmMode) {
-                const marker = L.marker([markerData.y, markerData.x]).addTo(bridge.map);
+                const marker = L.marker([markerData.y, markerData.x], {
+                    draggable: bridge.state.isDmMode // Make draggable only in DM mode
+                }).addTo(bridge.map);
+                
                 marker.on('click', () => bridge.uiModule.openInfoSidebar(markerData));
+                
+                // Handle marker drag end in DM mode
+                if (bridge.state.isDmMode) {
+                    marker.on('dragend', function(e) {
+                        const newPos = e.target.getLatLng();
+                        const newY = Math.round(newPos.lat);
+                        const newX = Math.round(newPos.lng);
+                        
+                        // Update marker position in the data
+                        markerData.y = newY;
+                        markerData.x = newX;
+                        
+                        console.log(`Moved marker "${markerData.name}" to [${newY}, ${newX}]`);
+                        
+                        // Auto-save the updated position
+                        if (bridge.dmModule && bridge.dmModule.updateMarkerPosition) {
+                            bridge.dmModule.updateMarkerPosition(markerData);
+                        }
+                    });
+                }
                 
                 if (bridge.state.focusMarker && markerData.id === bridge.state.focusMarker) {
                     focusMarkerInstance = { marker, data: markerData };

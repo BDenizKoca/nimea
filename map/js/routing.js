@@ -284,14 +284,16 @@
                     Math.pow(marker2.y - marker1.y, 2)
                 );
                 
-                // Only connect if reasonably close (prevent too many edges)
-                if (distance < 500) {
+                // Increased connection distance to improve pathfinding
+                if (distance < 1000) { // Increased from 500 to 1000
                     const terrainCost = getTerrainCostBetweenPoints(
                         {x: marker1.x, y: marker1.y},
                         {x: marker2.x, y: marker2.y}
                     );
                     
-                    // Don't create direct connections if path crosses unpassable terrain
+                    console.log(`Terrain cost between ${marker1.name} and ${marker2.name}: ${terrainCost}`);
+                    
+                    // Create connections even through difficult terrain (with high cost)
                     if (terrainCost < Infinity) {
                         edges.push({
                             from: marker1NodeId,
@@ -393,8 +395,10 @@
      * Calculate terrain cost between two points based on terrain features
      */
     function getTerrainCostBetweenPoints(from, to) {
-        // Check if path crosses unpassable areas
-        const unpassableFeatures = bridge.state.terrain.features.filter(f => f.properties.kind === 'unpassable');
+        // Check if path crosses unpassable/blocked areas
+        const unpassableFeatures = bridge.state.terrain.features.filter(f => 
+            f.properties.kind === 'unpassable' || f.properties.kind === 'blocked'
+        );
         
         for (const feature of unpassableFeatures) {
             if (feature.geometry.type === 'Polygon') {
@@ -480,23 +484,47 @@
             bridge.state.routePolylines.push(polyline);
             const distanceKm = computePixelPathKm(pixelPath);
             bridge.state.routeLegs.push({ from: start, to: end, distanceKm });
-        } else {
-            // Fallback to straight line if no path found
-            const straightPath = [[start.y, start.x], [end.y, end.x]];
-            const polyline = L.polyline(straightPath, { 
-                color: 'blue', 
-                weight: 3, 
-                dashArray: '5,5', 
-                pane: 'routePane' 
-            }).addTo(bridge.map);
             
-            bridge.state.routePolylines.push(polyline);
-            bridge.state.routeLegs.push({ 
-                from: start, 
-                to: end, 
-                distanceKm: straightLineKm, 
-                fallback: true 
-            });
+            console.log(`Found path from ${start.name} to ${end.name}: ${distanceKm.toFixed(2)}km`);
+        } else {
+            // Check if straight line crosses unpassable terrain
+            const terrainCost = getTerrainCostBetweenPoints(
+                {x: start.x, y: start.y}, 
+                {x: end.x, y: end.y}
+            );
+            
+            if (terrainCost === Infinity) {
+                // Can't use straight line either - mark as unreachable
+                console.warn(`No path possible from ${start.name} to ${end.name} - blocked by unpassable terrain`);
+                bridge.state.routeLegs.push({ 
+                    from: start, 
+                    to: end, 
+                    distanceKm: 0, 
+                    unreachable: true 
+                });
+            } else {
+                // Fallback to straight line with terrain cost applied
+                const straightPath = [[start.y, start.x], [end.y, end.x]];
+                const adjustedDistance = straightLineKm * terrainCost;
+                
+                const polyline = L.polyline(straightPath, { 
+                    color: terrainCost > 1 ? 'orange' : 'blue', 
+                    weight: 3, 
+                    dashArray: '5,5', 
+                    pane: 'routePane' 
+                }).addTo(bridge.map);
+                
+                bridge.state.routePolylines.push(polyline);
+                bridge.state.routeLegs.push({ 
+                    from: start, 
+                    to: end, 
+                    distanceKm: adjustedDistance, 
+                    fallback: true,
+                    terrainType: terrainCost > 1 ? 'difficult' : 'normal'
+                });
+                
+                console.log(`Using fallback path from ${start.name} to ${end.name}: ${adjustedDistance.toFixed(2)}km (terrain cost: ${terrainCost})`);
+            }
         }
         
         if (typeof onComplete === 'function') onComplete();
@@ -520,9 +548,33 @@
             return; 
         }
         const totalKm = bridge.state.routeLegs.reduce((a,l)=>a+l.distanceKm,0);
-        const legsHtml = bridge.state.routeLegs.map((l,i)=>`<li>Leg ${i+1}: ${l.from.name} → ${l.to.name}: ${l.distanceKm.toFixed(2)} km${l.fallback?' (direct)':''}</li>`).join('');
+        const legsHtml = bridge.state.routeLegs.map((l,i)=>{
+            let legInfo = `Leg ${i+1}: ${l.from.name} → ${l.to.name}: ${l.distanceKm.toFixed(2)} km`;
+            if (l.unreachable) {
+                legInfo += ' (BLOCKED!)';
+            } else if (l.fallback) {
+                if (l.terrainType === 'difficult') {
+                    legInfo += ' (difficult terrain)';
+                } else {
+                    legInfo += ' (direct)';
+                }
+            }
+            return `<li>${legInfo}</li>`;
+        }).join('');
+        
+        const hasBlocked = bridge.state.routeLegs.some(l => l.unreachable);
+        const hasTerrainPenalty = bridge.state.routeLegs.some(l => l.terrainType === 'difficult');
+        
+        let warningHtml = '';
+        if (hasBlocked) {
+            warningHtml = '<p class="route-warning">⚠️ Some destinations are unreachable due to terrain!</p>';
+        } else if (hasTerrainPenalty) {
+            warningHtml = '<p class="route-info">ℹ️ Route includes difficult terrain (longer travel time)</p>';
+        }
+        
         summaryDiv.innerHTML = `
             <h3>Route Summary</h3>
+            ${warningHtml}
             <p><strong>Total Distance:</strong> ${totalKm.toFixed(2)} km</p>
             <ul class="route-legs">${legsHtml}</ul>
             <div class="travel-times">
