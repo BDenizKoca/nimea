@@ -10,6 +10,21 @@ class GitGatewayClient {
         this.token = null;
         this.isAuthenticated = false;
         this.initialized = false; // track whether identity events have been bound
+        
+        // Force re-init when loaded to ensure we have the current auth state
+        this.checkAuthState();
+    }
+    
+    /**
+     * Check the current auth state on load
+     */
+    checkAuthState() {
+        if (window.netlifyIdentity) {
+            const user = netlifyIdentity.currentUser();
+            if (user) {
+                this.handleUserLogin(user);
+            }
+        }
     }
 
     async initialize() {
@@ -62,17 +77,35 @@ class GitGatewayClient {
             alert('Authentication not available: Netlify Identity script failed to load.');
             return;
         }
-        if (!this.initialized) {
-            // Try to initialize on-demand
-            try {
-                await this.initialize();
-            } catch (e) {
-                console.warn('Identity init failed on login attempt:', e);
-            }
+        
+        // Always force initialization
+        try {
+            await this.initialize();
+        } catch (e) {
+            console.warn('Identity init failed on login attempt:', e);
         }
+        
         if (!this.isAuthenticated) {
             try {
-                netlifyIdentity.open();
+                // Check if we already have a user but token needs refreshing
+                const currentUser = netlifyIdentity.currentUser();
+                if (currentUser) {
+                    console.log('User exists but needs refresh');
+                    
+                    // Try refreshing token
+                    try {
+                        await currentUser.jwt();
+                        this.handleUserLogin(currentUser);
+                        console.log('Token refreshed successfully');
+                        return;
+                    } catch (refreshError) {
+                        console.warn('Failed to refresh token, will try login flow', refreshError);
+                        netlifyIdentity.logout(); // Force logout to get a clean auth
+                    }
+                }
+                
+                // Show login dialog
+                netlifyIdentity.open('login');
             } catch (e) {
                 alert('Could not open login widget. See console for details.');
                 console.error(e);
@@ -116,6 +149,11 @@ Timestamp: ${new Date().toISOString()}`;
 
     async saveFileToRepo(filePath, content, commitMessage) {
         try {
+            // Ensure we have a valid token
+            if (!this.token || this.token.trim() === '') {
+                throw new Error('Missing authentication token');
+            }
+            
             // First, get the current file to get its SHA (if it exists)
             const currentFile = await this.getFileFromRepo(filePath);
             
@@ -134,18 +172,31 @@ Timestamp: ${new Date().toISOString()}`;
             }
 
             // Save file via Git Gateway
-            const response = await fetch(`${this.baseURL}/contents/${filePath}`, {
+            // Add timestamp to prevent caching issues
+            const timestamp = new Date().getTime();
+            
+            // Log what we're sending
+            console.log(`Saving ${filePath} with data:`, {
+                token: this.token ? 'present' : 'missing',
+                hasContent: !!content,
+                sha: currentFile?.sha ? 'present' : 'missing'
+            });
+            
+            const response = await fetch(`${this.baseURL}/contents/${filePath}?t=${timestamp}`, {
                 method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${this.token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(updateData)
+                headers: this.getAuthHeaders(),
+                body: JSON.stringify(updateData),
+                credentials: 'same-origin'
             });
 
             if (!response.ok) {
-                const error = await response.text();
-                throw new Error(`Failed to save ${filePath}: ${error}`);
+                const errorText = await response.text();
+                console.error(`Error response from server:`, {
+                    status: response.status,
+                    statusText: response.statusText,
+                    body: errorText
+                });
+                throw new Error(`Failed to save ${filePath}: ${errorText}`);
             }
 
             const result = await response.json();
@@ -178,13 +229,38 @@ Timestamp: ${new Date().toISOString()}`;
         });
     }
 
+    /**
+     * Helper method to get request headers for authenticated API calls
+     */
+    getAuthHeaders() {
+        if (!this.token) {
+            throw new Error('Not authenticated');
+        }
+        
+        return {
+            'Authorization': `Bearer ${this.token}`,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        };
+    }
+
     async getFileFromRepo(filePath) {
         try {
-            const response = await fetch(`${this.baseURL}/contents/${filePath}`, {
-                headers: {
-                    'Authorization': `Bearer ${this.token}`,
-                    'Content-Type': 'application/json'
-                }
+            // Ensure we have a valid token
+            if (!this.token || this.token.trim() === '') {
+                throw new Error('Missing authentication token');
+            }
+            
+            // Adding timestamp to query string to attempt to bypass cache
+            const timestamp = new Date().getTime();
+            
+            // Create fresh request with proper headers
+            const headers = this.getAuthHeaders();
+            delete headers['Content-Type']; // Not needed for GET requests
+            
+            const response = await fetch(`${this.baseURL}/contents/${filePath}?t=${timestamp}`, {
+                method: 'GET',
+                headers
             });
 
             if (response.status === 404) {
@@ -192,7 +268,8 @@ Timestamp: ${new Date().toISOString()}`;
             }
 
             if (!response.ok) {
-                throw new Error(`Failed to get ${filePath}: ${response.statusText}`);
+                const errorText = await response.text();
+                throw new Error(`Failed to get ${filePath}: ${errorText}`);
             }
 
             return await response.json();
