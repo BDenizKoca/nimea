@@ -20,6 +20,11 @@
     
     <div id="map"></div>
 
+    <!-- Route sidebar reopen button -->
+    <button id="reopen-route-sidebar" class="reopen-route-btn hidden" title="Open Route Planner">
+        🗺️
+    </button>
+
     <div class="map-legend hidden" id="map-legend" role="region" aria-label="Map Legend">
         <h4>Legend</h4>
         <ul>
@@ -34,6 +39,7 @@
     <!-- Overlay segmented control will appear through existing container -->
 
     <div class="sidebar left-sidebar" id="route-sidebar">
+        <button id="close-route-sidebar" class="sidebar-close-btn">&times;</button>
         <h2>Route Planner</h2>
         <div id="route-stops"></div>
         <div id="route-summary"></div>

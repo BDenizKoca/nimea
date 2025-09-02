@@ -57,8 +57,13 @@
         bridge.state.route.push(marker);
         
         const routeSidebar = document.getElementById('route-sidebar');
+        const reopenRouteSidebarBtn = document.getElementById('reopen-route-sidebar');
         if (routeSidebar) {
             routeSidebar.classList.add('open');
+            // Hide reopen button when sidebar opens
+            if (reopenRouteSidebarBtn) {
+                reopenRouteSidebarBtn.classList.add('hidden');
+            }
         }
         
         recomputeRoute();
@@ -99,11 +104,8 @@
         updateRouteDisplay();
         updateRouteSummaryEmpty();
 
-        // Close sidebar
-        const routeSidebar = document.getElementById('route-sidebar');
-        if (routeSidebar) {
-            routeSidebar.classList.remove('open');
-        }
+        // Don't automatically close sidebar when clearing route
+        // Let users manually control sidebar visibility
     }
 
     function recomputeRoute() {

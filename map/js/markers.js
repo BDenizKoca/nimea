@@ -45,7 +45,10 @@
                         markerPoint.x < 100 || markerPoint.x > mapSize.x - 100 ||
                         markerPoint.y < 100 || markerPoint.y > mapSize.y - 100) {
                         
-                        bridge.map.flyTo([markerData.y, markerData.x], Math.max(2.5, bridge.map.getZoom()), {
+                        // Close info sidebar before navigating
+                        bridge.uiModule.closeInfoSidebar();
+                        
+                        bridge.map.flyTo([markerData.y, markerData.x], Math.max(2.2, bridge.map.getZoom()), {
                             duration: 1.2,
                             easeLinearity: 0.25
                         });
@@ -88,8 +91,11 @@
         
         // Focus on specific marker if requested
         if (focusMarkerInstance) {
+            // Close any existing info sidebar
+            bridge.uiModule.closeInfoSidebar();
+            
             // Use flyTo for smooth zoom animation instead of abrupt setView
-            bridge.map.flyTo([focusMarkerInstance.data.y, focusMarkerInstance.data.x], 3, {
+            bridge.map.flyTo([focusMarkerInstance.data.y, focusMarkerInstance.data.x], 2.2, {
                 duration: 1.5, // 1.5 second animation
                 easeLinearity: 0.25 // Smooth easing
             });

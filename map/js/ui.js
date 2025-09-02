@@ -15,6 +15,7 @@
         bridge.uiModule = {
             applyOverlayMode,
             openInfoSidebar,
+            closeInfoSidebar,
             showNotification,
             updatePublishUI,
         };
@@ -31,8 +32,49 @@
     function setupSidebars() {
         const infoSidebar = document.getElementById('info-sidebar');
         const closeInfoSidebarBtn = document.getElementById('close-info-sidebar');
+        const routeSidebar = document.getElementById('route-sidebar');
+        const closeRouteSidebarBtn = document.getElementById('close-route-sidebar');
+        const reopenRouteSidebarBtn = document.getElementById('reopen-route-sidebar');
+        
+        // Info sidebar close button
         if (infoSidebar && closeInfoSidebarBtn) {
-            closeInfoSidebarBtn.addEventListener('click', () => infoSidebar.classList.remove('open'));
+            closeInfoSidebarBtn.addEventListener('click', () => closeInfoSidebar());
+        }
+        
+        // Route sidebar close button
+        if (routeSidebar && closeRouteSidebarBtn) {
+            closeRouteSidebarBtn.addEventListener('click', () => {
+                routeSidebar.classList.remove('open');
+                // Show reopen button
+                if (reopenRouteSidebarBtn) {
+                    reopenRouteSidebarBtn.classList.remove('hidden');
+                }
+            });
+        }
+        
+        // Route sidebar reopen button
+        if (routeSidebar && reopenRouteSidebarBtn) {
+            reopenRouteSidebarBtn.addEventListener('click', () => {
+                routeSidebar.classList.add('open');
+                // Hide reopen button
+                reopenRouteSidebarBtn.classList.add('hidden');
+            });
+        }
+        
+        // Add click-outside-to-close functionality for info sidebar on mobile
+        if (infoSidebar) {
+            document.addEventListener('click', (e) => {
+                // Only on mobile/narrow screens
+                if (window.innerWidth > 700) return;
+                
+                // Check if sidebar is open
+                if (!infoSidebar.classList.contains('open')) return;
+                
+                // Check if click was outside the sidebar
+                if (!infoSidebar.contains(e.target)) {
+                    closeInfoSidebar();
+                }
+            });
         }
     }
 
@@ -136,7 +178,7 @@
                     if (marker && bridge.dmModule && bridge.dmModule.editMarker) {
                         bridge.dmModule.editMarker(marker);
                         // Close the info sidebar after clicking edit
-                        infoSidebar.classList.remove('open');
+                        closeInfoSidebar();
                     }
                 });
             }
@@ -149,7 +191,7 @@
                         if (bridge.dmModule && bridge.dmModule.deleteMarker) {
                             bridge.dmModule.deleteMarker(markerId);
                             // Close the info sidebar after deletion
-                            infoSidebar.classList.remove('open');
+                            closeInfoSidebar();
                         }
                     }
                 });
@@ -184,6 +226,12 @@
         }
     }
 
+    function closeInfoSidebar() {
+        const infoSidebar = document.getElementById('info-sidebar');
+        if (infoSidebar) {
+            infoSidebar.classList.remove('open');
+        }
+    }
 
     window.__nimea_ui_init = initUiModule;
 

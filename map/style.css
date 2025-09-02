@@ -228,6 +228,61 @@ body, html {
     cursor: pointer;
 }
 
+/* Sidebar close buttons */
+.sidebar-close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+    transition: color 0.2s ease;
+}
+
+.sidebar-close-btn:hover {
+    color: #333;
+}
+
+/* Route sidebar reopen button */
+.reopen-route-btn {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    width: 48px;
+    height: 48px;
+    background: #3a2410;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+.reopen-route-btn:hover {
+    background: #5d3a1a;
+    transform: scale(1.1);
+}
+
+.reopen-route-btn.hidden {
+    display: none;
+}
+
+/* Mobile adjustments for reopen button */
+@media (max-width: 700px) {
+    .reopen-route-btn {
+        top: 75px; /* Below the header on mobile */
+        left: 15px;
+        width: 44px;
+        height: 44px;
+        font-size: 18px;
+    }
+}
+
 /* Wiki link styling */
 .wiki-link {
     display: inline-block;
