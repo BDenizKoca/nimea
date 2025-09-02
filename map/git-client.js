@@ -18,11 +18,13 @@ class GitGatewayClient {
     /**
      * Check the current auth state on load
      */
-    checkAuthState() {
+    async checkAuthState() {
         if (window.netlifyIdentity) {
             const user = netlifyIdentity.currentUser();
             if (user) {
-                this.handleUserLogin(user);
+                await this.handleUserLogin(user);
+                // Check Git Gateway config
+                await this.checkGitGatewayConfig();
             }
         }
     }
@@ -66,13 +68,13 @@ class GitGatewayClient {
     setupNetlifyIdentity() {
         return new Promise((resolve) => {
             try {
-                netlifyIdentity.on('init', (user) => {
-                    if (user) this.handleUserLogin(user);
+                netlifyIdentity.on('init', async (user) => {
+                    if (user) await this.handleUserLogin(user);
                     this.initialized = true;
                     resolve();
                 });
-                netlifyIdentity.on('login', (user) => {
-                    this.handleUserLogin(user);
+                netlifyIdentity.on('login', async (user) => {
+                    await this.handleUserLogin(user);
                     netlifyIdentity.close();
                 });
                 netlifyIdentity.on('logout', () => {
@@ -86,17 +88,34 @@ class GitGatewayClient {
         });
     }
 
-    handleUserLogin(user) {
+    async handleUserLogin(user) {
         this.user = user;
-        this.token = user.token?.access_token;
+        
+        // Ensure we have the latest token
+        try {
+            if (typeof user.jwt === 'function') {
+                // Get a fresh token using the jwt() method
+                const token = await user.jwt();
+                this.token = token;
+            } else {
+                // Fall back to the access_token if jwt() method is not available
+                this.token = user.token?.access_token;
+            }
+        } catch (e) {
+            console.warn('Could not refresh token, using existing one:', e);
+            this.token = user.token?.access_token;
+        }
+        
         this.isAuthenticated = true;
         
         // Log user info to help with debugging
         console.log('DM authenticated:', user.user_metadata?.full_name || user.email);
         console.log('Auth token details:', {
             tokenPresent: !!this.token,
+            tokenLength: this.token?.length || 0,
             userId: user.id,
             userEmail: user.email,
+            userName: user.user_metadata?.full_name || 'not set',
             roles: user.app_metadata?.roles || []
         });
     }
@@ -131,8 +150,11 @@ class GitGatewayClient {
                     // Try refreshing token
                     try {
                         await currentUser.jwt();
-                        this.handleUserLogin(currentUser);
+                        await this.handleUserLogin(currentUser);
                         console.log('Token refreshed successfully');
+                        
+                        // Check Git Gateway config after refreshing token
+                        await this.checkGitGatewayConfig();
                         return;
                     } catch (refreshError) {
                         console.warn('Failed to refresh token, will try login flow', refreshError);
@@ -185,10 +207,35 @@ Timestamp: ${new Date().toISOString()}`;
 
     async saveFileToRepo(filePath, content, commitMessage) {
         try {
+            // Check if user is authenticated
+            if (!this.isAuthenticated) {
+                throw new Error('User not authenticated. Please login first.');
+            }
+            
             // Ensure we have a valid token
             if (!this.token || this.token.trim() === '') {
-                throw new Error('Missing authentication token');
+                // Try to refresh the token if possible
+                try {
+                    if (this.user && typeof this.user.jwt === 'function') {
+                        console.log('Token missing or empty, attempting to refresh...');
+                        this.token = await this.user.jwt();
+                        console.log('Token refreshed successfully');
+                    } else {
+                        throw new Error('Cannot refresh authentication token');
+                    }
+                } catch (tokenError) {
+                    console.error('Failed to refresh token:', tokenError);
+                    throw new Error('Missing or invalid authentication token');
+                }
             }
+            
+            // Log authentication state before proceeding
+            console.log('Auth state before API call:', {
+                isAuthenticated: this.isAuthenticated,
+                hasUser: !!this.user,
+                hasToken: !!this.token,
+                tokenLength: this.token?.length || 0
+            });
             
             // First, get the current file to get its SHA (if it exists)
             const currentFile = await this.getFileFromRepo(filePath);
@@ -285,6 +332,7 @@ Timestamp: ${new Date().toISOString()}`;
         // Adding specific headers to solve "Operator microservice headers missing" error
         const userId = this.user?.id || '';
         const userEmail = this.user?.email || '';
+        const userName = this.user?.user_metadata?.full_name || '';
         
         return {
             'Authorization': `Bearer ${this.token}`,
@@ -292,7 +340,11 @@ Timestamp: ${new Date().toISOString()}`;
             'Content-Type': 'application/json',
             // Add Netlify-specific headers that might be expected by the Git Gateway
             'X-Netlify-User': userId,
-            'X-Netlify-User-Email': userEmail
+            'X-Netlify-User-Email': userEmail,
+            'X-Netlify-User-Name': userName,
+            'X-Git-Gateway': 'true',
+            'X-Operator-Headers': 'true',
+            'X-Netlify-Client': 'Nimea Map Editor'
         };
     }
 
@@ -326,6 +378,12 @@ Timestamp: ${new Date().toISOString()}`;
 
             if (!response.ok) {
                 const errorText = await response.text();
+                console.error(`Error fetching ${filePath}:`, {
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: Object.fromEntries(response.headers.entries()),
+                    responseText: errorText
+                });
                 throw new Error(`Failed to get ${filePath}: ${errorText}`);
             }
 
