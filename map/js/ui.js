@@ -26,7 +26,6 @@
         setupSidebars();
         if (bridge.state.isDmMode) {
             setupOverlayControls();
-            setupLegend();
         }
         setupMobileUI();
 
@@ -49,17 +48,6 @@
                 if (!btn) return;
                 const mode = btn.getAttribute('data-mode');
                 applyOverlayMode(mode);
-            });
-        }
-    }
-    
-    function setupLegend() {
-        const legendToggleBtn = document.getElementById('legend-toggle');
-        const legendPanel = document.getElementById('map-legend');
-        if (legendToggleBtn && legendPanel) {
-            legendToggleBtn.addEventListener('click', () => {
-                const hidden = legendPanel.classList.toggle('hidden');
-                legendToggleBtn.setAttribute('aria-expanded', hidden ? 'false' : 'true');
             });
         }
     }

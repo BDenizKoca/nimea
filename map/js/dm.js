@@ -103,6 +103,40 @@
                 await openTerrainTypeModal(); // This will either show a modal or auto-apply the current terrain mode
             }
         });
+
+        // Listen for shapes being removed by Geoman
+        bridge.map.on('pm:remove', (e) => {
+            if (e.layer && e.layer.feature && e.layer.feature.properties) {
+                const removedId = e.layer.feature.properties._internal_id;
+                if (!removedId) return; // Not a terrain feature we manage
+
+                const features = bridge.state.terrain.features;
+                const index = features.findIndex(f => f.properties._internal_id === removedId);
+
+                if (index > -1) {
+                    features.splice(index, 1);
+                    bridge.markDirty('terrain');
+                    bridge.showNotification('Terrain feature removed.', 'success');
+                }
+            }
+        });
+
+        // Listen for shapes being edited by Geoman
+        bridge.map.on('pm:edit', (e) => {
+            if (e.layer && e.layer.feature && e.layer.feature.properties) {
+                const editedId = e.layer.feature.properties._internal_id;
+                if (!editedId) return; // Not a terrain feature we manage
+
+                const featureToUpdate = bridge.state.terrain.features.find(f => f.properties._internal_id === editedId);
+
+                if (featureToUpdate) {
+                    // Update the geometry of the feature in our state
+                    featureToUpdate.geometry = e.layer.toGeoJSON().geometry;
+                    bridge.markDirty('terrain');
+                    bridge.showNotification('Terrain feature updated.', 'info');
+                }
+            }
+        });
     }
 
     /**
