@@ -7,18 +7,8 @@ site_url: https://nimea-wiki.netlify.app
 media_folder: "images"
 public_folder: "/images"
 
-# Use Netlify's default file upload (no API key needed)
-# media_library:
-#   name: uploadcare
-#   config:
-#     publicKey: "YOUR_UPLOADCARE_PUBLIC_KEY" # Replace with your public key
-
-# Enable rich text editor features for better image insertion
-editor:
-  preview: true
-
 # Simple publish mode - changes go live immediately
-# publish_mode: editorial_workflow
+publish_mode: simple
 
 collections:
   - name: "player-characters"
@@ -27,17 +17,14 @@ collections:
     create: true
     identifier_field: "slug"
     slug: "{{slug}}"
-    editor:
-      preview: true
     fields:
       - { label: "Layout", name: "layout", widget: "hidden", default: "base.njk" }
       - { label: "Name", name: "name", widget: "string" }
-      - { label: "Slug", name: "slug", widget: "string", hint: "URL-friendly version of the name (e.g., 'varkas-dragonslayer')" }
-      - { label: "Summary", name: "summary", widget: "text", hint: "A brief description (1-2 sentences)" }
-      - { label: "Cover Image", name: "cover_image", widget: "image", required: false, hint: "Optional widescreen cover image for this character" }
-      - { label: "Portrait Image", name: "portrait_image", widget: "image", required: false, hint: "Optional vertical portrait image for this character" }
+      - { label: "Slug", name: "slug", widget: "string", hint: "URL-friendly version of the name" }
+      - { label: "Summary", name: "summary", widget: "text", hint: "A brief description" }
+      - { label: "Cover Image", name: "cover_image", widget: "image", required: false }
       - { label: "Public", name: "public", widget: "boolean", default: true }
-      - { label: "Body", name: "body", widget: "markdown", hint: "The main content of the page" }
+      - { label: "Body", name: "body", widget: "markdown" }
 
   - name: "characters"
     label: "Characters"
@@ -45,17 +32,14 @@ collections:
     create: true
     identifier_field: "slug"
     slug: "{{slug}}"
-    editor:
-      preview: true
     fields:
       - { label: "Layout", name: "layout", widget: "hidden", default: "base.njk" }
       - { label: "Name", name: "name", widget: "string" }
-      - { label: "Slug", name: "slug", widget: "string", hint: "URL-friendly version of the name (e.g., 'varkas-dragonslayer')" }
-      - { label: "Summary", name: "summary", widget: "text", hint: "A brief description (1-2 sentences)" }
-      - { label: "Cover Image", name: "cover_image", widget: "image", required: false, hint: "Optional widescreen cover image for this character" }
-      - { label: "Portrait Image", name: "portrait_image", widget: "image", required: false, hint: "Optional vertical portrait image for this character" }
+      - { label: "Slug", name: "slug", widget: "string", hint: "URL-friendly version of the name" }
+      - { label: "Summary", name: "summary", widget: "text", hint: "A brief description" }
+      - { label: "Cover Image", name: "cover_image", widget: "image", required: false }
       - { label: "Public", name: "public", widget: "boolean", default: true }
-      - { label: "Body", name: "body", widget: "markdown", hint: "The main content of the page" }
+      - { label: "Body", name: "body", widget: "markdown" }
 
   - name: "nations-factions"
     label: "Nations & Factions"
@@ -63,16 +47,14 @@ collections:
     create: true
     identifier_field: "slug"
     slug: "{{slug}}"
-    editor:
-      preview: true
     fields:
       - { label: "Layout", name: "layout", widget: "hidden", default: "base.njk" }
       - { label: "Name", name: "name", widget: "string" }
-      - { label: "Slug", name: "slug", widget: "string", hint: "URL-friendly version of the name (e.g., 'empire-of-aurelius')" }
-      - { label: "Summary", name: "summary", widget: "text", hint: "A brief description (1-2 sentences)" }
-      - { label: "Cover Image", name: "cover_image", widget: "image", required: false, hint: "Optional cover image for this nation/faction" }
+      - { label: "Slug", name: "slug", widget: "string", hint: "URL-friendly version of the name" }
+      - { label: "Summary", name: "summary", widget: "text", hint: "A brief description" }
+      - { label: "Cover Image", name: "cover_image", widget: "image", required: false }
       - { label: "Public", name: "public", widget: "boolean", default: true }
-      - { label: "Body", name: "body", widget: "markdown", hint: "The main content of the page" }
+      - { label: "Body", name: "body", widget: "markdown" }
 
   - name: "locations-regions"
     label: "Locations & Regions"
@@ -80,21 +62,15 @@ collections:
     create: true
     identifier_field: "slug"
     slug: "{{slug}}"
-    editor:
-      preview: true
     fields:
       - { label: "Layout", name: "layout", widget: "hidden", default: "base.njk" }
       - { label: "Name", name: "name", widget: "string" }
-      - { label: "Slug", name: "slug", widget: "string", hint: "URL-friendly version of the name (e.g., 'aurelium')" }
-      - { label: "Summary", name: "summary", widget: "text", hint: "A brief description (1-2 sentences)" }
-      - { label: "Cover Image", name: "cover_image", widget: "image", required: false, hint: "Optional cover image for this location" }
-      - { label: "Map ID", name: "map_id", widget: "string", required: false, hint: "Identifier to link this location on the map - enables 'Show on Map' button" }
-      - { label: "Map Coordinates", name: "map_coords", widget: "object", required: false, fields: [
-          { label: "X", name: "x", widget: "number", value_type: "int" },
-          { label: "Y", name: "y", widget: "number", value_type: "int" }
-        ], hint: "Map coordinates if you want to auto-create a map marker" }
+      - { label: "Slug", name: "slug", widget: "string", hint: "URL-friendly version of the name" }
+      - { label: "Summary", name: "summary", widget: "text", hint: "A brief description" }
+      - { label: "Cover Image", name: "cover_image", widget: "image", required: false }
+      - { label: "Map ID", name: "map_id", widget: "string", required: false, hint: "Link to map marker" }
       - { label: "Public", name: "public", widget: "boolean", default: true }
-      - { label: "Body", name: "body", widget: "markdown", hint: "The main content of the page" }
+      - { label: "Body", name: "body", widget: "markdown" }
 
   - name: "gods-religions"
     label: "Gods & Religions"
@@ -102,17 +78,14 @@ collections:
     create: true
     identifier_field: "slug"
     slug: "{{slug}}"
-    editor:
-      preview: true
     fields:
       - { label: "Layout", name: "layout", widget: "hidden", default: "base.njk" }
       - { label: "Name", name: "name", widget: "string" }
-      - { label: "Slug", name: "slug", widget: "string", hint: "URL-friendly version of the name (e.g., 'solara-goddess-of-light')" }
-      - { label: "Summary", name: "summary", widget: "text", hint: "A brief description (1-2 sentences)" }
-      - { label: "Cover Image", name: "cover_image", widget: "image", required: false, hint: "Optional widescreen cover image for this deity/religion" }
-      - { label: "Portrait Image", name: "portrait_image", widget: "image", required: false, hint: "Optional vertical portrait image for this deity" }
+      - { label: "Slug", name: "slug", widget: "string", hint: "URL-friendly version of the name" }
+      - { label: "Summary", name: "summary", widget: "text", hint: "A brief description" }
+      - { label: "Cover Image", name: "cover_image", widget: "image", required: false }
       - { label: "Public", name: "public", widget: "boolean", default: true }
-      - { label: "Body", name: "body", widget: "markdown", hint: "The main content of the page" }
+      - { label: "Body", name: "body", widget: "markdown" }
 
   - name: "magic-powers"
     label: "Magic & Powers"
@@ -120,44 +93,12 @@ collections:
     create: true
     identifier_field: "slug"
     slug: "{{slug}}"
-    editor:
-      preview: true
     fields:
       - { label: "Layout", name: "layout", widget: "hidden", default: "base.njk" }
       - { label: "Name", name: "name", widget: "string" }
-      - { label: "Slug", name: "slug", widget: "string", hint: "URL-friendly version of the name (e.g., 'elemental-magic')" }
-      - { label: "Summary", name: "summary", widget: "text", hint: "A brief description (1-2 sentences)" }
-      - { label: "Cover Image", name: "cover_image", widget: "image", required: false, hint: "Optional cover image for this magic/power" }
+      - { label: "Slug", name: "slug", widget: "string", hint: "URL-friendly version of the name" }
+      - { label: "Summary", name: "summary", widget: "text", hint: "A brief description" }
+      - { label: "Cover Image", name: "cover_image", widget: "image", required: false }
       - { label: "Public", name: "public", widget: "boolean", default: true }
-      - { label: "Body", name: "body", widget: "markdown", hint: "The main content of the page" }
-
-  - name: "terrain"
-    label: "Terrain"
-    folder: "data"
-    create: false
-    files:
-      - label: "Terrain"
-        name: "terrain"
-        file: "data/terrain.geojson"
-        fields:
-          - { label: "Type", name: "type", widget: "hidden", default: "FeatureCollection" }
-          - name: "features"
-            label: "Terrain Features"
-            widget: "list"
-            fields:
-              - { label: "Type", name: "type", widget: "hidden", default: "Feature" }
-              - name: "properties"
-                label: "Properties"
-                widget: "object"
-                fields:
-                  - label: "Kind"
-                    name: "kind"
-                    widget: "select"
-                    options: ["road", "unpassable", "difficult"]
-              - name: "geometry"
-                label: "Geometry"
-                widget: "object"
-                fields:
-                  - { label: "Type", name: "type", widget: "string" }
-                  - { label: "Coordinates", name: "coordinates", widget: "list" }
+      - { label: "Body", name: "body", widget: "markdown" }
 

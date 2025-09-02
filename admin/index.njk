@@ -8,18 +8,12 @@ permalink: /admin/index.html
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Content Manager | Nimea Wiki</title>
   <link href="{{ '/admin/config.yml' | url }}" type="text/yaml" rel="cms-config-url">
-  <!-- Netlify Identity Widget -->
   <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 </head>
 <body>
-  <!-- Include the script that builds the page and powers Decap CMS -->
   <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
   
-  <!-- Include our custom CMS enhancements -->
-  <script src="{{ '/admin/cms-script.js' | url }}"></script>
-  
   <script>
-    // Handle Netlify Identity authentication
     if (window.netlifyIdentity) {
       window.netlifyIdentity.on("init", user => {
         if (!user) {

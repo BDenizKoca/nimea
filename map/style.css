@@ -23,7 +23,7 @@ body, html {
 
 /* Design Tokens */
 :root {
-    --color-bg-parchment: #fdf6e3;
+    --color-bg-parchment: #f4f0e6;
     --color-bg-panel: #ffffff;
     --color-border: #d3c0a5;
     --color-accent: #8b4513;
@@ -44,7 +44,7 @@ body, html {
     position: fixed;
     left: 10px;
     bottom: 70px;
-    background: rgba(253,246,227,0.92);
+    background: rgba(244,240,230,0.92);
     border: 2px solid var(--color-border);
     border-radius: var(--radius-md);
     padding: 8px 10px;
@@ -62,7 +62,7 @@ body, html {
     bottom: 18px;
     transform: translateX(-50%);
     z-index: 1200; /* Below header (2000) & sidebars (1000+) but above map */
-    background: rgba(253,246,227,0.9);
+    background: rgba(244,240,230,0.9);
     border: 2px solid var(--color-border);
     padding: 6px 10px;
     border-radius: 40px;

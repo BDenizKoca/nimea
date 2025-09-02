@@ -2,7 +2,7 @@
 
 body {
     font-family: 'IM Fell English SC', serif;
-    background-color: #fdf6e3; /* Fallback color */
+    background-color: #f4f0e6; /* Darker parchment color */
     color: #3a2410;
     margin: 0;
     padding: 2rem;
@@ -30,7 +30,7 @@ a:hover {
 .container {
     max-width: 800px;
     margin: 0 auto;
-    background: rgba(253, 246, 227, 0.9); /* Made background more opaque */
+    background: rgba(244, 240, 230, 0.9); /* Darker parchment with opacity */
     padding: 2rem;
     border: 1px solid #d3c0a5;
     box-shadow: 0 0 15px rgba(0,0,0,0.2);

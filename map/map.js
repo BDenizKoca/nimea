@@ -195,7 +195,20 @@ document.addEventListener('DOMContentLoaded', () => {
     function generateWikiLink(markerData) {
         // 1. Explicit slug override
         if (markerData.wikiSlug) {
-            return `/wiki/${markerData.wikiSlug.replace(/^\/wiki\//,'').replace(/\/+/g,'/')}/`;
+            // Check if it's already a full path
+            if (markerData.wikiSlug.includes('/')) {
+                return `/wiki/${markerData.wikiSlug.replace(/^\/wiki\//,'').replace(/\/+/g,'/')}/`;
+            }
+            // Otherwise, infer the correct category based on type
+            if (markerData.type && ['city','town','village','fortress','ruin','landmark','dungeon'].includes(markerData.type)) {
+                return `/wiki/locations-regions/${markerData.wikiSlug}/`;
+            }
+            // For character types, use characters folder
+            if (markerData.type === 'character') {
+                return `/wiki/characters/${markerData.wikiSlug}/`;
+            }
+            // Default fallback
+            return `/wiki/${markerData.wikiSlug}/`;
         }
         // 2. Infer by type (extendable)
         if (markerData.type && ['city','town','village','fortress','ruin','landmark','dungeon'].includes(markerData.type)) {
