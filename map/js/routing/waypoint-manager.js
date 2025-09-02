@@ -42,82 +42,172 @@
         
         console.log(`Created waypoint ${waypoint.name} at (${waypoint.x}, ${waypoint.y})`);
         
-        // Create visual marker on map
-        const icon = L.divIcon({
-            html: `<div class="waypoint-marker">${waypointCounter}</div>`,
-            className: 'waypoint-icon',
-            iconSize: [24, 24],
-            iconAnchor: [12, 12]
+        // Create visual marker on map - classic marker pin in orange color
+        const icon = L.icon({
+            iconUrl: 'data:image/svg+xml;base64,' + btoa(`
+                <svg width="25" height="41" viewBox="0 0 25 41" xmlns="http://www.w3.org/2000/svg">
+                    <path fill="#ff6b35" stroke="#ffffff" stroke-width="2" 
+                          d="M12.5 0C5.6 0 0 5.6 0 12.5c0 12.5 12.5 28.5 12.5 28.5s12.5-16 12.5-28.5C25 5.6 19.4 0 12.5 0z"/>
+                    <circle fill="#ffffff" cx="12.5" cy="12.5" r="6"/>
+                    <text x="12.5" y="17" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#ff6b35">${waypointCounter}</text>
+                </svg>
+            `),
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [0, -41],
+            className: 'waypoint-marker-icon'
         });
         
         const marker = L.marker([lat, lng], { 
             icon,
-            draggable: true  // Make waypoints draggable!
+            draggable: true,  // Make waypoints draggable!
+            waypointId: waypoint.id  // Store reference for reliable lookup
         }).addTo(bridge.map);
         
-        // Handle dragging - update waypoint position and recompute route
+        // Store bidirectional references for reliable state management
+        waypoint._leafletMarker = marker;
+        marker._waypointData = waypoint;
+        
+        // Handle dragging - update waypoint position and handle reordering
         marker.on('dragend', (e) => {
             const newLatLng = e.target.getLatLng();
             console.log(`Waypoint ${waypoint.name} dragged to: ${newLatLng.lat}, ${newLatLng.lng}`);
             
-            // Update waypoint coordinates
-            waypoint.lat = newLatLng.lat;
-            waypoint.lng = newLatLng.lng;
-            waypoint.x = newLatLng.lng;
-            waypoint.y = newLatLng.lat;
+            // Update waypoint coordinates in all locations
+            updateWaypointPosition(waypoint, newLatLng.lat, newLatLng.lng);
             
-            // Update in the markers array
-            const markerIndex = bridge.state.markers.findIndex(m => m.id === waypoint.id);
-            if (markerIndex > -1) {
-                bridge.state.markers[markerIndex] = waypoint;
-            }
-            
-            // Update in the route array if this waypoint is in the route
-            const routeIndex = bridge.state.route.findIndex(r => r.id === waypoint.id);
-            if (routeIndex > -1) {
-                bridge.state.route[routeIndex] = waypoint;
-                
-                // Invalidate graph and recompute route
-                if (bridge.routingModule && bridge.routingModule.invalidateGraph) {
-                    bridge.routingModule.invalidateGraph();
-                }
-                if (bridge.routingModule && bridge.routingModule.recomputeRoute) {
-                    bridge.routingModule.recomputeRoute();
-                }
-            }
+            // Check if waypoint needs reordering in route based on new position
+            handleWaypointReordering(waypoint);
             
             // Mark as just dragged to prevent accidental deletion
             marker._justDragged = true;
+            marker._dragEndTime = Date.now();
             setTimeout(() => {
                 marker._justDragged = false;
-            }, 100);
+            }, 300); // Longer delay to prevent accidental clicks
         });
         
-        // Click to delete waypoint (only trigger if not dragged recently)
+        // Click to delete waypoint with improved click detection
         marker.on('click', (e) => {
-            // If marker was just dragged, don't trigger delete
-            if (marker._justDragged) {
-                marker._justDragged = false;
+            // Prevent deletion if recently dragged
+            if (marker._justDragged || (marker._dragEndTime && Date.now() - marker._dragEndTime < 300)) {
+                console.log("Click ignored - waypoint was recently dragged");
                 return;
             }
             
+            e.originalEvent.stopPropagation(); // Prevent map click events
+            
             if (confirm(`Delete ${waypoint.name}?`)) {
-                deleteWaypoint(waypoint.id, marker);
+                deleteWaypoint(waypoint.id);
             }
         });
         
-        // Track dragging to prevent accidental deletion
+        // Track dragging states more reliably
         marker.on('dragstart', () => {
+            marker._isDragging = true;
             marker._justDragged = false;
+            console.log(`Started dragging waypoint ${waypoint.name}`);
         });
 
         // Add touch support for waypoint deletion on mobile
         setupWaypointTouchHandlers(marker, waypoint);
 
-        // Store reference to marker on waypoint
-        waypoint.marker = marker;
-
         return waypoint;
+    }
+
+    /**
+     * Update waypoint position in all relevant data structures
+     */
+    function updateWaypointPosition(waypoint, newLat, newLng) {
+        // Update waypoint object
+        waypoint.lat = newLat;
+        waypoint.lng = newLng;
+        waypoint.x = newLng;
+        waypoint.y = newLat;
+        
+        // Update in markers array
+        const markerIndex = bridge.state.markers.findIndex(m => m.id === waypoint.id);
+        if (markerIndex > -1) {
+            bridge.state.markers[markerIndex] = waypoint;
+        }
+        
+        // Update in route array if present
+        const routeIndex = bridge.state.route.findIndex(r => r.id === waypoint.id);
+        if (routeIndex > -1) {
+            bridge.state.route[routeIndex] = waypoint;
+        }
+        
+        console.log(`Updated waypoint ${waypoint.name} position to [${newLat}, ${newLng}] in all data structures`);
+    }
+
+    /**
+     * Handle waypoint reordering in route based on geographical position
+     */
+    function handleWaypointReordering(draggedWaypoint) {
+        const routeIndex = bridge.state.route.findIndex(r => r.id === draggedWaypoint.id);
+        if (routeIndex === -1) {
+            console.log("Waypoint not in route - no reordering needed");
+            return; // Waypoint not in route
+        }
+        
+        // Find the optimal position for this waypoint in the route based on geographic proximity
+        let bestPosition = routeIndex;
+        let minTotalDistance = calculateRouteDistance(bridge.state.route);
+        
+        // Try inserting the waypoint at each position and find the best one
+        for (let i = 0; i < bridge.state.route.length; i++) {
+            if (i === routeIndex) continue; // Skip current position
+            
+            // Create a test route with waypoint moved to position i
+            const testRoute = [...bridge.state.route];
+            const waypoint = testRoute.splice(routeIndex, 1)[0];
+            testRoute.splice(i, 0, waypoint);
+            
+            const testDistance = calculateRouteDistance(testRoute);
+            if (testDistance < minTotalDistance) {
+                minTotalDistance = testDistance;
+                bestPosition = i;
+            }
+        }
+        
+        // If a better position was found, reorder the route
+        if (bestPosition !== routeIndex) {
+            console.log(`Reordering waypoint ${draggedWaypoint.name} from position ${routeIndex} to ${bestPosition}`);
+            
+            if (bridge.routingModule && bridge.routingModule.reorderRoute) {
+                bridge.routingModule.reorderRoute(routeIndex, bestPosition);
+            } else {
+                // Fallback manual reordering
+                const waypoint = bridge.state.route.splice(routeIndex, 1)[0];
+                bridge.state.route.splice(bestPosition, 0, waypoint);
+                
+                // Trigger route recomputation
+                if (bridge.routingModule && bridge.routingModule.recomputeRoute) {
+                    bridge.routingModule.recomputeRoute();
+                }
+            }
+        } else {
+            // Even if position doesn't change, recompute route for new coordinates
+            console.log("Waypoint position optimal - recomputing route for new coordinates");
+            if (bridge.routingModule && bridge.routingModule.recomputeRoute) {
+                bridge.routingModule.recomputeRoute();
+            }
+        }
+    }
+
+    /**
+     * Calculate total distance of a route (simple Euclidean distance)
+     */
+    function calculateRouteDistance(route) {
+        if (!route || route.length < 2) return 0;
+        
+        let totalDistance = 0;
+        for (let i = 1; i < route.length; i++) {
+            const dx = route[i].x - route[i-1].x;
+            const dy = route[i].y - route[i-1].y;
+            totalDistance += Math.sqrt(dx * dx + dy * dy);
+        }
+        return totalDistance;
     }
 
     /**
@@ -155,33 +245,53 @@
     }
 
     /**
-     * Delete a waypoint
+     * Delete a waypoint - improved with better state cleanup
      */
-    function deleteWaypoint(waypointId, marker) {
-        // Remove from markers array
+    function deleteWaypoint(waypointId) {
+        console.log(`Deleting waypoint: ${waypointId}`);
+        
+        // Find waypoint in markers array
         const markerIndex = bridge.state.markers.findIndex(m => m.id === waypointId);
+        let waypoint = null;
         if (markerIndex > -1) {
+            waypoint = bridge.state.markers[markerIndex];
             bridge.state.markers.splice(markerIndex, 1);
+            console.log(`Removed waypoint from markers array at index ${markerIndex}`);
         }
 
-        // Remove from route if it's there
+        // Remove from route if present
         const routeIndex = bridge.state.route.findIndex(r => r.id === waypointId);
         if (routeIndex > -1) {
             bridge.state.route.splice(routeIndex, 1);
-            if (bridge.routingModule && bridge.routingModule.recomputeRoute) {
-                bridge.routingModule.recomputeRoute();
+            console.log(`Removed waypoint from route at index ${routeIndex}`);
+        }
+
+        // Remove from map using multiple methods to ensure cleanup
+        if (waypoint && waypoint._leafletMarker) {
+            bridge.map.removeLayer(waypoint._leafletMarker);
+            console.log("Removed waypoint marker using stored reference");
+        }
+        
+        // Also search all map layers to ensure cleanup
+        bridge.map.eachLayer(layer => {
+            if (layer instanceof L.Marker && 
+                (layer.options.waypointId === waypointId || 
+                 (layer._waypointData && layer._waypointData.id === waypointId))) {
+                bridge.map.removeLayer(layer);
+                console.log("Removed waypoint marker found by layer search");
             }
-        }
+        });
 
-        // Remove from map
-        if (marker) {
-            bridge.map.removeLayer(marker);
-        }
-
-        // Invalidate routing graph to rebuild without this waypoint
+        // Invalidate routing graph and recompute
         if (bridge.routingModule && bridge.routingModule.invalidateGraph) {
             bridge.routingModule.invalidateGraph();
         }
+        
+        if (bridge.routingModule && bridge.routingModule.recomputeRoute) {
+            bridge.routingModule.recomputeRoute();
+        }
+        
+        console.log(`Successfully deleted waypoint ${waypointId}`);
     }
 
     /**

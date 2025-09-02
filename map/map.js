@@ -86,13 +86,14 @@ document.addEventListener('DOMContentLoaded', () => {
             maxZoom: isMobile ? 1 : 2 // Limit max zoom on initial fit
         });
 
-        // Add right-click context menu for waypoint creation
+        // Add right-click context menu for waypoint creation - streamlined with no double confirmation
         map.on('contextmenu', (e) => {
             if (!window.__nimea.state.isDmMode && window.__nimea.routingModule) {
                 const { lat, lng } = e.latlng;
-                if (confirm('Create waypoint here?')) {
+                // Single confirmation - create waypoint and add to route automatically
+                if (confirm('Create waypoint and add to route?')) {
                     const waypoint = window.__nimea.routingModule.createWaypoint(lat, lng);
-                    if (waypoint && confirm(`Add ${waypoint.name} to route?`)) {
+                    if (waypoint) {
                         window.__nimea.routingModule.addToRoute(waypoint);
                     }
                 }
