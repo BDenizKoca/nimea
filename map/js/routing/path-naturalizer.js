@@ -37,11 +37,11 @@
      * Terrain-aware nudging: resample path segments and nudge points away from difficult terrain
      * @param {Array} points - Array of [x, y] coordinates (raw A* path)
      * @param {Function|Object} terrainGrid - Function or lookup table for terrain cost
-     * @param {number} step - Resampling distance in map units (default: 15)
-     * @param {number} offset - How far to check left/right of path (default: 2)
-     * @param {number} nudgeStrength - How much to nudge (default: 0.4)
+     * @param {number} step - Resampling distance in map units (default: 25)
+     * @param {number} offset - How far to check left/right of path (default: 1)
+     * @param {number} nudgeStrength - How much to nudge (default: 0.2)
      */
-    function nudgePath(points, terrainGrid, step = 15, offset = 2, nudgeStrength = 0.4) {
+    function nudgePath(points, terrainGrid, step = 25, offset = 1, nudgeStrength = 0.2) {
         if (!points || points.length < 2) return points;
 
         let nudged = [];
@@ -105,7 +105,7 @@
         // Remove duplicate points that are too close together
         let filtered = [nudged[0]];
         for (let i = 1; i < nudged.length; i++) {
-            if (distance(filtered[filtered.length - 1], nudged[i]) > 5) {
+            if (distance(filtered[filtered.length - 1], nudged[i]) > 8) {
                 filtered.push(nudged[i]);
             }
         }
@@ -118,9 +118,9 @@
      * Creates natural curves by iteratively refining the path
      * @param {Array} points - Array of [x, y] coordinates
      * @param {number} iterations - Number of smoothing iterations (default: 1)
-     * @param {number} ratio - Corner cutting ratio (default: 0.2, gives gentler curves)
+     * @param {number} ratio - Corner cutting ratio (default: 0.1, very gentle curves)
      */
-    function smoothPath(points, iterations = 1, ratio = 0.2) {
+    function smoothPath(points, iterations = 1, ratio = 0.1) {
         if (!points || points.length < 3) return points;
         
         let currentPoints = [...points];
@@ -203,21 +203,21 @@
         if (!points || points.length < 2) return points;
         
         const settings = {
-            // Nudging parameters
-            nudgeStep: options.nudgeStep || 15,           // Resample every 15 map units (less aggressive)
-            nudgeOffset: options.nudgeOffset || 2,        // Check terrain 2 units left/right (closer)
-            nudgeStrength: options.nudgeStrength || 0.6,  // Reduced nudge strength
+            // Nudging parameters - very subtle for human walking
+            nudgeStep: options.nudgeStep || 25,           // Resample every 25 map units (less frequent)
+            nudgeOffset: options.nudgeOffset || 1,        // Check terrain 1 unit left/right (very close)
+            nudgeStrength: options.nudgeStrength || 0.3,  // Very gentle nudging
             
-            // Smoothing parameters
-            smoothIterations: options.smoothIterations || 1,  // 1 iteration of smoothing (less aggressive)
-            smoothRatio: options.smoothRatio || 0.2,          // Gentler corner cutting ratio
+            // Smoothing parameters - minimal for natural human paths
+            smoothIterations: options.smoothIterations || 1,  // Single pass only
+            smoothRatio: options.smoothRatio || 0.1,          // Very gentle corner cutting
             
             // Style preferences
-            useEnhancedSmoothing: options.useEnhancedSmoothing || false,  // Use Bézier curves
-            bezierTension: options.bezierTension || 0.2,      // Reduced Bézier tension
+            useEnhancedSmoothing: options.useEnhancedSmoothing || false,  // Keep it simple
+            bezierTension: options.bezierTension || 0.1,      // Very low tension
             
-            // Terrain sensitivity
-            terrainSensitivity: options.terrainSensitivity || 0.7  // Reduced terrain sensitivity
+            // Terrain sensitivity - reduced for subtle human walking
+            terrainSensitivity: options.terrainSensitivity || 0.5  // Much less reactive
         };
         
         // Step 1: Terrain-aware nudging

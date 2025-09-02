@@ -50,13 +50,65 @@
             iconAnchor: [12, 12]
         });
         
-        const marker = L.marker([lat, lng], { icon }).addTo(bridge.map);
+        const marker = L.marker([lat, lng], { 
+            icon,
+            draggable: true  // Make waypoints draggable!
+        }).addTo(bridge.map);
         
-        // Click to delete waypoint
-        marker.on('click', () => {
+        // Handle dragging - update waypoint position and recompute route
+        marker.on('dragend', (e) => {
+            const newLatLng = e.target.getLatLng();
+            console.log(`Waypoint ${waypoint.name} dragged to: ${newLatLng.lat}, ${newLatLng.lng}`);
+            
+            // Update waypoint coordinates
+            waypoint.lat = newLatLng.lat;
+            waypoint.lng = newLatLng.lng;
+            waypoint.x = newLatLng.lng;
+            waypoint.y = newLatLng.lat;
+            
+            // Update in the markers array
+            const markerIndex = bridge.state.markers.findIndex(m => m.id === waypoint.id);
+            if (markerIndex > -1) {
+                bridge.state.markers[markerIndex] = waypoint;
+            }
+            
+            // Update in the route array if this waypoint is in the route
+            const routeIndex = bridge.state.route.findIndex(r => r.id === waypoint.id);
+            if (routeIndex > -1) {
+                bridge.state.route[routeIndex] = waypoint;
+                
+                // Invalidate graph and recompute route
+                if (bridge.routingModule && bridge.routingModule.invalidateGraph) {
+                    bridge.routingModule.invalidateGraph();
+                }
+                if (bridge.routingModule && bridge.routingModule.recomputeRoute) {
+                    bridge.routingModule.recomputeRoute();
+                }
+            }
+            
+            // Mark as just dragged to prevent accidental deletion
+            marker._justDragged = true;
+            setTimeout(() => {
+                marker._justDragged = false;
+            }, 100);
+        });
+        
+        // Click to delete waypoint (only trigger if not dragged recently)
+        marker.on('click', (e) => {
+            // If marker was just dragged, don't trigger delete
+            if (marker._justDragged) {
+                marker._justDragged = false;
+                return;
+            }
+            
             if (confirm(`Delete ${waypoint.name}?`)) {
                 deleteWaypoint(waypoint.id, marker);
             }
+        });
+        
+        // Track dragging to prevent accidental deletion
+        marker.on('dragstart', () => {
+            marker._justDragged = false;
         });
 
         // Add touch support for waypoint deletion on mobile
@@ -132,11 +184,47 @@
         }
     }
 
+    /**
+     * Clear all waypoints from the map and data structures
+     */
+    function clearAllWaypoints() {
+        console.log("Clearing all waypoints...");
+        
+        // Find all waypoints in markers
+        const waypoints = bridge.state.markers.filter(m => m.isWaypoint);
+        
+        // Remove each waypoint
+        waypoints.forEach(waypoint => {
+            // Remove from map if it has a marker
+            if (waypoint._leafletMarker) {
+                bridge.map.removeLayer(waypoint._leafletMarker);
+            }
+            
+            // Also try to find and remove by searching all map layers
+            bridge.map.eachLayer(layer => {
+                if (layer instanceof L.Marker && layer.options.markerId === waypoint.id) {
+                    bridge.map.removeLayer(layer);
+                }
+            });
+        });
+        
+        // Remove all waypoints from markers array
+        bridge.state.markers = bridge.state.markers.filter(m => !m.isWaypoint);
+        
+        // Invalidate graph to remove waypoint connections
+        if (bridge.routingModule && bridge.routingModule.invalidateGraph) {
+            bridge.routingModule.invalidateGraph();
+        }
+        
+        console.log(`Cleared ${waypoints.length} waypoints`);
+    }
+
     // Expose public functions
     window.__nimea_waypoint_manager = {
         initWaypointManager,
         createWaypoint,
-        deleteWaypoint
+        deleteWaypoint,
+        clearAllWaypoints
     };
 
 })(window);

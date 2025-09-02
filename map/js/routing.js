@@ -114,6 +114,7 @@
             invalidateGraph: routeCore.invalidateGraph,
             createWaypoint: waypointManager.createWaypoint,
             deleteWaypoint: waypointManager.deleteWaypoint,
+            clearAllWaypoints: waypointManager.clearAllWaypoints,
             removeRouteIndex: routeCore.removeRouteIndex,
             clearRoute: routeCore.clearRoute,
             initRouting: () => { /* no-op, already initialized */ }

@@ -69,6 +69,25 @@
             segments.push(currentSegment);
         }
         
+        // CRITICAL FIX: Ensure path connects properly to both start and end markers
+        if (pathIds.length > 0 && segments.length > 0) {
+            // Fix starting point
+            const firstNodeId = pathIds[0];
+            const firstNode = routingGraph.nodes.get(firstNodeId);
+            if (firstNode && firstNode.type === 'marker') {
+                const firstSegment = segments[0];
+                firstSegment.points[0] = [firstNode.y, firstNode.x];
+                console.log(`Fixed path start to marker position: [${firstNode.y}, ${firstNode.x}]`);
+            } else if (bridge.state.route.length > 0) {
+                const firstRouteStop = bridge.state.route[0];
+                if (firstRouteStop) {
+                    const firstSegment = segments[0];
+                    firstSegment.points.unshift([firstRouteStop.y, firstRouteStop.x]);
+                    console.log(`Extended path from start marker: [${firstRouteStop.y}, ${firstRouteStop.x}]`);
+                }
+            }
+        }
+        
         // CRITICAL FIX: Ensure the path actually reaches destination markers
         // If the last node is not a marker but the path should end at a marker,
         // extend the path to the actual marker position
@@ -86,15 +105,23 @@
                     const lastSegment = segments[segments.length - 1];
                     const lastPoint = lastSegment.points[lastSegment.points.length - 1];
                     
-                    // Verify the last point matches the marker position exactly
-                    if (Math.abs(lastPoint[0] - lastNode.y) > 0.1 || Math.abs(lastPoint[1] - lastNode.x) > 0.1) {
-                        console.warn(`Path endpoint mismatch: expected [${lastNode.y}, ${lastNode.x}], got [${lastPoint[0]}, ${lastPoint[1]}]`);
-                        // Fix the endpoint
-                        lastSegment.points[lastSegment.points.length - 1] = [lastNode.y, lastNode.x];
-                    }
+                    // Always force the endpoint to match the marker position exactly
+                    lastSegment.points[lastSegment.points.length - 1] = [lastNode.y, lastNode.x];
+                    console.log(`Fixed path endpoint to marker position: [${lastNode.y}, ${lastNode.x}]`);
                 }
             } else {
                 console.warn(`Path does not end at a marker node! Last node type: ${lastNode?.type}`);
+                
+                // If the path doesn't end at a marker, try to find the destination marker and extend to it
+                if (bridge.state.route.length > 0) {
+                    const lastRouteStop = bridge.state.route[bridge.state.route.length - 1];
+                    if (lastRouteStop && segments.length > 0) {
+                        const lastSegment = segments[segments.length - 1];
+                        // Extend the path to the actual destination marker
+                        lastSegment.points.push([lastRouteStop.y, lastRouteStop.x]);
+                        console.log(`Extended path to destination marker: [${lastRouteStop.y}, ${lastRouteStop.x}]`);
+                    }
+                }
             }
         }
         

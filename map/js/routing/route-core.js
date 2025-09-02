@@ -107,7 +107,12 @@
             bridge.state.routeUnifiedPolyline = null;
         }
 
-        console.log("Route cleared, updating display");
+        // Clear all waypoints when clearing the route
+        if (bridge.routingModule && bridge.routingModule.clearAllWaypoints) {
+            bridge.routingModule.clearAllWaypoints();
+        }
+
+        console.log("Route and waypoints cleared, updating display");
         if (routeUI && routeUI.updateRouteDisplay) {
             routeUI.updateRouteDisplay(reorderRoute);
         }
