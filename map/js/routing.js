@@ -9,13 +9,17 @@
     let routingGraph = null;
     let isCalculatingRoute = false; // Mutex to prevent concurrent calculations
 
-    // Terrain costs for pathfinding
+    // Terrain costs for pathfinding (base layer)
     const TERRAIN_COSTS = {
-        road: 0.5,      // Fast travel on roads
-        normal: 1.0,    // Default terrain
-        difficult: 3.0, // Mountains, swamps, etc.
+        road: 0.25,      // Make roads even more attractive in hybrid mode
+        normal: 1.0,     // Default terrain
+        difficult: 5.0,  // Crank up to discourage cutting through unless big shortcut
         unpassable: Infinity // Blocked areas
     };
+
+    // Single simplified tuning constants (adjust here if desired)
+    const DIRECT_ADVANTAGE_THRESHOLD = 0.7; // Direct must be 30% cheaper to beat road-biased path
+    const LEAVE_ROAD_PENALTY = 2.0;         // Penalty (in km-equivalent) per transition off/on roads
 
     function initRouting(map) {
         bridge = window.__nimea;
@@ -468,72 +472,54 @@
     function calculateLegPath(start, end, onComplete) {
         const startNodeId = `marker_${start.id}`;
         const endNodeId = `marker_${end.id}`;
-        
-        // Run Dijkstra's algorithm to find shortest path
-        const path = findShortestPath(routingGraph, startNodeId, endNodeId);
-        
-        const straightLineKm = computeDirectKm(start, end);
-        
-        if (path && path.length > 0) {
-            // Convert node path to coordinate path
-            const pixelPath = path.map(nodeId => {
-                const node = routingGraph.nodes.get(nodeId);
-                return [node.y, node.x]; // Leaflet expects [lat, lng] format
-            });
-            
-            const polyline = L.polyline(pixelPath, { 
-                color: 'red', 
-                weight: 3, 
-                pane: 'routePane' 
-            }).addTo(bridge.map);
-            
-            bridge.state.routePolylines.push(polyline);
-            const distanceKm = computePixelPathKm(pixelPath);
-            bridge.state.routeLegs.push({ from: start, to: end, distanceKm });
-            
-            console.log(`Found path from ${start.name} to ${end.name}: ${distanceKm.toFixed(2)}km`);
+        const hasRoads = bridge.state.terrain.features.some(f => f.properties.kind === 'road');
+
+        // Graph path via Dijkstra (includes roads + marker connections)
+        const graphPath = findShortestPath(routingGraph, startNodeId, endNodeId);
+        let graphPixelPath = null;
+        if (graphPath && graphPath.length > 0) {
+            graphPixelPath = graphPath.map(id => { const n = routingGraph.nodes.get(id); return [n.y, n.x]; });
+        }
+
+        // Direct path (straight line) baseline
+        const straightPixelPath = [[start.y,start.x],[end.y,end.x]];
+        const directDistanceKm = computePixelPathKm(straightPixelPath); // scaled to km
+
+        let useDirect = false;
+        if (!hasRoads || !graphPixelPath) {
+            useDirect = true; // nothing better
         } else {
-            // Check if straight line crosses unpassable terrain
-            const terrainCost = getTerrainCostBetweenPoints(
-                {x: start.x, y: start.y}, 
-                {x: end.x, y: end.y}
-            );
-            
-            if (terrainCost === Infinity) {
-                // Can't use straight line either - mark as unreachable
-                console.warn(`No path possible from ${start.name} to ${end.name} - blocked by unpassable terrain`);
-                bridge.state.routeLegs.push({ 
-                    from: start, 
-                    to: end, 
-                    distanceKm: 0, 
-                    unreachable: true 
-                });
+            const graphDistanceKm = computePixelPathKm(graphPixelPath);
+            const transitions = countRoadTransitionsSimple(graphPath);
+            const graphEffectiveKm = graphDistanceKm + (transitions * (LEAVE_ROAD_PENALTY * bridge.config.kmPerPixel));
+            if (directDistanceKm < graphEffectiveKm * DIRECT_ADVANTAGE_THRESHOLD) {
+                useDirect = true;
             } else {
-                // Fallback to straight line with terrain cost applied
-                const straightPath = [[start.y, start.x], [end.y, end.x]];
-                const adjustedDistance = straightLineKm * terrainCost;
-                
-                const polyline = L.polyline(straightPath, { 
-                    color: terrainCost > 1 ? 'orange' : 'blue', 
-                    weight: 3, 
-                    dashArray: '5,5', 
-                    pane: 'routePane' 
-                }).addTo(bridge.map);
-                
+                // Render graph (road-biased) path
+                const polyline = L.polyline(graphPixelPath, { color:'#cc2222', weight:3, pane:'routePane' }).addTo(bridge.map);
                 bridge.state.routePolylines.push(polyline);
-                bridge.state.routeLegs.push({ 
-                    from: start, 
-                    to: end, 
-                    distanceKm: adjustedDistance, 
-                    fallback: true,
-                    terrainType: terrainCost > 1 ? 'difficult' : 'normal'
-                });
-                
-                console.log(`Using fallback path from ${start.name} to ${end.name}: ${adjustedDistance.toFixed(2)}km (terrain cost: ${terrainCost})`);
+                bridge.state.routeLegs.push({ from:start, to:end, distanceKm: graphDistanceKm, hybrid:true });
             }
         }
-        
+
+        if (useDirect) {
+            // Evaluate terrain cost: if blocked mark unreachable else adjust by difficult
+            const terrainCost = getTerrainCostBetweenPoints({x:start.x,y:start.y},{x:end.x,y:end.y});
+            if (terrainCost === Infinity) {
+                bridge.state.routeLegs.push({ from:start, to:end, distanceKm:0, unreachable:true });
+            } else {
+                const adjusted = directDistanceKm * (terrainCost === TERRAIN_COSTS.difficult ? TERRAIN_COSTS.difficult : 1);
+                const polyline = L.polyline(straightPixelPath, { color: terrainCost>1?'orange':'purple', weight:3, dashArray:'4,4', pane:'routePane' }).addTo(bridge.map);
+                bridge.state.routePolylines.push(polyline);
+                bridge.state.routeLegs.push({ from:start, to:end, distanceKm: adjusted, fallback:true });
+            }
+        }
         if (typeof onComplete === 'function') onComplete();
+    }
+
+    function countRoadTransitionsSimple(pathIds) {
+        if (!pathIds) return 0;
+        let t=0; for (let i=1;i<pathIds.length;i++) { const a=pathIds[i-1].startsWith('road_'); const b=pathIds[i].startsWith('road_'); if (a!==b) t++; } return t;
     }
 
     function computePixelPathKm(pixelPath) {
