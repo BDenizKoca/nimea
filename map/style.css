@@ -791,25 +791,14 @@ button:focus, .leaflet-control-button:focus {
     margin: 2px 0;
     border-radius: 4px;
     transition: all 0.2s ease;
-}
-
-.route-stop-row[draggable="true"] {
-    cursor: grab;
-}
-
-.route-stop-row[draggable="true"]:active {
-    cursor: grabbing;
+    position: relative;
+    border: 1px solid transparent;
 }
 
 .route-stop-row:hover {
     background: rgba(255,255,255,1);
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.route-stop-row.dragging {
-    opacity: 0.5;
-    transform: rotate(5deg);
-    cursor: grabbing;
+    border-color: #ddd;
 }
 
 .drag-handle {
@@ -821,10 +810,21 @@ button:focus, .leaflet-control-button:focus {
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+    padding: 2px 4px;
+    border-radius: 3px;
+    transition: all 0.2s ease;
 }
 
-.route-stop-row:active .drag-handle {
+.drag-handle:hover {
+    background: rgba(53, 122, 189, 0.1);
+    color: #357abd;
+}
+
+.route-stop-row:active .drag-handle,
+.route-stop-row.dragging .drag-handle {
     cursor: grabbing;
+    background: rgba(53, 122, 189, 0.2);
+    color: #357abd;
 }
 
 .stop-info {
@@ -847,6 +847,57 @@ button:focus, .leaflet-control-button:focus {
     margin: 2px 0 !important;
     border-radius: 1px;
     opacity: 0.8;
+    pointer-events: none !important;
+}
+
+/* Route status and error styling */
+.route-status {
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: bold;
+    margin-left: 8px;
+}
+
+.route-status.blocked {
+    background: #ff4444;
+    color: white;
+}
+
+.route-status.hybrid {
+    background: #357abd;
+    color: white;
+}
+
+.route-status.terrain {
+    background: #ff9800;
+    color: white;
+}
+
+.route-error {
+    color: #d0021b;
+    font-style: italic;
+    margin-top: 4px;
+    display: block;
+}
+
+/* Improved drag and drop styling */
+.route-stop-row[draggable="true"] {
+    cursor: grab;
+    transition: all 0.2s ease;
+}
+
+.route-stop-row[draggable="true"]:active {
+    cursor: grabbing;
+}
+
+.route-stop-row.dragging {
+    opacity: 0.6;
+    transform: rotate(2deg) scale(1.05);
+    cursor: grabbing;
+    background: rgba(53, 122, 189, 0.1);
+    border: 2px dashed #357abd;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
 /* Route Status and Error Messages */

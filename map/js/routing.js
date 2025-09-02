@@ -203,7 +203,7 @@
         const clearBtn = document.getElementById('clear-route-btn');
         if (clearBtn) clearBtn.addEventListener('click', clearRoute);
 
-        // Add drag and drop functionality
+        // Setup drag and drop functionality (re-initialize after DOM update)
         setupDragAndDrop(stopsDiv);
     }
 
@@ -211,101 +211,130 @@
      * Setup drag and drop functionality for route reordering
      */
     function setupDragAndDrop(container) {
+        // Remove any existing event listeners to prevent duplicates
+        container.removeEventListener('dragstart', handleDragStart);
+        container.removeEventListener('dragend', handleDragEnd);
+        container.removeEventListener('dragover', handleDragOver);
+        container.removeEventListener('drop', handleDrop);
+        container.removeEventListener('dragenter', handleDragEnter);
+        
         let draggedElement = null;
         let draggedIndex = null;
 
-        const draggables = container.querySelectorAll('.route-stop-row[draggable="true"]');
-        
-        draggables.forEach((draggable, index) => {
-            draggable.addEventListener('dragstart', (e) => {
-                draggedElement = e.target;
-                draggedIndex = parseInt(e.target.dataset.routeIndex, 10);
-                e.target.classList.add('dragging');
-                e.dataTransfer.effectAllowed = 'move';
-                e.dataTransfer.setData('text/html', e.target.outerHTML);
-            });
+        // Drag start handler
+        function handleDragStart(e) {
+            const draggableRow = e.target.closest('.route-stop-row[draggable="true"]');
+            if (!draggableRow) return;
+            
+            draggedElement = draggableRow;
+            draggedIndex = parseInt(draggableRow.dataset.routeIndex, 10);
+            draggableRow.classList.add('dragging');
+            
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', draggedIndex.toString());
+            
+            console.log(`Drag started: index ${draggedIndex}`);
+        }
 
-            draggable.addEventListener('dragend', (e) => {
-                e.target.classList.remove('dragging');
-                draggedElement = null;
-                draggedIndex = null;
-                
-                // Remove any drop indicators
-                container.querySelectorAll('.drop-indicator').forEach(indicator => {
-                    indicator.remove();
-                });
-            });
-
-            draggable.addEventListener('dragover', (e) => {
-                if (draggedElement && e.target !== draggedElement) {
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = 'move';
-                    
-                    // Visual feedback
-                    const targetRow = e.target.closest('.route-stop-row');
-                    if (targetRow && !targetRow.classList.contains('dragging')) {
-                        const rect = targetRow.getBoundingClientRect();
-                        const midpoint = rect.top + rect.height / 2;
-                        
-                        // Remove existing indicators
-                        container.querySelectorAll('.drop-indicator').forEach(indicator => {
-                            indicator.remove();
-                        });
-                        
-                        // Add drop indicator
-                        const indicator = document.createElement('div');
-                        indicator.className = 'drop-indicator';
-                        indicator.style.cssText = 'height: 2px; background: #357abd; margin: 2px 0;';
-                        
-                        if (e.clientY < midpoint) {
-                            targetRow.parentNode.insertBefore(indicator, targetRow);
-                        } else {
-                            targetRow.parentNode.insertBefore(indicator, targetRow.nextSibling);
-                        }
-                    }
-                }
-            });
-
-            draggable.addEventListener('drop', (e) => {
-                e.preventDefault();
-                
-                if (draggedElement && draggedIndex !== null) {
-                    const targetRow = e.target.closest('.route-stop-row');
-                    
-                    if (targetRow && !targetRow.classList.contains('dragging')) {
-                        const targetIndex = parseInt(targetRow.dataset.routeIndex, 10);
-                        const rect = targetRow.getBoundingClientRect();
-                        const midpoint = rect.top + rect.height / 2;
-                        
-                        let newIndex = targetIndex;
-                        if (e.clientY > midpoint) {
-                            newIndex = targetIndex + 1;
-                        }
-                        
-                        // Adjust for removal of dragged item
-                        if (draggedIndex < newIndex) {
-                            newIndex--;
-                        }
-                        
-                        if (draggedIndex !== newIndex) {
-                            reorderRoute(draggedIndex, newIndex);
-                        }
-                    }
-                }
-                
-                // Clean up
-                container.querySelectorAll('.drop-indicator').forEach(indicator => {
-                    indicator.remove();
-                });
-            });
-        });
-
-        // Handle dragover for the container itself
-        container.addEventListener('dragover', (e) => {
-            if (draggedElement) {
-                e.preventDefault();
+        // Drag end handler
+        function handleDragEnd(e) {
+            const draggableRow = e.target.closest('.route-stop-row[draggable="true"]');
+            if (draggableRow) {
+                draggableRow.classList.remove('dragging');
             }
-        });
+            
+            // Clean up drop indicators
+            container.querySelectorAll('.drop-indicator').forEach(indicator => {
+                indicator.remove();
+            });
+            
+            draggedElement = null;
+            draggedIndex = null;
+            
+            console.log('Drag ended');
+        }
+
+        // Drag over handler
+        function handleDragOver(e) {
+            if (!draggedElement) return;
+            
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            
+            const targetRow = e.target.closest('.route-stop-row');
+            if (targetRow && targetRow !== draggedElement && !targetRow.classList.contains('dragging')) {
+                // Remove existing indicators
+                container.querySelectorAll('.drop-indicator').forEach(indicator => {
+                    indicator.remove();
+                });
+                
+                // Add drop indicator
+                const rect = targetRow.getBoundingClientRect();
+                const midpoint = rect.top + rect.height / 2;
+                
+                const indicator = document.createElement('div');
+                indicator.className = 'drop-indicator';
+                indicator.style.cssText = 'height: 2px; background: #357abd; margin: 2px 0; pointer-events: none;';
+                
+                if (e.clientY < midpoint) {
+                    targetRow.parentNode.insertBefore(indicator, targetRow);
+                } else {
+                    targetRow.parentNode.insertBefore(indicator, targetRow.nextSibling);
+                }
+            }
+        }
+
+        // Drag enter handler
+        function handleDragEnter(e) {
+            if (!draggedElement) return;
+            e.preventDefault();
+        }
+
+        // Drop handler
+        function handleDrop(e) {
+            e.preventDefault();
+            
+            if (!draggedElement || draggedIndex === null) return;
+            
+            const targetRow = e.target.closest('.route-stop-row');
+            if (!targetRow || targetRow === draggedElement || targetRow.classList.contains('dragging')) {
+                return;
+            }
+            
+            const targetIndex = parseInt(targetRow.dataset.routeIndex, 10);
+            const rect = targetRow.getBoundingClientRect();
+            const midpoint = rect.top + rect.height / 2;
+            
+            let newIndex = targetIndex;
+            if (e.clientY > midpoint) {
+                newIndex = targetIndex + 1;
+            }
+            
+            // Adjust for removal of dragged item
+            if (draggedIndex < newIndex) {
+                newIndex--;
+            }
+            
+            console.log(`Dropping: from ${draggedIndex} to ${newIndex}`);
+            
+            if (draggedIndex !== newIndex) {
+                reorderRoute(draggedIndex, newIndex);
+            }
+            
+            // Clean up drop indicators
+            container.querySelectorAll('.drop-indicator').forEach(indicator => {
+                indicator.remove();
+            });
+        }
+
+        // Use event delegation to handle all drag events
+        container.addEventListener('dragstart', handleDragStart, true);
+        container.addEventListener('dragend', handleDragEnd, true);
+        container.addEventListener('dragover', handleDragOver, true);
+        container.addEventListener('dragenter', handleDragEnter, true);
+        container.addEventListener('drop', handleDrop, true);
+        
+        console.log('Drag and drop initialized for', container.querySelectorAll('.route-stop-row[draggable="true"]').length, 'items');
     }
 
     /**
