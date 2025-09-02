@@ -4,40 +4,6 @@
     {
       "type": "Feature",
       "properties": {
-        "kind": "blocked",
-        "_internal_id": "terrain_1756774149659_2"
-      },
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
-          [
-            [
-              1300,
-              700
-            ],
-            [
-              1400,
-              700
-            ],
-            [
-              1400,
-              800
-            ],
-            [
-              1300,
-              800
-            ],
-            [
-              1300,
-              700
-            ]
-          ]
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
         "kind": "unpassable",
         "_internal_id": "terrain_1756783901841_0.6558544795245353"
       },
