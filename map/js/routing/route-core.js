@@ -93,19 +93,49 @@
 
         bridge.state.route = [];
         bridge.state.routeLegs = [];
-        bridge.state.routePolylines.forEach(pl => bridge.map.removeLayer(pl));
+        
+        // Clear all route polylines - be more thorough
+        if (bridge.state.routePolylines && Array.isArray(bridge.state.routePolylines)) {
+            bridge.state.routePolylines.forEach(pl => {
+                if (pl && bridge.map.hasLayer(pl)) {
+                    bridge.map.removeLayer(pl);
+                }
+            });
+        }
         bridge.state.routePolylines = [];
         
+        // Clear main route polyline
         if (bridge.state.routePolyline) { 
-            bridge.map.removeLayer(bridge.state.routePolyline); 
+            if (bridge.map.hasLayer(bridge.state.routePolyline)) {
+                bridge.map.removeLayer(bridge.state.routePolyline); 
+            }
             bridge.state.routePolyline = null; 
         }
 
         // Remove unified route line if present
         if (bridge.state.routeUnifiedPolyline) {
-            bridge.map.removeLayer(bridge.state.routeUnifiedPolyline);
+            if (bridge.map.hasLayer(bridge.state.routeUnifiedPolyline)) {
+                bridge.map.removeLayer(bridge.state.routeUnifiedPolyline);
+            }
             bridge.state.routeUnifiedPolyline = null;
         }
+        
+        // Comprehensive layer cleanup - remove any lingering route-related layers
+        bridge.map.eachLayer(layer => {
+            // Remove any polylines that might be route-related
+            if (layer instanceof L.Polyline) {
+                // Check if this polyline has route-related styling or is in the routePane
+                const element = layer.getElement();
+                if (element && (
+                    element.classList.contains('route-polyline') ||
+                    layer.options.pane === 'routePane' ||
+                    (layer.options.className && layer.options.className.includes('route'))
+                )) {
+                    console.log("Removing orphaned route polyline:", layer);
+                    bridge.map.removeLayer(layer);
+                }
+            }
+        });
 
         // Clear all waypoints when clearing the route
         if (bridge.routingModule && bridge.routingModule.clearAllWaypoints) {
@@ -131,14 +161,30 @@
             return;
         }
         
-        // Clear existing route visualization
-        bridge.state.routePolylines.forEach(pl => bridge.map.removeLayer(pl));
+        // Clear existing route visualization more thoroughly
+        if (bridge.state.routePolylines && Array.isArray(bridge.state.routePolylines)) {
+            bridge.state.routePolylines.forEach(pl => {
+                if (pl && bridge.map.hasLayer(pl)) {
+                    bridge.map.removeLayer(pl);
+                }
+            });
+        }
         bridge.state.routePolylines = [];
         bridge.state.routeLegs = [];
         
         if (bridge.state.routePolyline) { 
-            bridge.map.removeLayer(bridge.state.routePolyline); 
+            if (bridge.map.hasLayer(bridge.state.routePolyline)) {
+                bridge.map.removeLayer(bridge.state.routePolyline); 
+            }
             bridge.state.routePolyline = null; 
+        }
+        
+        // Clear unified polyline as well
+        if (bridge.state.routeUnifiedPolyline) {
+            if (bridge.map.hasLayer(bridge.state.routeUnifiedPolyline)) {
+                bridge.map.removeLayer(bridge.state.routeUnifiedPolyline);
+            }
+            bridge.state.routeUnifiedPolyline = null;
         }
         
         if (routeUI && routeUI.updateRouteDisplay) {

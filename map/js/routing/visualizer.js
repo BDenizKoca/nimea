@@ -255,7 +255,9 @@
 
         // Replace existing polyline if present
         if (bridge.state.routeUnifiedPolyline) {
-            bridge.map.removeLayer(bridge.state.routeUnifiedPolyline);
+            if (bridge.map.hasLayer(bridge.state.routeUnifiedPolyline)) {
+                bridge.map.removeLayer(bridge.state.routeUnifiedPolyline);
+            }
             bridge.state.routeUnifiedPolyline = null;
         }
 
@@ -309,7 +311,9 @@
 
         // Render using same unified style (reuse function but here direct to map)
         if (bridge.state.routeUnifiedPolyline) {
-            bridge.map.removeLayer(bridge.state.routeUnifiedPolyline);
+            if (bridge.map.hasLayer(bridge.state.routeUnifiedPolyline)) {
+                bridge.map.removeLayer(bridge.state.routeUnifiedPolyline);
+            }
             bridge.state.routeUnifiedPolyline = null;
         }
         const unifiedPolyline = L.polyline(leafletPts, {
