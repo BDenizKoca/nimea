@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- CONFIG & STATE ---
     const config = {
-        kmPerPixel: 100 / 175, // 0.5714285714
+        kmPerPixel: 100 / 115, // 0.8695652174 (115 pixels = 100 km)
         profiles: {
             walk: { speed: 30, cost: 1.0 },
             wagon: { speed: 50, cost: 0.8 },
