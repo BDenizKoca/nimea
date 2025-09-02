@@ -97,7 +97,7 @@ class GitGatewayClient {
 Updated by: ${this.user.user_metadata?.full_name || this.user.email}
 Timestamp: ${new Date().toISOString()}`;
 
-        return this.saveFileToRepo('data/markers.json', content, commitMessage);
+        return this.saveFileToRepo('map/data/markers.json', content, commitMessage);
     }
 
     async saveTerrainData(terrainData) {
@@ -111,7 +111,7 @@ Timestamp: ${new Date().toISOString()}`;
 Updated by: ${this.user.user_metadata?.full_name || this.user.email}
 Timestamp: ${new Date().toISOString()}`;
 
-        return this.saveFileToRepo('data/terrain.geojson', content, commitMessage);
+        return this.saveFileToRepo('map/data/terrain.geojson', content, commitMessage);
     }
 
     async saveFileToRepo(filePath, content, commitMessage) {
