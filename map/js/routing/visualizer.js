@@ -64,6 +64,11 @@
      * Render hybrid path with different styles for different segment types
      */
     function renderHybridPath(segments) {
+        // Option 1: Unified blue route line only (recommended for cleaner look)
+        renderUnifiedRouteLine(segments);
+        
+        // Option 2: Detailed segments on top (uncomment if you want detailed segment visualization)
+        /* 
         segments.forEach(segment => {
             if (segment.points.length < 2) return;
             
@@ -107,6 +112,43 @@
             const polyline = L.polyline(segment.points, style).addTo(bridge.map);
             bridge.state.routePolylines.push(polyline);
         });
+        */
+    }
+
+    /**
+     * Render a unified smooth blue route line connecting all segments
+     */
+    function renderUnifiedRouteLine(segments) {
+        if (!segments || segments.length === 0) return;
+        
+        // Collect all points from all segments to create a continuous path
+        const allPoints = [];
+        
+        segments.forEach((segment, index) => {
+            if (segment.points && segment.points.length > 0) {
+                if (index === 0) {
+                    // First segment: add all points
+                    allPoints.push(...segment.points);
+                } else {
+                    // Subsequent segments: skip first point to avoid duplication
+                    allPoints.push(...segment.points.slice(1));
+                }
+            }
+        });
+        
+        if (allPoints.length < 2) return;
+        
+        // Create a unified blue route line
+        const unifiedStyle = {
+            color: '#1e40af', // Solid blue
+            weight: 6,
+            opacity: 0.7,
+            pane: 'routePane',
+            className: 'unified-route-line'
+        };
+        
+        const unifiedPolyline = L.polyline(allPoints, unifiedStyle).addTo(bridge.map);
+        bridge.state.routePolylines.push(unifiedPolyline);
     }
 
     /**

@@ -749,6 +749,11 @@ button:focus, .leaflet-control-button:focus {
     outline-offset: 2px;
 }
 
+/* === UNIFIED ROUTE LINE STYLES === */
+.unified-route-line {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
 /* === WAYPOINT STYLES === */
 .waypoint-icon {
     background: none !important;
@@ -785,8 +790,15 @@ button:focus, .leaflet-control-button:focus {
     background: rgba(255,255,255,0.9);
     margin: 2px 0;
     border-radius: 4px;
-    cursor: grab;
     transition: all 0.2s ease;
+}
+
+.route-stop-row[draggable="true"] {
+    cursor: grab;
+}
+
+.route-stop-row[draggable="true"]:active {
+    cursor: grabbing;
 }
 
 .route-stop-row:hover {
@@ -827,6 +839,14 @@ button:focus, .leaflet-control-button:focus {
 /* Visual feedback for drag operations */
 .route-stop-row[draggable="true"]:hover {
     border-left: 3px solid #357abd;
+}
+
+.drop-indicator {
+    height: 2px !important;
+    background: #357abd !important;
+    margin: 2px 0 !important;
+    border-radius: 1px;
+    opacity: 0.8;
 }
 
 .leaflet-popup-content {

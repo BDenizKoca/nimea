@@ -30,6 +30,9 @@
         let focusMarkerInstance = null;
         
         bridge.state.markers.forEach(markerData => {
+            // Skip waypoints - they're handled by routing.js
+            if (markerData.isWaypoint) return;
+            
             if (markerData.public || bridge.state.isDmMode) {
                 const marker = L.marker([markerData.y, markerData.x], {
                     draggable: bridge.state.isDmMode // Make draggable only in DM mode

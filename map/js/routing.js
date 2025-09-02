@@ -207,58 +207,101 @@
      * Setup drag and drop functionality for route reordering
      */
     function setupDragAndDrop(container) {
+        let draggedElement = null;
+        let draggedIndex = null;
+
         const draggables = container.querySelectorAll('.route-stop-row[draggable="true"]');
         
-        draggables.forEach(draggable => {
+        draggables.forEach((draggable, index) => {
             draggable.addEventListener('dragstart', (e) => {
-                e.dataTransfer.setData('text/plain', e.target.dataset.routeIndex);
+                draggedElement = e.target;
+                draggedIndex = parseInt(e.target.dataset.routeIndex, 10);
                 e.target.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/html', e.target.outerHTML);
             });
 
             draggable.addEventListener('dragend', (e) => {
                 e.target.classList.remove('dragging');
+                draggedElement = null;
+                draggedIndex = null;
+                
+                // Remove any drop indicators
+                container.querySelectorAll('.drop-indicator').forEach(indicator => {
+                    indicator.remove();
+                });
             });
 
             draggable.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                const afterElement = getDragAfterElement(container, e.clientY);
-                const dragging = container.querySelector('.dragging');
-                
-                if (afterElement == null) {
-                    container.appendChild(dragging);
-                } else {
-                    container.insertBefore(dragging, afterElement);
+                if (draggedElement && e.target !== draggedElement) {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    
+                    // Visual feedback
+                    const targetRow = e.target.closest('.route-stop-row');
+                    if (targetRow && !targetRow.classList.contains('dragging')) {
+                        const rect = targetRow.getBoundingClientRect();
+                        const midpoint = rect.top + rect.height / 2;
+                        
+                        // Remove existing indicators
+                        container.querySelectorAll('.drop-indicator').forEach(indicator => {
+                            indicator.remove();
+                        });
+                        
+                        // Add drop indicator
+                        const indicator = document.createElement('div');
+                        indicator.className = 'drop-indicator';
+                        indicator.style.cssText = 'height: 2px; background: #357abd; margin: 2px 0;';
+                        
+                        if (e.clientY < midpoint) {
+                            targetRow.parentNode.insertBefore(indicator, targetRow);
+                        } else {
+                            targetRow.parentNode.insertBefore(indicator, targetRow.nextSibling);
+                        }
+                    }
                 }
             });
 
             draggable.addEventListener('drop', (e) => {
                 e.preventDefault();
-                const draggedIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
-                const targetIndex = parseInt(e.target.closest('.route-stop-row').dataset.routeIndex, 10);
                 
-                if (draggedIndex !== targetIndex) {
-                    reorderRoute(draggedIndex, targetIndex);
+                if (draggedElement && draggedIndex !== null) {
+                    const targetRow = e.target.closest('.route-stop-row');
+                    
+                    if (targetRow && !targetRow.classList.contains('dragging')) {
+                        const targetIndex = parseInt(targetRow.dataset.routeIndex, 10);
+                        const rect = targetRow.getBoundingClientRect();
+                        const midpoint = rect.top + rect.height / 2;
+                        
+                        let newIndex = targetIndex;
+                        if (e.clientY > midpoint) {
+                            newIndex = targetIndex + 1;
+                        }
+                        
+                        // Adjust for removal of dragged item
+                        if (draggedIndex < newIndex) {
+                            newIndex--;
+                        }
+                        
+                        if (draggedIndex !== newIndex) {
+                            reorderRoute(draggedIndex, newIndex);
+                        }
+                    }
                 }
+                
+                // Clean up
+                container.querySelectorAll('.drop-indicator').forEach(indicator => {
+                    indicator.remove();
+                });
             });
         });
-    }
 
-    /**
-     * Get the element after which the dragged item should be inserted
-     */
-    function getDragAfterElement(container, y) {
-        const draggableElements = [...container.querySelectorAll('.route-stop-row:not(.dragging)')];
-        
-        return draggableElements.reduce((closest, child) => {
-            const box = child.getBoundingClientRect();
-            const offset = y - box.top - box.height / 2;
-            
-            if (offset < 0 && offset > closest.offset) {
-                return { offset: offset, element: child };
-            } else {
-                return closest;
+        // Handle dragover for the container itself
+        container.addEventListener('dragover', (e) => {
+            if (draggedElement) {
+                e.preventDefault();
             }
-        }, { offset: Number.NEGATIVE_INFINITY }).element;
+        });
     }
 
     /**
