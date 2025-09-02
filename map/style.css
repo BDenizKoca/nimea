@@ -512,18 +512,18 @@ body, html {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
-    font-size: 18px;
+    width: 32px;
+    height: 32px;
+    font-size: 24px;
     background: rgba(255, 255, 255, 0.9);
     border: 2px solid #333;
     border-radius: 50%;
     box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-    transition: transform 0.2s ease;
+    cursor: pointer;
 }
 
 .custom-marker-icon:hover {
-    transform: scale(1.1);
+    background: rgba(255, 255, 255, 1);
 }
 
 /* Custom image marker styles */
@@ -531,11 +531,11 @@ body, html {
     border-radius: 50% !important;
     border: 2px solid #333 !important;
     box-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
-    transition: transform 0.2s ease !important;
+    cursor: pointer !important;
 }
 
 .custom-image-marker:hover {
-    transform: scale(1.1) !important;
+    opacity: 0.9 !important;
 }
 
 .form-actions button {

@@ -37,11 +37,11 @@
      * Terrain-aware nudging: resample path segments and nudge points away from difficult terrain
      * @param {Array} points - Array of [x, y] coordinates (raw A* path)
      * @param {Function|Object} terrainGrid - Function or lookup table for terrain cost
-     * @param {number} step - Resampling distance in map units (default: 100)
-     * @param {number} offset - How far to check left/right of path (default: 0.2)
-     * @param {number} nudgeStrength - How much to nudge (default: 0.02)
+     * @param {number} step - Resampling distance in map units (default: 200)
+     * @param {number} offset - How far to check left/right of path (default: 0.1)
+     * @param {number} nudgeStrength - How much to nudge (default: 0.005)
      */
-    function nudgePath(points, terrainGrid, step = 100, offset = 0.2, nudgeStrength = 0.02) {
+    function nudgePath(points, terrainGrid, step = 200, offset = 0.1, nudgeStrength = 0.005) {
         if (!points || points.length < 2) return points;
 
         let nudged = [];
@@ -118,9 +118,9 @@
      * Creates natural curves by iteratively refining the path
      * @param {Array} points - Array of [x, y] coordinates
      * @param {number} iterations - Number of smoothing iterations (default: 1)
-     * @param {number} ratio - Corner cutting ratio (default: 0.02, barely perceptible curves)
+     * @param {number} ratio - Corner cutting ratio (default: 0.01, microscopic curves)
      */
-    function smoothPath(points, iterations = 1, ratio = 0.02) {
+    function smoothPath(points, iterations = 1, ratio = 0.01) {
         if (!points || points.length < 3) return points;
         
         let currentPoints = [...points];
@@ -202,22 +202,26 @@
     function naturalizePath(points, terrainGrid, options = {}) {
         if (!points || points.length < 2) return points;
         
+        // CRITICAL: Store original endpoints to force preservation
+        const originalStart = [points[0][0], points[0][1]];
+        const originalEnd = [points[points.length - 1][0], points[points.length - 1][1]];
+        
         const settings = {
-            // Nudging parameters - extremely subtle for barely-visible human walking variation
-            nudgeStep: options.nudgeStep || 100,          // Resample every 100 map units (more sparse)
-            nudgeOffset: options.nudgeOffset || 0.2,      // Check terrain 0.2 units left/right (very close)
-            nudgeStrength: options.nudgeStrength || 0.02, // Barely perceptible nudging
+            // Nudging parameters - microscopic for almost-invisible human walking variation
+            nudgeStep: options.nudgeStep || 200,          // Resample every 200 map units (very sparse)
+            nudgeOffset: options.nudgeOffset || 0.1,      // Check terrain 0.1 units left/right (tiny)
+            nudgeStrength: options.nudgeStrength || 0.005, // Microscopic nudging
             
             // Smoothing parameters - minimal for almost-straight human paths
             smoothIterations: options.smoothIterations || 1,  // Single pass only
-            smoothRatio: options.smoothRatio || 0.02,         // Barely perceptible corner cutting
+            smoothRatio: options.smoothRatio || 0.01,         // Microscopic corner cutting
             
             // Style preferences
             useEnhancedSmoothing: options.useEnhancedSmoothing || false,  // Keep it simple
-            bezierTension: options.bezierTension || 0.02,     // Extremely low tension
+            bezierTension: options.bezierTension || 0.01,     // Microscopic tension
             
             // Terrain sensitivity - barely reactive for natural human walking
-            terrainSensitivity: options.terrainSensitivity || 0.2  // Minimal terrain reaction
+            terrainSensitivity: options.terrainSensitivity || 0.1  // Minimal terrain reaction
         };
         
         // Step 1: Terrain-aware nudging
@@ -235,6 +239,13 @@
             smoothedPath = smoothPathBezier(nudgedPath, settings.bezierTension);
         } else {
             smoothedPath = smoothPath(nudgedPath, settings.smoothIterations, settings.smoothRatio);
+        }
+        
+        // CRITICAL: Force restore original endpoints after naturalization
+        if (smoothedPath && smoothedPath.length > 0) {
+            smoothedPath[0] = originalStart;
+            smoothedPath[smoothedPath.length - 1] = originalEnd;
+            console.log(`Forced endpoint preservation: start [${originalStart[0]}, ${originalStart[1]}], end [${originalEnd[0]}, ${originalEnd[1]}]`);
         }
         
         return smoothedPath;

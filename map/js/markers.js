@@ -42,22 +42,22 @@
 
                 // Add custom icon if available
                 if (markerData.iconUrl) {
-                    // Prioritize image URL over emoji
+                    // Prioritize image URL over emoji - use normal marker size
                     markerOptions.icon = L.icon({
                         iconUrl: markerData.iconUrl,
-                        iconSize: [24, 24],
-                        iconAnchor: [12, 12],
-                        popupAnchor: [0, -12],
+                        iconSize: [32, 32],
+                        iconAnchor: [16, 32],
+                        popupAnchor: [0, -32],
                         className: 'custom-image-marker'
                     });
                 } else if (markerData.customIcon) {
-                    // Use emoji/text icon
+                    // Use emoji/text icon - larger size for visibility
                     markerOptions.icon = L.divIcon({
                         html: `<div class="custom-marker-icon">${markerData.customIcon}</div>`,
                         className: 'custom-marker',
-                        iconSize: [24, 24],
-                        iconAnchor: [12, 12],
-                        popupAnchor: [0, -12]
+                        iconSize: [32, 32],
+                        iconAnchor: [16, 32],
+                        popupAnchor: [0, -32]
                     });
                 }
 
