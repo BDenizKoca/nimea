@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const map = L.map('map', {
         crs: L.CRS.Simple,
         minZoom: -2,
-        maxZoom: 2,
+        maxZoom: 4,          // Allow more zoom levels
         zoomControl: false,
         attributionControl: false,
     });
@@ -66,7 +66,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const bounds = [[0, 0], [height, width]];
         originalMapBounds = bounds; // Store the original bounds
         L.imageOverlay(mapImageUrl, bounds).addTo(map);
-        map.fitBounds(bounds);
+        
+        // Set a specific zoom level instead of fitBounds to avoid making it too small
+        const centerY = height / 2;
+        const centerX = width / 2;
+        map.setView([centerY, centerX], 1); // Zoom level 1 should be good
+        
         loadInitialData();
     };
     img.onerror = () => console.error("Failed to load map image.");
