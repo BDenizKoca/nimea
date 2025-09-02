@@ -6,6 +6,24 @@
     // Bridge object will be initialized from main script
     let bridge = {};
 
+    // DOM element cache to reduce repeated getElementById calls
+    const domCache = {
+        elements: {},
+        get(id) {
+            if (!this.elements[id]) {
+                this.elements[id] = document.getElementById(id);
+            }
+            return this.elements[id];
+        },
+        clear(id) {
+            if (id) {
+                delete this.elements[id];
+            } else {
+                this.elements = {};
+            }
+        }
+    };
+
     // Routing modules
     let graphBuilder = null;
     let pathfinding = null;
@@ -80,7 +98,7 @@
      * This only needs to be called once during module initialization
      */
     function setupRouteEventDelegation() {
-        const stopsDiv = document.getElementById('route-stops');
+        const stopsDiv = domCache.get('route-stops');
         if (!stopsDiv) {
             console.error("Route stops container not found");
             return;
@@ -90,7 +108,7 @@
         stopsDiv.addEventListener('click', handleRouteStopClick);
         
         // Set up delegation for the clear button too (it's outside the stops div)
-        const routeSidebar = document.getElementById('route-sidebar');
+        const routeSidebar = domCache.get('route-sidebar');
         if (routeSidebar) {
             routeSidebar.addEventListener('click', handleClearButtonClick);
         }
@@ -236,8 +254,8 @@
 
         bridge.state.route.push(marker);
         
-        const routeSidebar = document.getElementById('route-sidebar');
-        const reopenRouteSidebarBtn = document.getElementById('reopen-route-sidebar');
+        const routeSidebar = domCache.get('route-sidebar');
+        const reopenRouteSidebarBtn = domCache.get('reopen-route-sidebar');
         if (routeSidebar) {
             routeSidebar.classList.add('open');
             // Hide reopen button when sidebar opens
@@ -253,7 +271,7 @@
      * Update route display with current stops and drag-drop support
      */
     function updateRouteDisplay() {
-        const stopsDiv = document.getElementById('route-stops');
+        const stopsDiv = domCache.get('route-stops');
         if (!stopsDiv) return;
 
         stopsDiv.innerHTML = bridge.state.route.map((stop, idx) => {
@@ -271,7 +289,7 @@
         // No need to manually attach event listeners here anymore
         
         // Setup drag and drop functionality (re-initialize after DOM update)
-        if (bridge.state.route.length > 1) {
+        if (bridge.state.route.length > 1 && !stopsDiv._dragInitialized) {
             setupDragAndDrop(stopsDiv);
         }
     }
@@ -300,6 +318,9 @@
      * Setup drag and drop functionality for route reordering
      */
     function setupDragAndDrop(container) {
+        // Prevent duplicate initialization - check if already initialized
+        if (container._dragInitialized) return;
+        
         // Store drag state
         let draggedElement = null;
         let draggedIndex = null;
@@ -311,8 +332,10 @@
         const newContainer = container.cloneNode(true);
         container.parentNode.replaceChild(newContainer, container);
         
-        // Update reference to the new container
-        const stopsDiv = document.getElementById('route-stops');
+        // Update reference to the new container and mark it as initialized
+        domCache.clear('route-stops'); // Clear cache since we cloned the element
+        const stopsDiv = domCache.get('route-stops');
+        stopsDiv._dragInitialized = true;
         
         // Drag start handler
         function handleDragStart(e) {
