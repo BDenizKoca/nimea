@@ -49,20 +49,22 @@
         <div class="modal-content">
             <h3>Create New Marker</h3>
             <form id="marker-form">
+                <input type="hidden" id="marker-lat">
+                <input type="hidden" id="marker-lng">
                 <div class="form-group">
                     <label for="marker-name">Name *</label>
-                    <input type="text" id="marker-name" required>
+                    <input type="text" id="marker-name" name="marker-name" required>
                 </div>
                 
                 <div class="form-group">
                     <label for="marker-id">ID *</label>
-                    <input type="text" id="marker-id" required>
+                    <input type="text" id="marker-id" name="marker-id" required>
                     <small>Auto-generated from name, but you can edit</small>
                 </div>
                 
                 <div class="form-group">
                     <label for="marker-type">Type</label>
-                    <select id="marker-type">
+                    <select id="marker-type" name="marker-type">
                         <option value="city">City</option>
                         <option value="town">Town</option>
                         <option value="village">Village</option>
@@ -76,17 +78,17 @@
                 
                 <div class="form-group">
                     <label for="marker-faction">Faction</label>
-                    <input type="text" id="marker-faction" placeholder="e.g., Empire of Aurelius">
+                    <input type="text" id="marker-faction" name="marker-faction" placeholder="e.g., Empire of Aurelius">
                 </div>
                 
                 <div class="form-group">
                     <label for="marker-summary">Summary *</label>
-                    <textarea id="marker-summary" rows="3" required></textarea>
+                    <textarea id="marker-summary" name="marker-summary" rows="3" required></textarea>
                 </div>
 
                 <div class="form-group">
                     <label for="marker-wiki-slug">Wiki Slug Override</label>
-                    <input type="text" id="marker-wiki-slug" placeholder="Optional: e.g., empire-of-aurelius">
+                    <input type="text" id="marker-wiki-slug" name="marker-wiki-slug" placeholder="Optional: e.g., empire-of-aurelius">
                     <small>If provided, links directly to /wiki/&lt;slug&gt;/ . Otherwise auto-generated.</small>
                 </div>
                 
@@ -97,7 +99,7 @@
                 
                 <div class="form-group">
                     <label>
-                        <input type="checkbox" id="marker-public" checked>
+                        <input type="checkbox" id="marker-public" name="marker-public" checked>
                         Public (visible to players)
                     </label>
                 </div>

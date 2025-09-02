@@ -376,14 +376,28 @@
 
     function openMarkerCreationModal(latLng) {
         const modal = document.getElementById('marker-creation-modal');
-        document.getElementById('marker-form').reset();
+        const form = document.getElementById('marker-form');
+        form.reset();
+        
+        // Store raw coordinates in hidden fields
+        document.getElementById('marker-lat').value = latLng.lat;
+        document.getElementById('marker-lng').value = latLng.lng;
+
+        // Display formatted coordinates for the user
         document.getElementById('marker-coordinates').value = `X: ${Math.round(latLng.lng)}, Y: ${Math.round(latLng.lat)}`;
+        
         document.getElementById('marker-public').checked = true;
         modal.classList.remove('hidden');
         document.getElementById('marker-name').focus();
     }
 
     function saveMarkerFromForm() {
+        if (!pendingMarker) {
+            bridge.showNotification('Error: No pending marker to save. Please try again.', 'error');
+            document.getElementById('marker-creation-modal').classList.add('hidden');
+            return;
+        }
+
         const form = document.getElementById('marker-form');
         const formData = new FormData(form);
         
@@ -394,9 +408,17 @@
         const faction = formData.get('marker-faction');
         const isPublic = formData.get('marker-public') === 'on';
         const wikiSlug = formData.get('marker-wiki-slug');
+        
+        // Get coordinates from the hidden fields
+        const lat = parseFloat(document.getElementById('marker-lat').value);
+        const lng = parseFloat(document.getElementById('marker-lng').value);
 
         if (!id || !name || !summary) {
             bridge.showNotification('Please fill in all required fields', 'error');
+            return;
+        }
+        if (isNaN(lat) || isNaN(lng)) {
+            bridge.showNotification('Error: Invalid coordinates. Please place the marker again.', 'error');
             return;
         }
         if (!/^[a-zA-Z0-9_-]+$/.test(id)) {
@@ -410,8 +432,8 @@
 
         const newMarkerData = {
             id, name,
-            x: pendingMarker.getLatLng().lng,
-            y: pendingMarker.getLatLng().lat,
+            x: lng,
+            y: lat,
             type,
             faction: faction || undefined,
             summary,

@@ -95,7 +95,10 @@
             return; 
         }
 
-        // Build the grid before calculating paths
+        // Show calculating message immediately
+        updateRouteSummaryCalculating();
+
+        // Build the grid before calculating paths (now this will be fast after the first time)
         buildPathfindingGrid();
 
         let legsToCalculate = bridge.state.route.length - 1;
@@ -122,6 +125,12 @@
     }
 
     function buildPathfindingGrid() {
+        // Check if the grid is already built and valid
+        if (pathfindingGrid) {
+            console.log("Pathfinding grid already exists. Skipping build.");
+            return;
+        }
+
         const bounds = bridge.map.getBounds();
         const mapWidth = bounds.getEast();
         const mapHeight = bounds.getSouth();
@@ -287,6 +296,12 @@
                 <p><strong>Horse:</strong> ${(totalKm / bridge.config.profiles.horse.speed).toFixed(1)} days</p>
             </div>
         `;
+    }
+
+    function updateRouteSummaryCalculating() {
+        const summaryDiv = document.getElementById('route-summary');
+        if (!summaryDiv) return;
+        summaryDiv.innerHTML = '<p>Calculating route...</p>';
     }
 
     function updateRouteSummaryEmpty() {
