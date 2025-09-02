@@ -26,8 +26,88 @@
      * Set up dynamic marker scaling based on zoom level
      */
     function setupMarkerScaling() {
-        // No JavaScript zoom events - pure CSS solution to prevent spazzing
-        console.log("Marker scaling setup complete (CSS-only to prevent spazzing)");
+        // Create a layer group to hold all markers for efficient eachLayer iteration
+        bridge.markerLayerGroup = L.layerGroup().addTo(bridge.map);
+        
+        // Set up global zoom event listener using eachLayer approach
+        setupGlobalZoomScaling();
+        
+        console.log("Marker scaling setup complete (LayerGroup with eachLayer approach)");
+    }
+
+    /**
+     * Set up global zoom scaling using eachLayer method for efficiency
+     */
+    function setupGlobalZoomScaling() {
+        if (!bridge.map || !bridge.markerLayerGroup) return;
+
+        let lastZoomIconState = null; // Store state to avoid unnecessary icon changes
+        
+        const updateAllMarkers = () => {
+            const currentZoom = bridge.map.getZoom();
+            const newSize = calculateIconSize(currentZoom);
+            
+            // Optimization: only update if size actually changed
+            if (lastZoomIconState === newSize) return;
+            lastZoomIconState = newSize;
+            
+            console.log(`Global zoom update: zoom ${currentZoom}, size ${newSize}px`);
+            
+            bridge.markerLayerGroup.eachLayer(function(layer) {
+                if (layer.markerData) {
+                    updateMarkerIcon(layer, layer.markerData, newSize);
+                }
+            });
+        };
+
+        // Set up single global zoom event listener
+        bridge.map.on('zoomend', updateAllMarkers);
+        
+        // Initial size setup
+        updateAllMarkers();
+        
+        console.log("Global zoom scaling setup complete");
+    }
+
+    /**
+     * Update a single marker's icon with new size
+     */
+    function updateMarkerIcon(marker, markerData, newSize) {
+        const ZoomIcon = createZoomResponsiveIcon();
+        
+        let newIcon;
+        if (markerData.iconUrl) {
+            // Image marker
+            newIcon = new ZoomIcon({
+                html: `<img src="${markerData.iconUrl}" class="custom-marker-image" style="width:100%; height:100%;">`,
+                className: 'custom-image-marker zoom-responsive-marker',
+                iconSize: [newSize, newSize],
+                iconAnchor: [newSize/2, newSize],
+                popupAnchor: [0, -newSize]
+            });
+        } else if (markerData.customIcon) {
+            // Custom icon (emoji/text)
+            newIcon = new ZoomIcon({
+                html: `<div class="custom-marker-icon" style="font-size: ${newSize * 0.6}px">${markerData.customIcon}</div>`,
+                className: 'custom-marker zoom-responsive-marker',
+                iconSize: [newSize, newSize],
+                iconAnchor: [newSize/2, newSize],
+                popupAnchor: [0, -newSize]
+            });
+        } else {
+            // Default marker
+            newIcon = new ZoomIcon({
+                html: `<div class="custom-marker-icon" style="font-size: ${newSize * 0.6}px; width: ${newSize}px; height: ${newSize}px;">📍</div>`,
+                className: 'custom-marker zoom-responsive-marker',
+                iconSize: [newSize, newSize],
+                iconAnchor: [newSize/2, newSize],
+                popupAnchor: [0, -newSize]
+            });
+        }
+        
+        if (newIcon) {
+            marker.setIcon(newIcon);
+        }
     }
 
     /**
@@ -50,68 +130,25 @@
      */
     function calculateIconSize(zoom, baseSize = 60) {
         // Using your formula: newSize = 60/((20 - actualZoom )*2)
-        const newSize = baseSize / ((20 - zoom) * 2);
+        const rawSize = baseSize / ((20 - zoom) * 2);
         // Clamp size between reasonable bounds
-        return Math.max(20, Math.min(80, newSize));
-    }
-
-    /**
-     * Set up zoom-based scaling for a specific marker
-     */
-    function setupMarkerZoomScaling(marker, markerData) {
-        if (!bridge.map || !marker) return;
-
-        const ZoomIcon = createZoomResponsiveIcon();
-        
-        const updateMarkerSize = () => {
-            const zoom = bridge.map.getZoom();
-            const newSize = calculateIconSize(zoom);
-            
-            let newIcon;
-            if (markerData.iconUrl) {
-                // Image marker
-                newIcon = new ZoomIcon({
-                    html: `<img src="${markerData.iconUrl}" class="custom-marker-image" style="width:100%; height:100%;">`,
-                    className: 'custom-image-marker zoom-responsive-marker',
-                    iconSize: [newSize, newSize],
-                    iconAnchor: [newSize/2, newSize],
-                    popupAnchor: [0, -newSize]
-                });
-            } else if (markerData.customIcon) {
-                // Custom icon (emoji/text)
-                newIcon = new ZoomIcon({
-                    html: `<div class="custom-marker-icon" style="font-size: ${newSize * 0.6}px">${markerData.customIcon}</div>`,
-                    className: 'custom-marker zoom-responsive-marker',
-                    iconSize: [newSize, newSize],
-                    iconAnchor: [newSize/2, newSize],
-                    popupAnchor: [0, -newSize]
-                });
-            }
-            
-            if (newIcon) {
-                marker.setIcon(newIcon);
-            }
-        };
-
-        // Set up zoom event listener for this specific marker
-        bridge.map.on('zoomend', updateMarkerSize);
-        
-        // Initial size setup
-        updateMarkerSize();
-        
-        // Store the cleanup function on the marker for later removal
-        marker._zoomCleanup = () => {
-            bridge.map.off('zoomend', updateMarkerSize);
-        };
+        const clampedSize = Math.max(20, Math.min(80, rawSize));
+        console.log(`Zoom ${zoom}: formula gives ${rawSize.toFixed(1)}px, clamped to ${clampedSize}px`);
+        return clampedSize;
     }
 
     function renderMarkers() {
-        // Clean up existing markers to prevent memory leaks
-        bridge.map.eachLayer(layer => {
-            if (layer instanceof L.Marker && !layer.options.isPending) {
-                bridge.map.removeLayer(layer);
-            }
-        });
+        // Clean up existing markers from layer group to prevent memory leaks
+        if (bridge.markerLayerGroup) {
+            bridge.markerLayerGroup.clearLayers();
+        } else {
+            // Fallback: clean up markers from map directly
+            bridge.map.eachLayer(layer => {
+                if (layer instanceof L.Marker && !layer.options.isPending) {
+                    bridge.map.removeLayer(layer);
+                }
+            });
+        }
         
         let focusMarkerInstance = null;
         
@@ -126,34 +163,19 @@
                     riseOnHover: true  // Ensures marker appears above others on hover
                 };
 
-                // Add custom icon if available
-                if (markerData.iconUrl) {
-                    // Use divIcon for image markers to allow for scaling of an inner element
-                    markerOptions.icon = L.divIcon({
-                        html: `<img src="${markerData.iconUrl}" class="custom-marker-image" style="width:100%; height:100%;">`,
-                        className: 'custom-image-marker',
-                        iconSize: [48, 48],  // Much larger: 48x48 instead of 32x32
-                        iconAnchor: [24, 48],
-                        popupAnchor: [0, -48]
-                    });
-                } else if (markerData.customIcon) {
-                    // Use emoji/text icon - much larger size for visibility
-                    markerOptions.icon = L.divIcon({
-                        html: `<div class="custom-marker-icon">${markerData.customIcon}</div>`,
-                        className: 'custom-marker',
-                        iconSize: [48, 48],  // Much larger: 48x48 instead of 32x32
-                        iconAnchor: [24, 48],
-                        popupAnchor: [0, -32]
-                    });
-                }
-
-                const marker = L.marker([markerData.y, markerData.x], markerOptions).addTo(bridge.map);
+                // Create marker and add to layer group instead of directly to map
+                const marker = L.marker([markerData.y, markerData.x], markerOptions);
                 
-                // Set up zoom-based scaling for this marker using your formula
-                setupMarkerZoomScaling(marker, markerData);
-                
-                // Store marker data directly on the marker object for direct-touch.js to use
+                // Store marker data directly on the marker object
                 marker.markerData = markerData;
+                
+                // Add to our marker layer group for efficient eachLayer iteration
+                if (bridge.markerLayerGroup) {
+                    bridge.markerLayerGroup.addLayer(marker);
+                } else {
+                    // Fallback: add directly to map if layer group not ready
+                    marker.addTo(bridge.map);
+                }
                 
                 // Unified tap detection for both desktop and mobile
                 let lastTapTime = 0;
