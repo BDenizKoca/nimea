@@ -380,10 +380,36 @@
                         case 'bridge':
                             bridgeKm += segmentDistance;
                             break;
+                        default:
+                            // Handle any unclassified segments
+                            console.warn(`Unclassified segment type: ${segment.type}, adding to terrain`);
+                            terrainKm += segmentDistance;
+                            break;
                     }
                 });
+            } else {
+                // If leg has no segments, treat entire leg as terrain
+                console.warn(`Leg ${leg.from.name} → ${leg.to.name} has no segments, treating as terrain`);
+                terrainKm += leg.distanceKm;
             }
         });
+        
+        // Check if segment distances match total distance
+        const segmentTotal = roadKm + terrainKm + bridgeKm;
+        const discrepancy = Math.abs(totalKm - segmentTotal);
+        
+        if (discrepancy > 0.1) { // If more than 100m difference
+            console.warn(`Distance discrepancy: Total ${totalKm.toFixed(2)}km vs Segments ${segmentTotal.toFixed(2)}km (diff: ${discrepancy.toFixed(2)}km)`);
+            // Adjust the largest component to match the total
+            const adjustment = totalKm - segmentTotal;
+            if (terrainKm >= roadKm && terrainKm >= bridgeKm) {
+                terrainKm += adjustment;
+            } else if (roadKm >= bridgeKm) {
+                roadKm += adjustment;
+            } else {
+                bridgeKm += adjustment;
+            }
+        }
         
         const legsHtml = bridge.state.routeLegs.map((l, i) => {
             let legInfo = `Leg ${i + 1}: ${l.from.name} → ${l.to.name}: ${l.distanceKm.toFixed(2)} km`;
@@ -412,22 +438,42 @@
             alertsHtml += '<div class="route-alert info">ℹ️ Route includes some off-road terrain sections</div>';
         }
         
-        // Route composition breakdown
+        // Route composition breakdown with proper percentage calculation
+        // Use the corrected segment totals for percentage calculation
+        const actualTotal = roadKm + terrainKm + bridgeKm;
+        let roadPercent = actualTotal > 0 ? Math.round((roadKm / actualTotal) * 100) : 0;
+        let terrainPercent = actualTotal > 0 ? Math.round((terrainKm / actualTotal) * 100) : 0;
+        let bridgePercent = actualTotal > 0 ? Math.round((bridgeKm / actualTotal) * 100) : 0;
+        
+        // Ensure percentages add up to 100% by adjusting the largest component
+        let totalPercent = roadPercent + terrainPercent + bridgePercent;
+        if (totalPercent !== 100 && actualTotal > 0) {
+            let difference = 100 - totalPercent;
+            // Add the difference to the largest component
+            if (roadPercent >= terrainPercent && roadPercent >= bridgePercent) {
+                roadPercent += difference;
+            } else if (terrainPercent >= bridgePercent) {
+                terrainPercent += difference;
+            } else {
+                bridgePercent += difference;
+            }
+        }
+        
         const compositionHtml = `
             <div class="route-composition">
                 <h4>Route Composition</h4>
                 <div class="composition-item road">
                     <span class="composition-color" style="background-color: #2563eb;"></span>
-                    Roads: ${roadKm.toFixed(1)} km (${((roadKm / totalKm) * 100).toFixed(0)}%)
+                    Roads: ${roadKm.toFixed(1)} km (${roadPercent}%)
                 </div>
                 <div class="composition-item terrain">
                     <span class="composition-color" style="background-color: #dc2626;"></span>
-                    Off-road: ${terrainKm.toFixed(1)} km (${((terrainKm / totalKm) * 100).toFixed(0)}%)
+                    Off-road: ${terrainKm.toFixed(1)} km (${terrainPercent}%)
                 </div>
                 ${bridgeKm > 0 ? `
                 <div class="composition-item bridge">
                     <span class="composition-color" style="background-color: #7c3aed;"></span>
-                    Connections: ${bridgeKm.toFixed(1)} km (${((bridgeKm / totalKm) * 100).toFixed(0)}%)
+                    Connections: ${bridgeKm.toFixed(1)} km (${bridgePercent}%)
                 </div>` : ''}
             </div>
         `;
