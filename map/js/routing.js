@@ -205,12 +205,13 @@
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols; c++) {
                     const [worldX, worldY] = gridToWorldCoords(c, r, cols, rows, mapWidth, mapHeight);
-                    const point = turf.point([worldX, worldY]);
+                    const pointCoords = [worldX, worldY];
+                    const turfPoint = turf.point(pointCoords); // Still useful for polygon checks
                     let tileType = TILE_NORMAL;
                     let isImpassable = false;
 
                     for (const feature of unpassableFeatures) {
-                        if (feature.geometry.type === 'Polygon' && turf.booleanPointInPolygon(point, feature)) {
+                        if (feature.geometry.type === 'Polygon' && turf.booleanPointInPolygon(turfPoint, feature)) {
                             isImpassable = true;
                             tileType = TILE_UNPASSABLE;
                             break;
@@ -223,7 +224,7 @@
 
                     let onRoad = false;
                     for (const feature of roadFeatures) {
-                        const distance = turf.pointToLineDistance(point, feature, { units: 'pixels' });
+                        const distance = pointToPolylineDistance(pointCoords, feature.geometry.coordinates);
                         if (distance < bridge.config.gridCellSize / 2) {
                             tileType = TILE_ROAD;
                             onRoad = true;
@@ -233,11 +234,11 @@
 
                     if (!onRoad) {
                         for (const feature of difficultFeatures) {
-                            if (feature.geometry.type === 'Polygon' && turf.booleanPointInPolygon(point, feature)) {
+                            if (feature.geometry.type === 'Polygon' && turf.booleanPointInPolygon(turfPoint, feature)) {
                                 tileType = TILE_DIFFICULT;
                                 break;
                             } else if (feature.geometry.type === 'LineString') {
-                                const distance = turf.pointToLineDistance(point, feature, { units: 'pixels' });
+                                const distance = pointToPolylineDistance(pointCoords, feature.geometry.coordinates);
                                 if (distance < bridge.config.gridCellSize) {
                                     tileType = TILE_DIFFICULT;
                                     break;
@@ -314,6 +315,51 @@
             if (typeof onComplete === 'function') onComplete();
         });
         legEasystar.calculate();
+    }
+
+    // --- Custom Distance Calculation Helpers (replaces turf.pointToLineDistance) ---
+
+    /**
+     * Calculates the minimum distance from a point to a polyline (a series of line segments).
+     * @param {number[]} point - The point as [x, y].
+     * @param {number[][]} polyline - An array of points, e.g., [[x1, y1], [x2, y2], ...].
+     * @returns {number} The minimum distance in pixels.
+     */
+    function pointToPolylineDistance(point, polyline) {
+        let minDistance = Infinity;
+        const p = { x: point[0], y: point[1] };
+
+        for (let i = 0; i < polyline.length - 1; i++) {
+            const a = { x: polyline[i][0], y: polyline[i][1] };
+            const b = { x: polyline[i+1][0], y: polyline[i+1][1] };
+            const distance = pointToLineSegmentDistance(p, a, b);
+            if (distance < minDistance) {
+                minDistance = distance;
+            }
+        }
+        return minDistance;
+    }
+
+    /**
+     * Calculates the shortest distance from a point to a single line segment.
+     * @param {{x: number, y: number}} p - The point.
+     * @param {{x: number, y: number}} a - The start point of the line segment.
+     * @param {{x: number, y: number}} b - The end point of the line segment.
+     * @returns {number} The distance in pixels.
+     */
+    function pointToLineSegmentDistance(p, a, b) {
+        const l2 = (a.x - b.x)**2 + (a.y - b.y)**2;
+        if (l2 === 0) return Math.sqrt((p.x - a.x)**2 + (p.y - a.y)**2);
+        
+        let t = ((p.x - a.x) * (b.x - a.x) + (p.y - a.y) * (b.y - a.y)) / l2;
+        t = Math.max(0, Math.min(1, t));
+        
+        const closestPoint = {
+            x: a.x + t * (b.x - a.x),
+            y: a.y + t * (b.y - a.y)
+        };
+        
+        return Math.sqrt((p.x - closestPoint.x)**2 + (p.y - closestPoint.y)**2);
     }
     
     function worldToGridCoords(x, y) {
