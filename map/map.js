@@ -117,6 +117,26 @@ document.addEventListener('DOMContentLoaded', () => {
             state.markers = markersData.markers || [];
             state.terrain = terrainData;
 
+            // --- Data Migration ---
+            // Ensure all terrain features have a unique internal ID for editing.
+            if (state.isDmMode && state.terrain && state.terrain.features) {
+                let migrationMade = false;
+                state.terrain.features.forEach((feature, index) => {
+                    if (!feature.properties) {
+                        feature.properties = {};
+                    }
+                    if (!feature.properties._internal_id) {
+                        feature.properties._internal_id = `terrain_${Date.now()}_${index}`;
+                        migrationMade = true;
+                    }
+                });
+                if (migrationMade) {
+                    console.log('Performed one-time migration for terrain feature IDs.');
+                    markDirty('terrain');
+                    // The "UNSAVED" badge will appear, prompting the user to save the migrated IDs.
+                }
+            }
+
             console.log('Loaded data:', {
                 markers: state.markers.length,
                 terrain: state.terrain.features.length,

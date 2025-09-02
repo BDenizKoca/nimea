@@ -100,15 +100,15 @@
                 openMarkerCreationModal(pendingMarker.getLatLng());
             } else if (e.shape === 'Polygon' || e.shape === 'Line') {
                 pendingTerrain = e.layer;
-                await openTerrainTypeModal(); // This will either show a modal or auto-apply the current terrain mode
+                await openTerrainTypeModal(); 
             }
         });
 
         // Listen for shapes being removed by Geoman
         bridge.map.on('pm:remove', (e) => {
-            if (e.layer && e.layer.feature && e.layer.feature.properties) {
+            if (e.layer && e.layer.feature) {
                 const removedId = e.layer.feature.properties._internal_id;
-                if (!removedId) return; // Not a terrain feature we manage
+                if (!removedId) return; 
 
                 const features = bridge.state.terrain.features;
                 const index = features.findIndex(f => f.properties._internal_id === removedId);
@@ -123,14 +123,13 @@
 
         // Listen for shapes being edited by Geoman
         bridge.map.on('pm:edit', (e) => {
-            if (e.layer && e.layer.feature && e.layer.feature.properties) {
+            if (e.layer && e.layer.feature) {
                 const editedId = e.layer.feature.properties._internal_id;
-                if (!editedId) return; // Not a terrain feature we manage
+                if (!editedId) return;
 
                 const featureToUpdate = bridge.state.terrain.features.find(f => f.properties._internal_id === editedId);
 
                 if (featureToUpdate) {
-                    // Update the geometry of the feature in our state
                     featureToUpdate.geometry = e.layer.toGeoJSON().geometry;
                     bridge.markDirty('terrain');
                     bridge.showNotification('Terrain feature updated.', 'info');
@@ -475,6 +474,8 @@
 
         const feature = pendingTerrain.toGeoJSON();
         feature.properties.kind = terrainType;
+        // *** THIS IS THE CRITICAL FIX: Assign a unique ID ***
+        feature.properties._internal_id = `terrain_${Date.now()}_${Math.random()}`;
         
         // Add the new feature to the state before re-rendering
         bridge.state.terrain.features.push(feature);
