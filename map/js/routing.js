@@ -10,16 +10,25 @@
     const domCache = {
         elements: {},
         get(id) {
-            if (!this.elements[id]) {
-                this.elements[id] = document.getElementById(id);
+            try {
+                if (!this.elements[id]) {
+                    this.elements[id] = document.getElementById(id);
+                }
+                return this.elements[id];
+            } catch (error) {
+                console.error(`Error accessing DOM element '${id}':`, error);
+                return null;
             }
-            return this.elements[id];
         },
         clear(id) {
-            if (id) {
-                delete this.elements[id];
-            } else {
-                this.elements = {};
+            try {
+                if (id) {
+                    delete this.elements[id];
+                } else {
+                    this.elements = {};
+                }
+            } catch (error) {
+                console.error('Error clearing DOM cache:', error);
             }
         }
     };
@@ -272,25 +281,36 @@
      */
     function updateRouteDisplay() {
         const stopsDiv = domCache.get('route-stops');
-        if (!stopsDiv) return;
+        if (!stopsDiv) {
+            console.error('Route stops container not found');
+            return;
+        }
 
-        stopsDiv.innerHTML = bridge.state.route.map((stop, idx) => {
-            const stopType = stop.isWaypoint ? 'waypoint' : 'marker';
-            return `<div class="route-stop-row" draggable="true" data-route-index="${idx}">
-                        <span class="drag-handle">⋮⋮</span>
-                        <span class="stop-info">${idx+1}. ${stop.name}</span>
-                        <button class="mini-btn" data-ridx="${idx}" title="Remove stop">✖</button>
-                    </div>`;
-        }).join('') + (bridge.state.route.length ? `<div class="route-actions">
-                        <button id="clear-route-btn" class="clear-route-btn">Clear Route</button>
+        try {
+            stopsDiv.innerHTML = bridge.state.route.map((stop, idx) => {
+                const stopType = stop.isWaypoint ? 'waypoint' : 'marker';
+                return `<div class="route-stop-row" draggable="true" data-route-index="${idx}">
+                            <span class="drag-handle">⋮⋮</span>
+                            <span class="stop-info">${idx+1}. ${stop.name}</span>
+                            <button class="mini-btn" data-ridx="${idx}" title="Remove stop">✖</button>
+                        </div>`;
+            }).join('') + (bridge.state.route.length ? `<div class="route-actions">
+                            <button id="clear-route-btn" class="clear-route-btn">Clear Route</button>
                     </div>` : '');
         
-        // Event delegation handles all button clicks automatically
-        // No need to manually attach event listeners here anymore
-        
-        // Setup drag and drop functionality (re-initialize after DOM update)
-        if (bridge.state.route.length > 1 && !stopsDiv._dragInitialized) {
-            setupDragAndDrop(stopsDiv);
+            // Event delegation handles all button clicks automatically
+            // No need to manually attach event listeners here anymore
+            
+            // Setup drag and drop functionality (re-initialize after DOM update)
+            if (bridge.state.route.length > 1 && !stopsDiv._dragInitialized) {
+                setupDragAndDrop(stopsDiv);
+            }
+        } catch (error) {
+            console.error('Error updating route display:', error);
+            // Fallback: ensure the div is cleared in case of partial failure
+            if (stopsDiv) {
+                stopsDiv.innerHTML = '<div class="error-message">Error loading route. Please refresh the page.</div>';
+            }
         }
     }
 
