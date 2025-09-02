@@ -114,10 +114,8 @@ body, html {
 .map-legend li { display:flex; align-items:center; gap:6px; margin:2px 0; }
 .legend-swatch { width:18px; height:10px; border:1px solid #333; border-radius:2px; box-shadow:0 0 0 1px rgba(0,0,0,0.1) inset; }
 .legend-road { background:#4a90e2; }
-.legend-river { background: repeating-linear-gradient(45deg,#1f78d1,#1f78d1 4px,#fff 4px,#fff 8px); }
-.legend-ocean { background:#0d3c66; }
-.legend-diff { background:#f5a623; }
-.legend-block { background:#d0021b; }
+.legend-difficult { background:#f5a623; }
+.legend-unpassable { background:#d0021b; }
 .legend-route { background:linear-gradient(90deg,#b30000,#ff5e5e); }
 .legend-note { font-style:italic; opacity:0.8; }
 

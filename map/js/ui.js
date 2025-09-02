@@ -28,8 +28,6 @@
             setupOverlayControls();
         }
         setupMobileUI();
-
-        console.log("UI module initialized.");
     }
 
     function setupSidebars() {

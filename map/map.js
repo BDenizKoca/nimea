@@ -13,12 +13,6 @@ document.addEventListener('DOMContentLoaded', () => {
             wagon: { speed: 50, cost: 0.8 },
             horse: { speed: 60, cost: 0.7 },
         },
-        terrainCosts: {
-            normal: 1,
-            road: 0.5,
-            difficult: 3,
-        },
-        gridCellSize: 24, // in pixels
     };
 
     const state = {

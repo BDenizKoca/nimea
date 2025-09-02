@@ -22,13 +22,10 @@
         if (bridge.state.isDmMode) {
             renderTerrain();
         }
-        
-        console.log("Terrain module initialized.");
     }
 
     function renderTerrain() {
         if (!bridge.state.isDmMode) {
-            console.log("Not in DM mode, skipping terrain rendering.");
             return;
         }
 
@@ -53,12 +50,9 @@
             onEachFeature: function (feature, layer) {
                 layer.on('click', () => {
                     // Optional: show info or editing tools for the terrain feature
-                    console.log('Clicked on terrain:', feature.properties);
                 });
             }
         }).addTo(bridge.map);
-
-        console.log('Terrain rendered for DM.');
     }
 
     function getTerrainAsGeoJSON() {

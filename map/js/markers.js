@@ -1,4 +1,4 @@
-// map/js/markers.js
+// map/js/markers.js - Marker rendering and management
 
 (function(window) {
     'use strict';
@@ -13,15 +13,11 @@
         }
 
         bridge.markersModule = {
-            renderMarkers,
+            renderMarkers
         };
-        
-        console.log("Markers module initialized.");
     }
 
     function renderMarkers() {
-        console.log('Rendering markers:', bridge.state.markers.length);
-        
         // Clean up existing markers to prevent memory leaks
         bridge.map.eachLayer(layer => {
             if (layer instanceof L.Marker && !layer.options.isPending) {

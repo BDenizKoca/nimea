@@ -1,4 +1,4 @@
-// map/js/routing.js
+// map/js/routing.js - Graph-based pathfinding system
 
 (function(window) {
     'use strict';
@@ -6,8 +6,16 @@
     // This will be initialized with the bridge object from the main script.
     let bridge = {};
 
-    let pathfindingGrid = null;
+    let routingGraph = null;
     let isCalculatingRoute = false; // Mutex to prevent concurrent calculations
+
+    // Terrain costs for pathfinding
+    const TERRAIN_COSTS = {
+        road: 0.5,      // Fast travel on roads
+        normal: 1.0,    // Default terrain
+        difficult: 3.0, // Mountains, swamps, etc.
+        unpassable: Infinity // Blocked areas
+    };
 
     function initRouting(map) {
         bridge = window.__nimea;
@@ -20,7 +28,7 @@
         bridge.routingModule = {
             addToRoute,
             recomputeRoute,
-            invalidateGrid, // <-- NEW: Allow other modules to invalidate the grid
+            invalidateGraph,
             initRouting: () => { /* no-op, already initialized */ }
         };
         
@@ -28,19 +36,17 @@
     }
 
     /**
-     * Invalidates the cached pathfinding grid.
+     * Invalidates the cached routing graph.
      * Called by the DM module when terrain is updated.
      */
-    function invalidateGrid() {
-        pathfindingGrid = null;
-        console.log("Pathfinding grid invalidated due to terrain changes.");
+    function invalidateGraph() {
+        routingGraph = null;
     }
 
     function addToRoute(marker) {
         if (bridge.state.isDmMode) {
             return; // routing disabled in DM mode
         }
-        console.log('Adding to route:', marker.name);
         bridge.state.route.push(marker);
         
         const routeSidebar = document.getElementById('route-sidebar');
@@ -92,18 +98,15 @@
             console.warn("Route calculation already in progress. Ignoring new request.");
             return;
         }
-
-        console.log('recomputeRoute called, current state:', {
-            routeLength: bridge.state.route.length,
-            isDmMode: bridge.state.isDmMode,
-            routeStops: bridge.state.route.map(r => r.name)
-        });
         
         // Clear existing leg polylines
         bridge.state.routePolylines.forEach(pl => bridge.map.removeLayer(pl));
         bridge.state.routePolylines = [];
         bridge.state.routeLegs = [];
-        if (bridge.state.routePolyline) { bridge.map.removeLayer(bridge.state.routePolyline); bridge.state.routePolyline = null; }
+        if (bridge.state.routePolyline) { 
+            bridge.map.removeLayer(bridge.state.routePolyline); 
+            bridge.state.routePolyline = null; 
+        }
         
         updateRouteDisplay();
         
@@ -115,23 +118,19 @@
         isCalculatingRoute = true;
         updateRouteSummaryCalculating();
         
-        // Build grid if it doesn't exist. This is now the only place it's built.
-        if (!pathfindingGrid) {
-            buildPathfindingGrid();
+        // Build graph if it doesn't exist
+        if (!routingGraph) {
+            buildRoutingGraph();
         }
 
-        // If grid build failed or was retried, the actual calculation will be picked up later.
-        // The `isCalculatingRoute` flag will be handled by the grid builder.
-        if (!pathfindingGrid) {
-            console.log("Grid is not ready yet, calculation will start after grid is built.");
+        if (!routingGraph) {
             return;
         }
 
-        // Process legs sequentially to avoid overwhelming easystar
+        // Process legs sequentially 
         const processLeg = (legIndex) => {
             // If calculation was cancelled, stop.
             if (!isCalculatingRoute) {
-                console.log("Route calculation was cancelled.");
                 updateRouteSummaryEmpty();
                 return;
             }
@@ -140,7 +139,6 @@
                 // All legs are calculated
                 updateRouteSummaryFromLegs();
                 isCalculatingRoute = false;
-                console.info('Route summary updated (A* mode).');
                 return;
             }
 
@@ -164,230 +162,344 @@
         return distPx * bridge.config.kmPerPixel;
     }
 
-    function buildPathfindingGrid() {
-        // This function now only builds the grid data, it doesn't configure easystar.
-        const bounds = bridge.map.getBounds();
-        const mapWidth = bounds.getEast();
-        const mapHeight = bounds.getSouth();
-
-        // Safeguard against invalid map dimensions during initialization
-        if (mapWidth <= 0 || mapHeight <= 0) {
-            console.warn(`Invalid map dimensions (${mapWidth}x${mapHeight}). Retrying grid build shortly...`);
-            setTimeout(buildPathfindingGrid, 200); // Try again after a short delay
-            return;
-        }
-
-        const cols = Math.floor(mapWidth / bridge.config.gridCellSize);
-        const rows = Math.floor(mapHeight / bridge.config.gridCellSize);
-
-        // Final safeguard for cols/rows
-        if (cols <= 0 || rows <= 0) {
-            console.error(`Cannot build grid with non-positive dimensions: ${cols}x${rows}.`);
-            isCalculatingRoute = false; // Release the lock
-            return;
-        }
-
-        console.log(`Building ${cols}x${rows} grid for map size ${mapWidth}x${mapHeight}...`);
-        console.log('Terrain features available:', bridge.state.terrain.features.length);
-
-        const TILE_NORMAL = 1;
-        const TILE_ROAD = 2;
-        const TILE_DIFFICULT = 3;
-        const TILE_UNPASSABLE = 4;
-
-        const grid = Array(rows).fill(null).map(() => Array(cols).fill(TILE_NORMAL));
-
-        if (bridge.state.terrain.features && bridge.state.terrain.features.length > 0) {
-            const unpassableFeatures = bridge.state.terrain.features.filter(f => f.properties.kind === 'unpassable');
-            const difficultFeatures = bridge.state.terrain.features.filter(f => f.properties.kind === 'difficult');
-            const roadFeatures = bridge.state.terrain.features.filter(f => f.properties.kind === 'road');
-
-            for (let r = 0; r < rows; r++) {
-                for (let c = 0; c < cols; c++) {
-                    const [worldX, worldY] = gridToWorldCoords(c, r, cols, rows, mapWidth, mapHeight);
-                    const pointCoords = [worldX, worldY];
-                    const turfPoint = turf.point(pointCoords); // Still useful for polygon checks
-                    let tileType = TILE_NORMAL;
-                    let isImpassable = false;
-
-                    for (const feature of unpassableFeatures) {
-                        if (feature.geometry.type === 'Polygon' && turf.booleanPointInPolygon(turfPoint, feature)) {
-                            isImpassable = true;
-                            tileType = TILE_UNPASSABLE;
-                            break;
-                        }
+    function buildRoutingGraph() {
+        const nodes = new Map(); // nodeId -> {x, y, type}
+        const edges = []; // {from, to, cost, distance}
+        
+        // Add all markers as nodes
+        bridge.state.markers.forEach(marker => {
+            const nodeId = `marker_${marker.id}`;
+            nodes.set(nodeId, {
+                x: marker.x,
+                y: marker.y,
+                type: 'marker',
+                markerId: marker.id
+            });
+        });
+        
+        // Process road features to create road network
+        const roadFeatures = bridge.state.terrain.features.filter(f => f.properties.kind === 'road');
+        
+        roadFeatures.forEach((roadFeature, roadIndex) => {
+            if (roadFeature.geometry.type !== 'LineString') return;
+            
+            const coordinates = roadFeature.geometry.coordinates;
+            
+            // Create nodes for road endpoints and intersections
+            coordinates.forEach((coord, coordIndex) => {
+                const nodeId = `road_${roadIndex}_${coordIndex}`;
+                nodes.set(nodeId, {
+                    x: coord[0],
+                    y: coord[1],
+                    type: 'road_node'
+                });
+            });
+            
+            // Create edges between consecutive road nodes
+            for (let i = 0; i < coordinates.length - 1; i++) {
+                const fromId = `road_${roadIndex}_${i}`;
+                const toId = `road_${roadIndex}_${i + 1}`;
+                const from = coordinates[i];
+                const to = coordinates[i + 1];
+                
+                const distance = Math.sqrt(
+                    Math.pow(to[0] - from[0], 2) + 
+                    Math.pow(to[1] - from[1], 2)
+                );
+                
+                // Roads have low cost
+                edges.push({
+                    from: fromId,
+                    to: toId,
+                    cost: TERRAIN_COSTS.road,
+                    distance: distance
+                });
+                
+                // Add reverse edge for bidirectional travel
+                edges.push({
+                    from: toId,
+                    to: fromId,
+                    cost: TERRAIN_COSTS.road,
+                    distance: distance
+                });
+            }
+        });
+        
+        // Connect markers to nearby road nodes
+        bridge.state.markers.forEach(marker => {
+            const markerNodeId = `marker_${marker.id}`;
+            const markerPos = {x: marker.x, y: marker.y};
+            
+            let closestRoadNode = null;
+            let closestDistance = Infinity;
+            
+            // Find closest road node
+            for (let [nodeId, node] of nodes) {
+                if (node.type === 'road_node') {
+                    const distance = Math.sqrt(
+                        Math.pow(node.x - markerPos.x, 2) + 
+                        Math.pow(node.y - markerPos.y, 2)
+                    );
+                    
+                    if (distance < closestDistance) {
+                        closestDistance = distance;
+                        closestRoadNode = nodeId;
                     }
-                    if (isImpassable) {
-                        grid[r][c] = tileType;
-                        continue;
-                    }
-
-                    let onRoad = false;
-                    for (const feature of roadFeatures) {
-                        const distance = pointToPolylineDistance(pointCoords, feature.geometry.coordinates);
-                        if (distance < bridge.config.gridCellSize / 2) {
-                            tileType = TILE_ROAD;
-                            onRoad = true;
-                            break;
-                        }
-                    }
-
-                    if (!onRoad) {
-                        for (const feature of difficultFeatures) {
-                            if (feature.geometry.type === 'Polygon' && turf.booleanPointInPolygon(turfPoint, feature)) {
-                                tileType = TILE_DIFFICULT;
-                                break;
-                            } else if (feature.geometry.type === 'LineString') {
-                                const distance = pointToPolylineDistance(pointCoords, feature.geometry.coordinates);
-                                if (distance < bridge.config.gridCellSize) {
-                                    tileType = TILE_DIFFICULT;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    grid[r][c] = tileType;
                 }
             }
-        }
+            
+            // Connect marker to closest road node if within reasonable distance
+            if (closestRoadNode && closestDistance < 200) { // 200 pixel threshold
+                const terrainCost = getTerrainCostBetweenPoints(
+                    markerPos, 
+                    nodes.get(closestRoadNode)
+                );
+                
+                edges.push({
+                    from: markerNodeId,
+                    to: closestRoadNode,
+                    cost: terrainCost,
+                    distance: closestDistance
+                });
+                
+                edges.push({
+                    from: closestRoadNode,
+                    to: markerNodeId,
+                    cost: terrainCost,
+                    distance: closestDistance
+                });
+            }
+        });
         
-        // Cache the generated grid and its metadata
-        pathfindingGrid = { 
-            grid, 
-            cols, 
-            rows, 
-            width: mapWidth, 
-            height: mapHeight,
-            TILE_NORMAL, TILE_ROAD, TILE_DIFFICULT
-        };
-
-        // If a calculation was waiting for the grid, start it now.
+        // Connect markers directly if no roads available or they're far from roads
+        bridge.state.markers.forEach((marker1, i) => {
+            bridge.state.markers.forEach((marker2, j) => {
+                if (i >= j) return; // Avoid duplicate edges and self-loops
+                
+                const marker1NodeId = `marker_${marker1.id}`;
+                const marker2NodeId = `marker_${marker2.id}`;
+                
+                const distance = Math.sqrt(
+                    Math.pow(marker2.x - marker1.x, 2) + 
+                    Math.pow(marker2.y - marker1.y, 2)
+                );
+                
+                // Only connect if reasonably close (prevent too many edges)
+                if (distance < 500) {
+                    const terrainCost = getTerrainCostBetweenPoints(
+                        {x: marker1.x, y: marker1.y},
+                        {x: marker2.x, y: marker2.y}
+                    );
+                    
+                    // Don't create direct connections if path crosses unpassable terrain
+                    if (terrainCost < Infinity) {
+                        edges.push({
+                            from: marker1NodeId,
+                            to: marker2NodeId,
+                            cost: terrainCost,
+                            distance: distance
+                        });
+                        
+                        edges.push({
+                            from: marker2NodeId,
+                            to: marker1NodeId,
+                            cost: terrainCost,
+                            distance: distance
+                        });
+                    }
+                }
+            });
+        });
+        
+        routingGraph = { nodes, edges };
+        
+        // If a calculation was waiting for the graph, start it now
         if (isCalculatingRoute) {
             recomputeRoute();
         }
     }
 
+    /**
+     * Dijkstra's algorithm implementation for pathfinding
+     */
+    function findShortestPath(graph, startNodeId, endNodeId) {
+        if (!graph.nodes.has(startNodeId) || !graph.nodes.has(endNodeId)) {
+            console.warn(`Node not found: start=${startNodeId}, end=${endNodeId}`);
+            return null;
+        }
+
+        const distances = new Map();
+        const previous = new Map();
+        const unvisited = new Set();
+
+        // Initialize distances
+        for (let nodeId of graph.nodes.keys()) {
+            distances.set(nodeId, Infinity);
+            unvisited.add(nodeId);
+        }
+        distances.set(startNodeId, 0);
+
+        while (unvisited.size > 0) {
+            // Find unvisited node with minimum distance
+            let currentNode = null;
+            let minDistance = Infinity;
+            for (let nodeId of unvisited) {
+                if (distances.get(nodeId) < minDistance) {
+                    minDistance = distances.get(nodeId);
+                    currentNode = nodeId;
+                }
+            }
+
+            if (currentNode === null || minDistance === Infinity) {
+                break; // No more reachable nodes
+            }
+
+            unvisited.delete(currentNode);
+
+            if (currentNode === endNodeId) {
+                break; // Found target
+            }
+
+            // Check all edges from current node
+            for (let edge of graph.edges) {
+                if (edge.from === currentNode && unvisited.has(edge.to)) {
+                    const totalCost = edge.distance * edge.cost;
+                    const altDistance = distances.get(currentNode) + totalCost;
+                    
+                    if (altDistance < distances.get(edge.to)) {
+                        distances.set(edge.to, altDistance);
+                        previous.set(edge.to, currentNode);
+                    }
+                }
+            }
+        }
+
+        // Reconstruct path
+        if (!previous.has(endNodeId)) {
+            return null; // No path found
+        }
+
+        const path = [];
+        let currentNode = endNodeId;
+        while (currentNode !== undefined) {
+            path.unshift(currentNode);
+            currentNode = previous.get(currentNode);
+        }
+
+        return path;
+    }
+
+    /**
+     * Calculate terrain cost between two points based on terrain features
+     */
+    function getTerrainCostBetweenPoints(from, to) {
+        // Check if path crosses unpassable areas
+        const unpassableFeatures = bridge.state.terrain.features.filter(f => f.properties.kind === 'unpassable');
+        
+        for (const feature of unpassableFeatures) {
+            if (feature.geometry.type === 'Polygon') {
+                // Simple line-polygon intersection check
+                if (lineIntersectsPolygon([from.x, from.y], [to.x, to.y], feature.geometry.coordinates[0])) {
+                    return Infinity; // Unpassable
+                }
+            }
+        }
+        
+        // Check for difficult terrain (increases cost)
+        const difficultFeatures = bridge.state.terrain.features.filter(f => f.properties.kind === 'difficult');
+        
+        for (const feature of difficultFeatures) {
+            if (feature.geometry.type === 'Polygon') {
+                // If path goes through difficult terrain, increase cost
+                if (lineIntersectsPolygon([from.x, from.y], [to.x, to.y], feature.geometry.coordinates[0])) {
+                    return TERRAIN_COSTS.difficult;
+                }
+            }
+        }
+        
+        // Default terrain cost
+        return TERRAIN_COSTS.normal;
+    }
+
+    /**
+     * Simple line-polygon intersection test
+     */
+    function lineIntersectsPolygon(lineStart, lineEnd, polygon) {
+        // Check if line intersects any edge of the polygon
+        for (let i = 0; i < polygon.length - 1; i++) {
+            if (linesIntersect(
+                lineStart, lineEnd,
+                polygon[i], polygon[i + 1]
+            )) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Check if two line segments intersect
+     */
+    function linesIntersect(line1Start, line1End, line2Start, line2End) {
+        const x1 = line1Start[0], y1 = line1Start[1];
+        const x2 = line1End[0], y2 = line1End[1];
+        const x3 = line2Start[0], y3 = line2Start[1];
+        const x4 = line2End[0], y4 = line2End[1];
+
+        const denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+        if (denom === 0) return false; // Lines are parallel
+
+        const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom;
+        const u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denom;
+
+        return t >= 0 && t <= 1 && u >= 0 && u <= 1;
+    }
+
     function calculateLegPath(start, end, onComplete) {
-        // Create a FRESH easystar instance for each leg to avoid state issues.
-        const legEasystar = new EasyStar.js();
-
-        // Configure this specific instance with the cached grid.
-        legEasystar.setGrid(pathfindingGrid.grid);
-        legEasystar.setAcceptableTiles([pathfindingGrid.TILE_NORMAL, pathfindingGrid.TILE_ROAD, pathfindingGrid.TILE_DIFFICULT]);
-        legEasystar.setTileCost(pathfindingGrid.TILE_NORMAL, 1.0);
-        legEasystar.setTileCost(pathfindingGrid.TILE_ROAD, 0.5);
-        legEasystar.setTileCost(pathfindingGrid.TILE_DIFFICULT, 3.0);
-        legEasystar.enableDiagonals();
-        legEasystar.disableCornerCutting();
-
-        const startCell = worldToGridCoords(start.x, start.y);
-        const endCell = worldToGridCoords(end.x, end.y);
+        const startNodeId = `marker_${start.id}`;
+        const endNodeId = `marker_${end.id}`;
+        
+        // Run Dijkstra's algorithm to find shortest path
+        const path = findShortestPath(routingGraph, startNodeId, endNodeId);
+        
         const straightLineKm = computeDirectKm(start, end);
         
-        const fallbackTimer = setTimeout(() => {
-            console.warn('EasyStar timeout, using fallback route');
-            legEasystar.stopFindPath(); // Stop the calculation
-            const straightPath = [[start.y, start.x], [end.y, end.x]];
-            const polyline = L.polyline(straightPath, { color: 'blue', weight: 3, dashArray: '5,5', pane: 'routePane' }).addTo(bridge.map);
-            bridge.state.routePolylines.push(polyline);
-            bridge.state.routeLegs.push({ from: start, to: end, distanceKm: straightLineKm, fallback: true });
-            if (typeof onComplete === 'function') onComplete();
-        }, 2000);
-        
-        legEasystar.findPath(startCell.x, startCell.y, endCell.x, endCell.y, (path) => {
-            clearTimeout(fallbackTimer);
+        if (path && path.length > 0) {
+            // Convert node path to coordinate path
+            const pixelPath = path.map(nodeId => {
+                const node = routingGraph.nodes.get(nodeId);
+                return [node.y, node.x]; // Leaflet expects [lat, lng] format
+            });
             
-            if (path && path.length > 0) {
-                const pixelPath = path.map(p => {
-                    const coords = gridToWorldCoords(p.x, p.y);
-                    return [coords[1], coords[0]];
-                });
-                const polyline = L.polyline(pixelPath, { color: 'red', weight: 3, pane: 'routePane' }).addTo(bridge.map);
-                bridge.state.routePolylines.push(polyline);
-                const distanceKm = computePixelPathKm(pixelPath);
-                bridge.state.routeLegs.push({ from: start, to: end, distanceKm });
-            } else {
-                const straightPath = [[start.y, start.x], [end.y, end.x]];
-                const polyline = L.polyline(straightPath, { color: 'blue', weight: 3, dashArray: '5,5', pane: 'routePane' }).addTo(bridge.map);
-                bridge.state.routePolylines.push(polyline);
-                bridge.state.routeLegs.push({ from: start, to: end, distanceKm: straightLineKm, fallback: true });
-            }
-            if (typeof onComplete === 'function') onComplete();
-        });
-        legEasystar.calculate();
-    }
-
-    // --- Custom Distance Calculation Helpers (replaces turf.pointToLineDistance) ---
-
-    /**
-     * Calculates the minimum distance from a point to a polyline (a series of line segments).
-     * @param {number[]} point - The point as [x, y].
-     * @param {number[][]} polyline - An array of points, e.g., [[x1, y1], [x2, y2], ...].
-     * @returns {number} The minimum distance in pixels.
-     */
-    function pointToPolylineDistance(point, polyline) {
-        let minDistance = Infinity;
-        const p = { x: point[0], y: point[1] };
-
-        for (let i = 0; i < polyline.length - 1; i++) {
-            const a = { x: polyline[i][0], y: polyline[i][1] };
-            const b = { x: polyline[i+1][0], y: polyline[i+1][1] };
-            const distance = pointToLineSegmentDistance(p, a, b);
-            if (distance < minDistance) {
-                minDistance = distance;
-            }
+            const polyline = L.polyline(pixelPath, { 
+                color: 'red', 
+                weight: 3, 
+                pane: 'routePane' 
+            }).addTo(bridge.map);
+            
+            bridge.state.routePolylines.push(polyline);
+            const distanceKm = computePixelPathKm(pixelPath);
+            bridge.state.routeLegs.push({ from: start, to: end, distanceKm });
+        } else {
+            // Fallback to straight line if no path found
+            const straightPath = [[start.y, start.x], [end.y, end.x]];
+            const polyline = L.polyline(straightPath, { 
+                color: 'blue', 
+                weight: 3, 
+                dashArray: '5,5', 
+                pane: 'routePane' 
+            }).addTo(bridge.map);
+            
+            bridge.state.routePolylines.push(polyline);
+            bridge.state.routeLegs.push({ 
+                from: start, 
+                to: end, 
+                distanceKm: straightLineKm, 
+                fallback: true 
+            });
         }
-        return minDistance;
-    }
-
-    /**
-     * Calculates the shortest distance from a point to a single line segment.
-     * @param {{x: number, y: number}} p - The point.
-     * @param {{x: number, y: number}} a - The start point of the line segment.
-     * @param {{x: number, y: number}} b - The end point of the line segment.
-     * @returns {number} The distance in pixels.
-     */
-    function pointToLineSegmentDistance(p, a, b) {
-        const l2 = (a.x - b.x)**2 + (a.y - b.y)**2;
-        if (l2 === 0) return Math.sqrt((p.x - a.x)**2 + (p.y - a.y)**2);
         
-        let t = ((p.x - a.x) * (b.x - a.x) + (p.y - a.y) * (b.y - a.y)) / l2;
-        t = Math.max(0, Math.min(1, t));
-        
-        const closestPoint = {
-            x: a.x + t * (b.x - a.x),
-            y: a.y + t * (b.y - a.y)
-        };
-        
-        return Math.sqrt((p.x - closestPoint.x)**2 + (p.y - closestPoint.y)**2);
-    }
-    
-    function worldToGridCoords(x, y) {
-        if (!pathfindingGrid) return { x: 0, y: 0 };
-        const gridX = Math.floor(x / bridge.config.gridCellSize);
-        const gridY = Math.floor(y / bridge.config.gridCellSize);
-        return {
-            x: Math.max(0, Math.min(gridX, pathfindingGrid.cols - 1)),
-            y: Math.max(0, Math.min(gridY, pathfindingGrid.rows - 1))
-        };
-    }
-
-    function gridToWorldCoords(gridX, gridY) {
-        // Overloaded signature to support old calls from the grid builder
-        if (arguments.length > 2) {
-            const cols = arguments[2];
-            const rows = arguments[3];
-            const mapWidth = arguments[4];
-            const mapHeight = arguments[5];
-            return [
-                gridX * bridge.config.gridCellSize + bridge.config.gridCellSize / 2,
-                gridY * bridge.config.gridCellSize + bridge.config.gridCellSize / 2
-            ];
-        }
-        return [
-            gridX * bridge.config.gridCellSize + bridge.config.gridCellSize / 2,
-            gridY * bridge.config.gridCellSize + bridge.config.gridCellSize / 2
-        ];
+        if (typeof onComplete === 'function') onComplete();
     }
 
     function computePixelPathKm(pixelPath) {

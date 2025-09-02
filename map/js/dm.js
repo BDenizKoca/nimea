@@ -39,8 +39,6 @@
         };
         bridge.openInfoSidebar = bridge.openInfoSidebar || function() { console.error('openInfoSidebar not implemented on bridge'); };
 
-
-        console.log("DM module initialized and attached to bridge.");
     }
 
     /**
@@ -55,8 +53,6 @@
 
         // From here, we are in DM mode
         addAuthenticationControls();
-
-        console.log('Setting up DM mode controls (DM mode active)...');
 
         // Initialize Git Gateway for live CMS functionality
         try {
@@ -510,9 +506,9 @@
         bridge.showNotification(`${terrainType} terrain added`, 'success');
         bridge.markDirty('terrain');
 
-        // Invalidate the routing grid so the next calculation uses the new terrain
-        if (bridge.routingModule && bridge.routingModule.invalidateGrid) {
-            bridge.routingModule.invalidateGrid();
+        // Invalidate the routing graph so the next calculation uses the new terrain
+        if (bridge.routingModule && bridge.routingModule.invalidateGraph) {
+            bridge.routingModule.invalidateGraph();
         }
         
         // We no longer need the temporary layer drawn by Geoman, as renderTerrain has replaced it

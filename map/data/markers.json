@@ -1,47 +1,26 @@
 {
-  "markers": [
-    {
-      "id": "test-city-1",
-      "name": "Varkas",
-      "x": 1000,
-      "y": 800,
-      "type": "city",
-      "faction": "Kuruntar",
-      "summary": "Test city for route planning. Capital built on ancient ruins.",
-      "images": [],
-      "public": true
-    },
-    {
-      "id": "test-city-2",
-      "name": "Aurelium",
-      "x": 1500,
-      "y": 1200,
-      "type": "city",
-      "faction": "Empire of Aurelius",
-      "summary": "Second test city. The magnificent capital of the Empire.",
-      "images": [],
-      "public": true
-    },
-    {
-      "id": "test-fortress",
-      "name": "Iron Gate",
-      "x": 1250,
-      "y": 1000,
-      "type": "fortress",
-      "faction": "Empire of Aurelius",
-      "summary": "Test fortress between the two cities for route testing.",
-      "images": [],
-      "public": true
-    },
-    {
-      "id": "testcity",
-      "name": "testcity",
-      "x": 2082.499969953928,
-      "y": 2458.496105973203,
-      "type": "city",
-      "summary": "test",
-      "images": [],
-      "public": true
-    }
-  ]
+    "markers": [
+        {
+            "id": "varkas",
+            "name": "Varkas",
+            "x": 1234,
+            "y": 987,
+            "type": "city",
+            "faction": "Kuruntar",
+            "summary": "Başkent, yıkık bir kutsal şehrin üzerine inşa edildi.",
+            "images": ["images/varkas_1.jpg", "images/varkas_2.jpg"],
+            "public": true
+        },
+        {
+            "id": "aurelium",
+            "name": "Aurelium",
+            "x": 2000,
+            "y": 1200,
+            "type": "city",
+            "faction": "Empire of Aurelius",
+            "summary": "The magnificent capital of the Empire of Aurelius and the largest urban center in Nimea.",
+            "images": [],
+            "public": true
+        }
+    ]
 }
