@@ -42,17 +42,48 @@
                 // Store marker data directly on the marker object for direct-touch.js to use
                 marker.markerData = markerData;
                 
-                // Standard click handler - works primarily for desktop
-                marker.on('click', () => {
-                    console.log("Click detected on marker:", markerData.name);
+                // Unified tap detection for both desktop and mobile
+                let lastTapTime = 0;
+                let tapTimeout = null;
+                
+                const handleSingleTap = () => {
+                    console.log("Single tap detected on marker:", markerData.name);
                     bridge.uiModule.openInfoSidebar(markerData);
-                });
-
-                // Standard double-click handler for desktop
-                marker.on('dblclick', () => {
-                    console.log("Double click detected on marker:", markerData.name);
+                };
+                
+                const handleDoubleTap = () => {
+                    console.log("Double tap detected on marker:", markerData.name);
                     focusOnMarker(markerData);
+                };
+                
+                const handleTapEvent = (e) => {
+                    const now = Date.now();
+                    const timeSince = now - lastTapTime;
+                    
+                    if (timeSince < 300 && timeSince > 0) {
+                        // Double tap detected
+                        clearTimeout(tapTimeout);
+                        lastTapTime = 0; // Reset to prevent triple-tap
+                        handleDoubleTap();
+                    } else {
+                        // Potential single tap - wait to see if double tap follows
+                        lastTapTime = now;
+                        tapTimeout = setTimeout(() => {
+                            if (lastTapTime === now) {
+                                handleSingleTap();
+                            }
+                        }, 300);
+                    }
+                };
+                
+                // Desktop click handler with delay for double-click detection
+                marker.on('click', (e) => {
+                    e.originalEvent.preventDefault();
+                    handleTapEvent(e);
                 });
+                
+                // Disable the default dblclick handler since we handle it manually
+                marker.off('dblclick');
                 
                 // Make sure the marker's icon exists before we try to modify it
                 if (marker._icon) {
@@ -64,7 +95,7 @@
                         marker._icon.addEventListener('touchend', (e) => {
                             e.preventDefault(); // Prevent default behavior
                             console.log("Direct touchend on marker icon:", markerData.name);
-                            bridge.uiModule.openInfoSidebar(markerData);
+                            handleTapEvent(e); // Use the same unified tap detection
                         }, false);
                     }
                 } else {
@@ -77,7 +108,7 @@
                                 marker._icon.addEventListener('touchend', (e) => {
                                     e.preventDefault();
                                     console.log("Delayed touchend on marker icon:", markerData.name);
-                                    bridge.uiModule.openInfoSidebar(markerData);
+                                    handleTapEvent(e); // Use the same unified tap detection
                                 }, false);
                             }
                         }
