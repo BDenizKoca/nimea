@@ -1,26 +1,40 @@
 {
-    "markers": [
-        {
-            "id": "varkas",
-            "name": "Varkas",
-            "x": 1234,
-            "y": 987,
-            "type": "city",
-            "faction": "Kuruntar",
-            "summary": "Başkent, yıkık bir kutsal şehrin üzerine inşa edildi.",
-            "images": ["images/varkas_1.jpg", "images/varkas_2.jpg"],
-            "public": true
-        },
-        {
-            "id": "aurelium",
-            "name": "Aurelium",
-            "x": 2000,
-            "y": 1200,
-            "type": "city",
-            "faction": "Empire of Aurelius",
-            "summary": "The magnificent capital of the Empire of Aurelius and the largest urban center in Nimea.",
-            "images": [],
-            "public": true
-        }
-    ]
+  "markers": [
+    {
+      "id": "varkas",
+      "name": "Varkas",
+      "x": 1234,
+      "y": 987,
+      "type": "city",
+      "faction": "Kuruntar",
+      "summary": "Başkent, yıkık bir kutsal şehrin üzerine inşa edildi.",
+      "images": [
+        "images/varkas_1.jpg",
+        "images/varkas_2.jpg"
+      ],
+      "public": true
+    },
+    {
+      "id": "aurelium",
+      "name": "Aurelium",
+      "x": 2000,
+      "y": 1200,
+      "type": "city",
+      "faction": "Empire of Aurelius",
+      "summary": "The magnificent capital of the Empire of Aurelius and the largest urban center in Nimea.",
+      "images": [],
+      "public": true
+    },
+    {
+      "id": "nortreen",
+      "name": "Nortreen",
+      "x": 2063.999634764632,
+      "y": 2407.93772526788,
+      "type": "city",
+      "faction": "fref",
+      "summary": "free",
+      "images": [],
+      "public": true
+    }
+  ]
 }
