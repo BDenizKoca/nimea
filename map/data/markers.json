@@ -1,37 +1,47 @@
 {
-    "markers": [
-        {
-            "id": "test-city-1",
-            "name": "Varkas",
-            "x": 1000,
-            "y": 800,
-            "type": "city",
-            "faction": "Kuruntar",
-            "summary": "Test city for route planning. Capital built on ancient ruins.",
-            "images": [],
-            "public": true
-        },
-        {
-            "id": "test-city-2", 
-            "name": "Aurelium",
-            "x": 1500,
-            "y": 1200,
-            "type": "city",
-            "faction": "Empire of Aurelius",
-            "summary": "Second test city. The magnificent capital of the Empire.",
-            "images": [],
-            "public": true
-        },
-        {
-            "id": "test-fortress",
-            "name": "Iron Gate",
-            "x": 1250,
-            "y": 1000,
-            "type": "fortress",
-            "faction": "Empire of Aurelius",
-            "summary": "Test fortress between the two cities for route testing.",
-            "images": [],
-            "public": true
-        }
-    ]
+  "markers": [
+    {
+      "id": "test-city-1",
+      "name": "Varkas",
+      "x": 1000,
+      "y": 800,
+      "type": "city",
+      "faction": "Kuruntar",
+      "summary": "Test city for route planning. Capital built on ancient ruins.",
+      "images": [],
+      "public": true
+    },
+    {
+      "id": "test-city-2",
+      "name": "Aurelium",
+      "x": 1500,
+      "y": 1200,
+      "type": "city",
+      "faction": "Empire of Aurelius",
+      "summary": "Second test city. The magnificent capital of the Empire.",
+      "images": [],
+      "public": true
+    },
+    {
+      "id": "test-fortress",
+      "name": "Iron Gate",
+      "x": 1250,
+      "y": 1000,
+      "type": "fortress",
+      "faction": "Empire of Aurelius",
+      "summary": "Test fortress between the two cities for route testing.",
+      "images": [],
+      "public": true
+    },
+    {
+      "id": "testcity",
+      "name": "testcity",
+      "x": 2082.499969953928,
+      "y": 2458.496105973203,
+      "type": "city",
+      "summary": "test",
+      "images": [],
+      "public": true
+    }
+  ]
 }
