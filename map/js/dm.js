@@ -442,6 +442,9 @@
         const feature = pendingTerrain.toGeoJSON();
         feature.properties.kind = terrainType;
         
+        // Add the new feature to the state before re-rendering
+        bridge.state.terrain.features.push(feature);
+
         // The terrain module will now handle the visual representation
         if (bridge.terrainModule) {
             bridge.terrainModule.renderTerrain();
@@ -450,6 +453,8 @@
         bridge.showNotification(`${terrainType} terrain added`, 'success');
         bridge.markDirty('terrain');
         
+        // We no longer need the temporary layer drawn by Geoman, as renderTerrain has replaced it
+        bridge.map.removeLayer(pendingTerrain);
         pendingTerrain = null;
     }
 
