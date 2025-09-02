@@ -509,6 +509,11 @@
         
         bridge.showNotification(`${terrainType} terrain added`, 'success');
         bridge.markDirty('terrain');
+
+        // Invalidate the routing grid so the next calculation uses the new terrain
+        if (bridge.routingModule && bridge.routingModule.invalidateGrid) {
+            bridge.routingModule.invalidateGrid();
+        }
         
         // We no longer need the temporary layer drawn by Geoman, as renderTerrain has replaced it
         bridge.map.removeLayer(pendingTerrain);

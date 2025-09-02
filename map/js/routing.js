@@ -7,7 +7,6 @@
     let bridge = {};
 
     let pathfindingGrid = null;
-    let easystar = null;
     let isCalculatingRoute = false; // Mutex to prevent concurrent calculations
 
     function initRouting(map) {
@@ -16,16 +15,25 @@
             console.error("Routing module requires the global bridge.");
             return;
         }
-        easystar = new EasyStar.js();
         
         // Expose public functions on the bridge
         bridge.routingModule = {
             addToRoute,
             recomputeRoute,
+            invalidateGrid, // <-- NEW: Allow other modules to invalidate the grid
             initRouting: () => { /* no-op, already initialized */ }
         };
         
         console.log("Routing module initialized.");
+    }
+
+    /**
+     * Invalidates the cached pathfinding grid.
+     * Called by the DM module when terrain is updated.
+     */
+    function invalidateGrid() {
+        pathfindingGrid = null;
+        console.log("Pathfinding grid invalidated due to terrain changes.");
     }
 
     function addToRoute(marker) {
@@ -106,14 +114,24 @@
 
         isCalculatingRoute = true;
         updateRouteSummaryCalculating();
-        buildPathfindingGrid(); // This is fast after the first run
+        
+        // Build grid if it doesn't exist. This is now the only place it's built.
+        if (!pathfindingGrid) {
+            buildPathfindingGrid();
+        }
+
+        // If grid build failed or was retried, the actual calculation will be picked up later.
+        // The `isCalculatingRoute` flag will be handled by the grid builder.
+        if (!pathfindingGrid) {
+            console.log("Grid is not ready yet, calculation will start after grid is built.");
+            return;
+        }
 
         // Process legs sequentially to avoid overwhelming easystar
         const processLeg = (legIndex) => {
             // If calculation was cancelled, stop.
             if (!isCalculatingRoute) {
                 console.log("Route calculation was cancelled.");
-                // We should probably clear the summary here too
                 updateRouteSummaryEmpty();
                 return;
             }
@@ -147,12 +165,7 @@
     }
 
     function buildPathfindingGrid() {
-        // Check if the grid is already built and valid
-        if (pathfindingGrid) {
-            console.log("Pathfinding grid already exists. Skipping build.");
-            return;
-        }
-
+        // This function now only builds the grid data, it doesn't configure easystar.
         const bounds = bridge.map.getBounds();
         const mapWidth = bounds.getEast();
         const mapHeight = bounds.getSouth();
@@ -191,7 +204,7 @@
 
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols; c++) {
-                    const [worldX, worldY] = gridToWorldCoords(c, r);
+                    const [worldX, worldY] = gridToWorldCoords(c, r, cols, rows, mapWidth, mapHeight);
                     const point = turf.point([worldX, worldY]);
                     let tileType = TILE_NORMAL;
                     let isImpassable = false;
@@ -236,26 +249,43 @@
                 }
             }
         }
+        
+        // Cache the generated grid and its metadata
+        pathfindingGrid = { 
+            grid, 
+            cols, 
+            rows, 
+            width: mapWidth, 
+            height: mapHeight,
+            TILE_NORMAL, TILE_ROAD, TILE_DIFFICULT
+        };
 
-        easystar.setGrid(grid);
-        easystar.setAcceptableTiles([TILE_NORMAL, TILE_ROAD, TILE_DIFFICULT]);
-        easystar.setTileCost(TILE_NORMAL, 1.0);
-        easystar.setTileCost(TILE_ROAD, 0.5);
-        easystar.setTileCost(TILE_DIFFICULT, 3.0);
-        easystar.enableDiagonals();
-        easystar.disableCornerCutting();
-
-        pathfindingGrid = { cols, rows, width: mapWidth, height: mapHeight, TILE_NORMAL, TILE_ROAD, TILE_DIFFICULT, TILE_UNPASSABLE };
+        // If a calculation was waiting for the grid, start it now.
+        if (isCalculatingRoute) {
+            recomputeRoute();
+        }
     }
 
     function calculateLegPath(start, end, onComplete) {
-        if (!pathfindingGrid) buildPathfindingGrid();
+        // Create a FRESH easystar instance for each leg to avoid state issues.
+        const legEasystar = new EasyStar.js();
+
+        // Configure this specific instance with the cached grid.
+        legEasystar.setGrid(pathfindingGrid.grid);
+        legEasystar.setAcceptableTiles([pathfindingGrid.TILE_NORMAL, pathfindingGrid.TILE_ROAD, pathfindingGrid.TILE_DIFFICULT]);
+        legEasystar.setTileCost(pathfindingGrid.TILE_NORMAL, 1.0);
+        legEasystar.setTileCost(pathfindingGrid.TILE_ROAD, 0.5);
+        legEasystar.setTileCost(pathfindingGrid.TILE_DIFFICULT, 3.0);
+        legEasystar.enableDiagonals();
+        legEasystar.disableCornerCutting();
+
         const startCell = worldToGridCoords(start.x, start.y);
         const endCell = worldToGridCoords(end.x, end.y);
         const straightLineKm = computeDirectKm(start, end);
         
         const fallbackTimer = setTimeout(() => {
             console.warn('EasyStar timeout, using fallback route');
+            legEasystar.stopFindPath(); // Stop the calculation
             const straightPath = [[start.y, start.x], [end.y, end.x]];
             const polyline = L.polyline(straightPath, { color: 'blue', weight: 3, dashArray: '5,5', pane: 'routePane' }).addTo(bridge.map);
             bridge.state.routePolylines.push(polyline);
@@ -263,7 +293,7 @@
             if (typeof onComplete === 'function') onComplete();
         }, 2000);
         
-        easystar.findPath(startCell.x, startCell.y, endCell.x, endCell.y, (path) => {
+        legEasystar.findPath(startCell.x, startCell.y, endCell.x, endCell.y, (path) => {
             clearTimeout(fallbackTimer);
             
             if (path && path.length > 0) {
@@ -283,7 +313,7 @@
             }
             if (typeof onComplete === 'function') onComplete();
         });
-        easystar.calculate();
+        legEasystar.calculate();
     }
     
     function worldToGridCoords(x, y) {
@@ -297,6 +327,17 @@
     }
 
     function gridToWorldCoords(gridX, gridY) {
+        // Overloaded signature to support old calls from the grid builder
+        if (arguments.length > 2) {
+            const cols = arguments[2];
+            const rows = arguments[3];
+            const mapWidth = arguments[4];
+            const mapHeight = arguments[5];
+            return [
+                gridX * bridge.config.gridCellSize + bridge.config.gridCellSize / 2,
+                gridY * bridge.config.gridCellSize + bridge.config.gridCellSize / 2
+            ];
+        }
         return [
             gridX * bridge.config.gridCellSize + bridge.config.gridCellSize / 2,
             gridY * bridge.config.gridCellSize + bridge.config.gridCellSize / 2
