@@ -55,27 +55,29 @@
 
                 marker.on('touchend', (e) => {
                     e.originalEvent.preventDefault();
-                    if (marker._touchStartTime && marker._touchStartPos) {
-                        const touchDuration = Date.now() - marker._touchStartTime;
-                        const touchEnd = e.originalEvent.changedTouches[0];
-                        const deltaX = Math.abs(touchEnd.clientX - marker._touchStartPos.clientX);
-                        const deltaY = Math.abs(touchEnd.clientY - marker._touchStartPos.clientY);
-                        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-                        if (touchDuration < 500 && distance < 10) {
-                            const now = Date.now();
-                            if (marker._lastTapTime && (now - marker._lastTapTime) < 350) {
-                                // Double tap: focus
-                                focusOnMarker(markerData);
-                                marker._lastTapTime = null;
-                            } else {
-                                // Immediate single tap behavior (no waiting)
-                                bridge.uiModule.openInfoSidebar(markerData);
-                                marker._lastTapTime = now;
-                            }
+                    if (!marker._touchStartTime || !marker._touchStartPos) return;
+                    const touchDuration = Date.now() - marker._touchStartTime;
+                    const touchEnd = e.originalEvent.changedTouches[0];
+                    const deltaX = Math.abs(touchEnd.clientX - marker._touchStartPos.clientX);
+                    const deltaY = Math.abs(touchEnd.clientY - marker._touchStartPos.clientY);
+                    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+                    if (touchDuration < 500 && distance < 10) {
+                        const now = Date.now();
+                        const isDouble = marker._lastTapTime && (now - marker._lastTapTime) < 320;
+                        // Always open info immediately on first tap
+                        bridge.uiModule.openInfoSidebar(markerData);
+                        if (isDouble) {
+                            // Perform focus WITHOUT closing sidebar so user still sees info
+                            mapFocusWithoutClosing(markerData);
+                            marker._lastTapTime = null; // reset chain
+                        } else {
+                            marker._lastTapTime = now;
                         }
-                        marker._touchStartTime = null;
-                        marker._touchStartPos = null;
                     }
+
+                    marker._touchStartTime = null;
+                    marker._touchStartPos = null;
                 });
 
                 marker.on('dblclick', () => {
@@ -85,24 +87,17 @@
 
                 // Helper function for focus behavior
                 function focusOnMarker(markerData) {
-                    // Double click/tap: Focus mode with zoom and center
-                    // Check if marker is currently visible in viewport
-                    const markerPoint = bridge.map.latLngToContainerPoint([markerData.y, markerData.x]);
-                    const mapSize = bridge.map.getSize();
-                    
-                    // Close info sidebar before navigating
-                    bridge.uiModule.closeInfoSidebar();
-                    
-                    // Always zoom and center on double click/tap
+                    // Desktop double-click path (kept for compatibility)
+                    mapFocusWithoutClosing(markerData);
+                }
+
+                function mapFocusWithoutClosing(markerData) {
                     bridge.map.flyTo([markerData.y, markerData.x], Math.max(2.2, bridge.map.getZoom()), {
-                        duration: 1.2,
+                        duration: 1.0,
                         easeLinearity: 0.25
                     });
-                    
-                    // Open sidebar after animation
-                    setTimeout(() => {
-                        bridge.uiModule.openInfoSidebar(markerData);
-                    }, 600);
+                    // Ensure sidebar stays visible – reopen after slight delay in case layout shifts
+                    setTimeout(() => bridge.uiModule.openInfoSidebar(markerData), 400);
                 }
                 
                 // Handle marker drag end in DM mode
