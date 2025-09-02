@@ -16,7 +16,45 @@
             renderMarkers
         };
         
+        // Set up zoom-based marker scaling
+        setupMarkerScaling();
+        
         console.log("Markers module initialized.");
+    }
+
+    /**
+     * Set up dynamic marker scaling based on zoom level
+     */
+    function setupMarkerScaling() {
+        if (!bridge.map) return;
+        
+        const applyMarkerScale = () => {
+            const zoom = bridge.map.getZoom();
+            const maxZoom = bridge.map.getMaxZoom();
+            const minZoom = bridge.map.getMinZoom();
+            
+            // Calculate scale factor - minimum 0.6 (60%) at max zoom, normal scale at lower zooms
+            const minScale = 0.6;
+            const normalizedZoom = (zoom - minZoom) / (maxZoom - minZoom);
+            const scale = Math.max(minScale, 1 - (normalizedZoom * 0.4));
+            
+            // Apply scale to all custom markers
+            bridge.map.eachLayer(layer => {
+                if (layer instanceof L.Marker) {
+                    const iconElement = layer.getElement();
+                    if (iconElement && (iconElement.classList.contains('custom-marker') || iconElement.classList.contains('custom-image-marker'))) {
+                        iconElement.style.transform = `scale(${scale})`;
+                    }
+                }
+            });
+        };
+        
+        // Apply scaling on zoom events
+        bridge.map.on('zoom', applyMarkerScale);
+        bridge.map.on('zoomend', applyMarkerScale);
+        
+        // Apply initial scaling
+        setTimeout(applyMarkerScale, 100);
     }
 
     function renderMarkers() {
@@ -192,6 +230,26 @@
             });
             // Removed the automatic info sidebar opening - now "Show on Map" just zooms to location
         }
+        
+        // Apply marker scaling after rendering
+        setTimeout(() => {
+            const zoom = bridge.map.getZoom();
+            const maxZoom = bridge.map.getMaxZoom();
+            const minZoom = bridge.map.getMinZoom();
+            
+            const minScale = 0.6;
+            const normalizedZoom = (zoom - minZoom) / (maxZoom - minZoom);
+            const scale = Math.max(minScale, 1 - (normalizedZoom * 0.4));
+            
+            bridge.map.eachLayer(layer => {
+                if (layer instanceof L.Marker) {
+                    const iconElement = layer.getElement();
+                    if (iconElement && (iconElement.classList.contains('custom-marker') || iconElement.classList.contains('custom-image-marker'))) {
+                        iconElement.style.transform = `scale(${scale})`;
+                    }
+                }
+            });
+        }, 50);
     }
 
     window.__nimea_markers_init = initMarkersModule;

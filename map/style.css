@@ -506,6 +506,9 @@ body, html {
 .custom-marker {
     background: none !important;
     border: none !important;
+    /* Ensure minimum scale even at high zoom levels */
+    transform-origin: center bottom;
+    transition: transform 0.1s ease-out;
 }
 
 .custom-marker-icon {
@@ -520,14 +523,20 @@ body, html {
     border-radius: 50%;
     box-shadow: 0 2px 4px rgba(0,0,0,0.3);
     cursor: pointer;
+    /* Minimum scale to ensure visibility at max zoom */
+    min-width: 24px;
+    min-height: 24px;
 }
 
 .custom-marker-icon:hover {
     background: rgba(255, 255, 255, 1);
 }
 
-/* Custom image marker styles */
+/* Custom image marker styles with minimum scale */
 .custom-image-marker {
+    /* Ensure minimum scale even at high zoom levels */
+    transform-origin: center bottom;
+    transition: transform 0.1s ease-out;
     border-radius: 50% !important;
     border: 2px solid #333 !important;
     box-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
