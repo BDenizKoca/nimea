@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- MAP INITIALIZATION ---
     const map = L.map('map', {
         crs: L.CRS.Simple,
-        minZoom: -2,
+        minZoom: -3,         // Allow more zoom out for very wide screens
         maxZoom: 4,          // Allow more zoom levels
         zoomControl: false,
         attributionControl: false,
@@ -67,15 +67,28 @@ document.addEventListener('DOMContentLoaded', () => {
         originalMapBounds = bounds; // Store the original bounds
         L.imageOverlay(mapImageUrl, bounds).addTo(map);
         
-        // Use setView with a higher zoom level to fill the screen better
-        const centerY = height / 2;
-        const centerX = width / 2;
-        
-        // Adjust initial zoom based on screen width
+        // Use fitBounds to show the entire map initially, with different padding for mobile vs desktop
         const isMobile = window.innerWidth <= 700;
-        const initialZoom = isMobile ? -0.5 : 0.5; // Zoom out more on mobile
+        const padding = isMobile ? [20, 20] : [50, 50]; // Less padding on mobile for more map visibility
         
-        map.setView([centerY, centerX], initialZoom);
+        map.fitBounds(bounds, { 
+            padding: padding,
+            maxZoom: isMobile ? 1 : 2 // Limit max zoom on initial fit
+        });
+        
+        // Add window resize handler to adjust zoom for orientation changes on mobile
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                const newIsMobile = window.innerWidth <= 700;
+                const newPadding = newIsMobile ? [20, 20] : [50, 50];
+                map.fitBounds(bounds, { 
+                    padding: newPadding,
+                    maxZoom: newIsMobile ? 1 : 2
+                });
+            }, 250); // Debounce resize events
+        });
         
         loadInitialData();
     };
