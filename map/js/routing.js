@@ -95,28 +95,23 @@
             return; 
         }
 
-        console.info('Computing route distances using direct pixel distance (175px = 100km).');
+        // Build the grid before calculating paths
+        buildPathfindingGrid();
 
+        let legsToCalculate = bridge.state.route.length - 1;
         for (let i = 1; i < bridge.state.route.length; i++) {
             const start = bridge.state.route[i - 1];
             const end = bridge.state.route[i];
-            const straightLineKm = computeDirectKm(start, end);
-            console.debug(`Leg ${i}: ${start.name} -> ${end.name} = ${straightLineKm.toFixed(2)} km`);
-
-            const straightPath = [[start.y, start.x], [end.y, end.x]];
-            const polyline = L.polyline(straightPath, {
-                color: '#204d8c',
-                weight: 3,
-                dashArray: '6,6',
-                pane: 'routePane'
-            }).addTo(bridge.map);
             
-            bridge.state.routePolylines.push(polyline);
-            bridge.state.routeLegs.push({ from: start, to: end, distanceKm: straightLineKm, mode: 'direct' });
+            calculateLegPath(start, end, () => {
+                legsToCalculate--;
+                if (legsToCalculate === 0) {
+                    // This is the last leg, now update the summary
+                    updateRouteSummaryFromLegs();
+                    console.info('Route summary updated (A* mode).');
+                }
+            });
         }
-
-        updateRouteSummaryFromLegs();
-        console.info('Route summary updated (direct mode).');
     }
 
     function computeDirectKm(a, b) {

@@ -376,8 +376,8 @@
 
     function openMarkerCreationModal(latLng) {
         const modal = document.getElementById('marker-creation-modal');
-        document.getElementById('marker-coordinates').value = `X: ${Math.round(latLng.lng)}, Y: ${Math.round(latLng.lat)}`;
         document.getElementById('marker-form').reset();
+        document.getElementById('marker-coordinates').value = `X: ${Math.round(latLng.lng)}, Y: ${Math.round(latLng.lat)}`;
         document.getElementById('marker-public').checked = true;
         modal.classList.remove('hidden');
         document.getElementById('marker-name').focus();
