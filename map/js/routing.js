@@ -226,22 +226,18 @@
                         <button id="clear-route-btn" class="clear-route-btn">Clear Route</button>
                     </div>` : '');
         
-        // Add event listeners for remove buttons
-        stopsDiv.querySelectorAll('button[data-ridx]').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const ridx = parseInt(e.currentTarget.dataset.ridx, 10);
-                removeRouteIndex(ridx);
-            });
-        });
+        // Use event delegation for better reliability when DOM changes frequently
+        // Remove any existing delegated listeners to avoid duplicates
+        stopsDiv.removeEventListener('click', handleRouteStopClick);
+        stopsDiv.addEventListener('click', handleRouteStopClick);
         
-        // Add event listener for clear button
+        // Add event listener for clear button (direct since it's unique)
         const clearBtn = document.getElementById('clear-route-btn');
         if (clearBtn) {
             console.log("Clear route button found, attaching event listener");
-            clearBtn.addEventListener('click', () => {
-                console.log("Clear route button clicked");
-                clearRoute();
-            });
+            // Remove any existing listener to avoid duplicates
+            clearBtn.removeEventListener('click', clearRouteHandler);
+            clearBtn.addEventListener('click', clearRouteHandler);
         } else {
             console.log("Clear route button not found in DOM");
         }
@@ -250,6 +246,33 @@
         if (bridge.state.route.length > 1) {
             setupDragAndDrop(stopsDiv);
         }
+    }
+
+    /**
+     * Delegated event handler for route stop interactions
+     */
+    function handleRouteStopClick(e) {
+        const target = e.target;
+        
+        // Handle remove button clicks
+        if (target.classList.contains('mini-btn') && target.dataset.ridx !== undefined) {
+            e.preventDefault();
+            e.stopPropagation();
+            const ridx = parseInt(target.dataset.ridx, 10);
+            console.log("Remove button clicked for index:", ridx);
+            removeRouteIndex(ridx);
+            return;
+        }
+    }
+
+    /**
+     * Clear route button handler
+     */
+    function clearRouteHandler(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log("Clear route button clicked");
+        clearRoute();
     }
 
     /**
@@ -519,8 +542,16 @@
      * Remove specific route stop by index
      */
     function removeRouteIndex(idx) {
-        bridge.state.route.splice(idx, 1);
-        recomputeRoute();
+        console.log("removeRouteIndex called with index:", idx, "current route length:", bridge.state.route.length);
+        if (idx >= 0 && idx < bridge.state.route.length) {
+            const removedStop = bridge.state.route[idx];
+            console.log("Removing stop:", removedStop.name);
+            bridge.state.route.splice(idx, 1);
+            console.log("New route length:", bridge.state.route.length);
+            recomputeRoute();
+        } else {
+            console.error("Invalid route index:", idx);
+        }
     }
 
     /**
