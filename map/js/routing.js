@@ -236,7 +236,15 @@
         
         // Add event listener for clear button
         const clearBtn = document.getElementById('clear-route-btn');
-        if (clearBtn) clearBtn.addEventListener('click', clearRoute);
+        if (clearBtn) {
+            console.log("Clear route button found, attaching event listener");
+            clearBtn.addEventListener('click', () => {
+                console.log("Clear route button clicked");
+                clearRoute();
+            });
+        } else {
+            console.log("Clear route button not found in DOM");
+        }
 
         // Setup drag and drop functionality (re-initialize after DOM update)
         if (bridge.state.route.length > 1) {
@@ -519,6 +527,8 @@
      * Clear entire route
      */
     function clearRoute() {
+        console.log("clearRoute() called - current route length:", bridge.state.route.length);
+        
         if (isCalculatingRoute) {
             isCalculatingRoute = false; // Signal to stop the calculation chain
         }
@@ -539,8 +549,10 @@
             bridge.state.routeUnifiedPolyline = null;
         }
 
+        console.log("Route cleared, updating display");
         updateRouteDisplay();
         visualizer.updateRouteSummaryEmpty();
+        console.log("Route display updated - new route length:", bridge.state.route.length);
     }
 
     /**
