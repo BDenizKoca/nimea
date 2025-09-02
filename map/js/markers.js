@@ -38,12 +38,15 @@
             const normalizedZoom = (zoom - minZoom) / (maxZoom - minZoom);
             const scale = Math.max(minScale, 1 - (normalizedZoom * 0.4));
             
-            // Apply scale to all custom markers
+            // Apply scale to the inner element of custom markers
             bridge.map.eachLayer(layer => {
                 if (layer instanceof L.Marker) {
                     const iconElement = layer.getElement();
-                    if (iconElement && (iconElement.classList.contains('custom-marker') || iconElement.classList.contains('custom-image-marker'))) {
-                        iconElement.style.transform = `scale(${scale})`;
+                    if (iconElement) {
+                        const innerIcon = iconElement.querySelector('.custom-marker-icon') || iconElement.querySelector('.custom-marker-image');
+                        if (innerIcon) {
+                            innerIcon.style.transform = `scale(${scale})`;
+                        }
                     }
                 }
             });
@@ -80,13 +83,13 @@
 
                 // Add custom icon if available
                 if (markerData.iconUrl) {
-                    // Prioritize image URL over emoji - use normal marker size
-                    markerOptions.icon = L.icon({
-                        iconUrl: markerData.iconUrl,
+                    // Use divIcon for image markers to allow for scaling of an inner element
+                    markerOptions.icon = L.divIcon({
+                        html: `<img src="${markerData.iconUrl}" class="custom-marker-image" style="width:100%; height:100%;">`,
+                        className: 'custom-image-marker',
                         iconSize: [32, 32],
                         iconAnchor: [16, 32],
-                        popupAnchor: [0, -32],
-                        className: 'custom-image-marker'
+                        popupAnchor: [0, -32]
                     });
                 } else if (markerData.customIcon) {
                     // Use emoji/text icon - larger size for visibility
@@ -244,8 +247,11 @@
             bridge.map.eachLayer(layer => {
                 if (layer instanceof L.Marker) {
                     const iconElement = layer.getElement();
-                    if (iconElement && (iconElement.classList.contains('custom-marker') || iconElement.classList.contains('custom-image-marker'))) {
-                        iconElement.style.transform = `scale(${scale})`;
+                    if (iconElement) {
+                        const innerIcon = iconElement.querySelector('.custom-marker-icon') || iconElement.querySelector('.custom-marker-image');
+                        if (innerIcon) {
+                            innerIcon.style.transform = `scale(${scale})`;
+                        }
                     }
                 }
             });
