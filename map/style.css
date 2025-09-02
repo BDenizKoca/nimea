@@ -511,6 +511,18 @@ body, html {
     transition: transform 0.1s ease-out;
 }
 
+/* Remove any default Leaflet marker styling that might show black circles */
+.custom-marker .leaflet-marker-icon {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* Hide the default marker shadow */
+.custom-marker .leaflet-marker-shadow {
+    display: none !important;
+}
+
 .custom-marker-icon {
     display: flex;
     align-items: center;
@@ -526,6 +538,8 @@ body, html {
     /* Minimum scale to ensure visibility at max zoom */
     min-width: 24px;
     min-height: 24px;
+    /* Remove any background that might appear as black circle */
+    background-clip: padding-box;
 }
 
 .custom-marker-icon:hover {
@@ -537,10 +551,22 @@ body, html {
     /* Ensure minimum scale even at high zoom levels */
     transform-origin: center bottom;
     transition: transform 0.1s ease-out;
+    background: transparent !important;
+    border: none !important;
     border-radius: 50% !important;
-    border: 2px solid #333 !important;
     box-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
     cursor: pointer !important;
+}
+
+/* Remove any default styling from custom image markers */
+.custom-image-marker .leaflet-marker-icon {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.custom-image-marker .leaflet-marker-shadow {
+    display: none !important;
 }
 
 .custom-image-marker:hover {

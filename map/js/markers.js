@@ -33,20 +33,24 @@
             const maxZoom = bridge.map.getMaxZoom();
             const minZoom = bridge.map.getMinZoom();
             
-            // Calculate scale factor - minimum 0.6 (60%) at max zoom, normal scale at lower zooms
-            const minScale = 0.6;
-            const normalizedZoom = (zoom - minZoom) / (maxZoom - minZoom);
-            const scale = Math.max(minScale, 1 - (normalizedZoom * 0.4));
+            // Much more conservative scaling - minimum 85% at max zoom, starts scaling only at higher zooms
+            const minScale = 0.85;  // Keep 85% minimum size instead of 60%
+            const scaleStartZoom = minZoom + (maxZoom - minZoom) * 0.6; // Start scaling only at 60% through zoom range
             
-            // Apply scale to the inner element of custom markers
+            let scale = 1.0;
+            if (zoom > scaleStartZoom) {
+                const scalingRange = maxZoom - scaleStartZoom;
+                const zoomIntoScaling = zoom - scaleStartZoom;
+                const normalizedZoom = zoomIntoScaling / scalingRange;
+                scale = Math.max(minScale, 1 - (normalizedZoom * 0.15)); // Only scale down by 15% max
+            }
+            
+            // Apply scale to all custom markers
             bridge.map.eachLayer(layer => {
                 if (layer instanceof L.Marker) {
                     const iconElement = layer.getElement();
-                    if (iconElement) {
-                        const innerIcon = iconElement.querySelector('.custom-marker-icon') || iconElement.querySelector('.custom-marker-image');
-                        if (innerIcon) {
-                            innerIcon.style.transform = `scale(${scale})`;
-                        }
+                    if (iconElement && (iconElement.classList.contains('custom-marker') || iconElement.classList.contains('custom-image-marker'))) {
+                        iconElement.style.transform = `scale(${scale})`;
                     }
                 }
             });
@@ -240,18 +244,23 @@
             const maxZoom = bridge.map.getMaxZoom();
             const minZoom = bridge.map.getMinZoom();
             
-            const minScale = 0.6;
-            const normalizedZoom = (zoom - minZoom) / (maxZoom - minZoom);
-            const scale = Math.max(minScale, 1 - (normalizedZoom * 0.4));
+            // Much more conservative scaling - minimum 85% at max zoom, starts scaling only at higher zooms
+            const minScale = 0.85;  // Keep 85% minimum size instead of 60%
+            const scaleStartZoom = minZoom + (maxZoom - minZoom) * 0.6; // Start scaling only at 60% through zoom range
+            
+            let scale = 1.0;
+            if (zoom > scaleStartZoom) {
+                const scalingRange = maxZoom - scaleStartZoom;
+                const zoomIntoScaling = zoom - scaleStartZoom;
+                const normalizedZoom = zoomIntoScaling / scalingRange;
+                scale = Math.max(minScale, 1 - (normalizedZoom * 0.15)); // Only scale down by 15% max
+            }
             
             bridge.map.eachLayer(layer => {
                 if (layer instanceof L.Marker) {
                     const iconElement = layer.getElement();
-                    if (iconElement) {
-                        const innerIcon = iconElement.querySelector('.custom-marker-icon') || iconElement.querySelector('.custom-marker-image');
-                        if (innerIcon) {
-                            innerIcon.style.transform = `scale(${scale})`;
-                        }
+                    if (iconElement && (iconElement.classList.contains('custom-marker') || iconElement.classList.contains('custom-image-marker'))) {
+                        iconElement.style.transform = `scale(${scale})`;
                     }
                 }
             });
