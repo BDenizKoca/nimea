@@ -37,11 +37,11 @@
      * Terrain-aware nudging: resample path segments and nudge points away from difficult terrain
      * @param {Array} points - Array of [x, y] coordinates (raw A* path)
      * @param {Function|Object} terrainGrid - Function or lookup table for terrain cost
-     * @param {number} step - Resampling distance in map units (default: 10)
-     * @param {number} offset - How far to check left/right of path (default: 3)
-     * @param {number} nudgeStrength - How much to nudge (default: 0.8)
+     * @param {number} step - Resampling distance in map units (default: 15)
+     * @param {number} offset - How far to check left/right of path (default: 2)
+     * @param {number} nudgeStrength - How much to nudge (default: 0.4)
      */
-    function nudgePath(points, terrainGrid, step = 10, offset = 3, nudgeStrength = 0.8) {
+    function nudgePath(points, terrainGrid, step = 15, offset = 2, nudgeStrength = 0.4) {
         if (!points || points.length < 2) return points;
 
         let nudged = [];
@@ -105,7 +105,7 @@
         // Remove duplicate points that are too close together
         let filtered = [nudged[0]];
         for (let i = 1; i < nudged.length; i++) {
-            if (distance(filtered[filtered.length - 1], nudged[i]) > 2) {
+            if (distance(filtered[filtered.length - 1], nudged[i]) > 5) {
                 filtered.push(nudged[i]);
             }
         }
@@ -117,10 +117,10 @@
      * Path smoothing using Chaikin's corner-cutting algorithm
      * Creates natural curves by iteratively refining the path
      * @param {Array} points - Array of [x, y] coordinates
-     * @param {number} iterations - Number of smoothing iterations (default: 2)
-     * @param {number} ratio - Corner cutting ratio (default: 0.25, gives 0.75:0.25 split)
+     * @param {number} iterations - Number of smoothing iterations (default: 1)
+     * @param {number} ratio - Corner cutting ratio (default: 0.2, gives gentler curves)
      */
-    function smoothPath(points, iterations = 2, ratio = 0.25) {
+    function smoothPath(points, iterations = 1, ratio = 0.2) {
         if (!points || points.length < 3) return points;
         
         let currentPoints = [...points];
@@ -204,20 +204,20 @@
         
         const settings = {
             // Nudging parameters
-            nudgeStep: options.nudgeStep || 8,           // Resample every 8 map units
-            nudgeOffset: options.nudgeOffset || 4,       // Check terrain 4 units left/right
-            nudgeStrength: options.nudgeStrength || 1.2, // Nudge strength
+            nudgeStep: options.nudgeStep || 15,           // Resample every 15 map units (less aggressive)
+            nudgeOffset: options.nudgeOffset || 2,        // Check terrain 2 units left/right (closer)
+            nudgeStrength: options.nudgeStrength || 0.6,  // Reduced nudge strength
             
             // Smoothing parameters
-            smoothIterations: options.smoothIterations || 2,  // 2 iterations of smoothing
-            smoothRatio: options.smoothRatio || 0.25,         // Corner cutting ratio
+            smoothIterations: options.smoothIterations || 1,  // 1 iteration of smoothing (less aggressive)
+            smoothRatio: options.smoothRatio || 0.2,          // Gentler corner cutting ratio
             
             // Style preferences
             useEnhancedSmoothing: options.useEnhancedSmoothing || false,  // Use Bézier curves
-            bezierTension: options.bezierTension || 0.3,      // Bézier tension
+            bezierTension: options.bezierTension || 0.2,      // Reduced Bézier tension
             
             // Terrain sensitivity
-            terrainSensitivity: options.terrainSensitivity || 1.0  // Multiplier for terrain awareness
+            terrainSensitivity: options.terrainSensitivity || 0.7  // Reduced terrain sensitivity
         };
         
         // Step 1: Terrain-aware nudging
