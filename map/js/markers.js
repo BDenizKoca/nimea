@@ -169,6 +169,11 @@
                 // Store marker data directly on the marker object
                 marker.markerData = markerData;
                 
+                // Set initial icon immediately using current zoom level
+                const currentZoom = bridge.map.getZoom();
+                const initialSize = calculateIconSize(currentZoom);
+                updateMarkerIcon(marker, markerData, initialSize);
+                
                 // Add to our marker layer group for efficient eachLayer iteration
                 if (bridge.markerLayerGroup) {
                     bridge.markerLayerGroup.addLayer(marker);
