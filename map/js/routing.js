@@ -9,17 +9,20 @@
     let routingGraph = null;
     let isCalculatingRoute = false; // Mutex to prevent concurrent calculations
 
-    // Terrain costs for pathfinding (base layer)
+    // Terrain costs for hybrid pathfinding system
     const TERRAIN_COSTS = {
-        road: 0.25,      // Make roads even more attractive in hybrid mode
-        normal: 1.0,     // Default terrain
-        difficult: 5.0,  // Crank up to discourage cutting through unless big shortcut
-        unpassable: Infinity // Blocked areas
+        road: 1.0,       // Primary paths: roads are fastest (cost = 1)
+        difficult: 5.0,  // Existing difficult terrain (matches DM mode)
+        forest: 3.0,     // New forest terrain type (moderate difficulty)
+        unpassable: Infinity, // Blocked areas (matches DM mode)
+        normal: 2.0      // Default fallback terrain for empty areas
     };
 
-    // Single simplified tuning constants (adjust here if desired)
-    const DIRECT_ADVANTAGE_THRESHOLD = 0.8; // Direct must be 20% cheaper (stricter) to beat road-biased path
-    const LEAVE_ROAD_PENALTY = 0.5;         // Smaller penalty per transition; roads already cheap
+    // Grid size for terrain-based pathfinding fallback (pixels)
+    const TERRAIN_GRID_SIZE = 50;
+    
+    // Bridge connection distance threshold (pixels)
+    const ROAD_CONNECTION_DISTANCE = 150;
 
     function initRouting(map) {
         bridge = window.__nimea;
@@ -173,40 +176,42 @@
     }
 
     function buildRoutingGraph() {
-    const nodes = new Map(); // nodeId -> {x, y, type}
-    const edges = []; // {from, to, cost, distance}
-    const edgeMap = new Map(); // `${from}|${to}` -> edge
+        const nodes = new Map(); // nodeId -> {x, y, type, cost}
+        const edges = []; // {from, to, cost, distance, type}
+        const edgeMap = new Map(); // `${from}|${to}` -> edge
         
-        // Add all markers as nodes
-        bridge.state.markers.forEach(marker => {
-            const nodeId = `marker_${marker.id}`;
-            nodes.set(nodeId, {
-                x: marker.x,
-                y: marker.y,
-                type: 'marker',
-                markerId: marker.id
-            });
-        });
+        console.log("Building hybrid multilayer routing graph...");
         
-        // Process road features to create road network
+        // === ROADS LAYER ===
+        // Add all road features as a high-priority network
         const roadFeatures = bridge.state.terrain.features.filter(f => f.properties.kind === 'road');
+        const roadNodes = new Map(); // Track road intersections
         
         roadFeatures.forEach((roadFeature, roadIndex) => {
             if (roadFeature.geometry.type !== 'LineString') return;
             
             const coordinates = roadFeature.geometry.coordinates;
             
-            // Create nodes for road endpoints and intersections
+            // Create nodes for each point in the road
             coordinates.forEach((coord, coordIndex) => {
                 const nodeId = `road_${roadIndex}_${coordIndex}`;
                 nodes.set(nodeId, {
                     x: coord[0],
                     y: coord[1],
-                    type: 'road_node'
+                    type: 'road_node',
+                    roadIndex,
+                    coordIndex
                 });
+                
+                // Track for intersection detection
+                const posKey = `${Math.round(coord[0])},${Math.round(coord[1])}`;
+                if (!roadNodes.has(posKey)) {
+                    roadNodes.set(posKey, []);
+                }
+                roadNodes.get(posKey).push(nodeId);
             });
             
-            // Create edges between consecutive road nodes
+            // Create edges between consecutive road points
             for (let i = 0; i < coordinates.length - 1; i++) {
                 const fromId = `road_${roadIndex}_${i}`;
                 const toId = `road_${roadIndex}_${i + 1}`;
@@ -218,20 +223,119 @@
                     Math.pow(to[1] - from[1], 2)
                 );
                 
-                // Roads have low cost
-                const fwd = { from: fromId, to: toId, cost: TERRAIN_COSTS.road, distance };
-                edges.push(fwd); edgeMap.set(`${fromId}|${toId}`, fwd);
-                
-                // Add reverse edge for bidirectional travel
-                const rev = { from: toId, to: fromId, cost: TERRAIN_COSTS.road, distance };
-                edges.push(rev); edgeMap.set(`${toId}|${fromId}`, rev);
+                // Roads have cost = 1 (primary paths)
+                const fwd = { from: fromId, to: toId, cost: TERRAIN_COSTS.road, distance, type: 'road' };
+                const rev = { from: toId, to: fromId, cost: TERRAIN_COSTS.road, distance, type: 'road' };
+                edges.push(fwd, rev);
+                edgeMap.set(`${fromId}|${toId}`, fwd);
+                edgeMap.set(`${toId}|${fromId}`, rev);
             }
         });
         
-        // Connect markers to nearby road nodes
+        // Connect road intersections (where roads cross or meet)
+        for (let [posKey, nodeIds] of roadNodes) {
+            if (nodeIds.length > 1) {
+                // Create connections between all road nodes at this position
+                for (let i = 0; i < nodeIds.length; i++) {
+                    for (let j = i + 1; j < nodeIds.length; j++) {
+                        const fromId = nodeIds[i];
+                        const toId = nodeIds[j];
+                        
+                        // Zero-cost transition between road networks at intersections
+                        const fwd = { from: fromId, to: toId, cost: 0, distance: 0, type: 'road_intersection' };
+                        const rev = { from: toId, to: fromId, cost: 0, distance: 0, type: 'road_intersection' };
+                        edges.push(fwd, rev);
+                        edgeMap.set(`${fromId}|${toId}`, fwd);
+                        edgeMap.set(`${toId}|${fromId}`, rev);
+                    }
+                }
+            }
+        }
+        
+        // === TERRAIN GRID LAYER ===
+        // Create a grid of terrain nodes as fallback pathfinding layer
+        const mapBounds = getMapBounds();
+        const terrainNodes = new Map();
+        
+        for (let x = mapBounds.minX; x <= mapBounds.maxX; x += TERRAIN_GRID_SIZE) {
+            for (let y = mapBounds.minY; y <= mapBounds.maxY; y += TERRAIN_GRID_SIZE) {
+                const nodeId = `terrain_${Math.round(x)}_${Math.round(y)}`;
+                const terrainCost = getTerrainCostAtPoint(x, y);
+                
+                // Only add passable terrain nodes
+                if (terrainCost < Infinity) {
+                    nodes.set(nodeId, {
+                        x: x,
+                        y: y,
+                        type: 'terrain_node',
+                        terrainCost: terrainCost
+                    });
+                    terrainNodes.set(`${Math.round(x)},${Math.round(y)}`, nodeId);
+                }
+            }
+        }
+        
+        // Connect adjacent terrain grid nodes
+        for (let [posKey, nodeId] of terrainNodes) {
+            const [x, y] = posKey.split(',').map(Number);
+            const node = nodes.get(nodeId);
+            
+            // Check 8-directional neighbors
+            const neighbors = [
+                [x + TERRAIN_GRID_SIZE, y], // right
+                [x - TERRAIN_GRID_SIZE, y], // left
+                [x, y + TERRAIN_GRID_SIZE], // down
+                [x, y - TERRAIN_GRID_SIZE], // up
+                [x + TERRAIN_GRID_SIZE, y + TERRAIN_GRID_SIZE], // diagonal
+                [x - TERRAIN_GRID_SIZE, y - TERRAIN_GRID_SIZE], // diagonal
+                [x + TERRAIN_GRID_SIZE, y - TERRAIN_GRID_SIZE], // diagonal
+                [x - TERRAIN_GRID_SIZE, y + TERRAIN_GRID_SIZE]  // diagonal
+            ];
+            
+            neighbors.forEach(([nx, ny]) => {
+                const neighborKey = `${nx},${ny}`;
+                const neighborId = terrainNodes.get(neighborKey);
+                
+                if (neighborId) {
+                    const neighborNode = nodes.get(neighborId);
+                    const distance = Math.sqrt(
+                        Math.pow(nx - x, 2) + Math.pow(ny - y, 2)
+                    );
+                    
+                    // Cost is the average of the two nodes' terrain costs
+                    const avgCost = (node.terrainCost + neighborNode.terrainCost) / 2;
+                    
+                    const edge = {
+                        from: nodeId,
+                        to: neighborId,
+                        cost: avgCost,
+                        distance: distance,
+                        type: 'terrain'
+                    };
+                    
+                    edges.push(edge);
+                    edgeMap.set(`${nodeId}|${neighborId}`, edge);
+                }
+            });
+        }
+        
+        // === MARKERS LAYER ===
+        // Add all markers as nodes
+        bridge.state.markers.forEach(marker => {
+            const nodeId = `marker_${marker.id}`;
+            nodes.set(nodeId, {
+                x: marker.x,
+                y: marker.y,
+                type: 'marker',
+                markerId: marker.id
+            });
+        });
+        
+        // === BRIDGE CONNECTIONS ===
+        // Connect markers to road network (primary connections)
         bridge.state.markers.forEach(marker => {
             const markerNodeId = `marker_${marker.id}`;
-            const markerPos = {x: marker.x, y: marker.y};
+            const markerPos = { x: marker.x, y: marker.y };
             
             let closestRoadNode = null;
             let closestDistance = Infinity;
@@ -251,63 +355,224 @@
                 }
             }
             
-            // Connect marker to closest road node if within reasonable distance
-            if (closestRoadNode && closestDistance < 200) { // 200 pixel threshold
-                const terrainCost = getTerrainCostBetweenPoints(
-                    markerPos, 
-                    nodes.get(closestRoadNode)
+            // Connect to road if within reasonable distance
+            if (closestRoadNode && closestDistance < ROAD_CONNECTION_DISTANCE) {
+                const connectionCost = getTerrainCostBetweenPoints(markerPos, nodes.get(closestRoadNode));
+                
+                const fwd = { 
+                    from: markerNodeId, 
+                    to: closestRoadNode, 
+                    cost: connectionCost, 
+                    distance: closestDistance,
+                    type: 'road_bridge'
+                };
+                const rev = { 
+                    from: closestRoadNode, 
+                    to: markerNodeId, 
+                    cost: connectionCost, 
+                    distance: closestDistance,
+                    type: 'road_bridge'
+                };
+                
+                edges.push(fwd, rev);
+                edgeMap.set(`${markerNodeId}|${closestRoadNode}`, fwd);
+                edgeMap.set(`${closestRoadNode}|${markerNodeId}`, rev);
+            }
+            
+            // Connect markers to terrain grid (fallback connections)
+            const gridX = Math.round(marker.x / TERRAIN_GRID_SIZE) * TERRAIN_GRID_SIZE;
+            const gridY = Math.round(marker.y / TERRAIN_GRID_SIZE) * TERRAIN_GRID_SIZE;
+            const terrainNodeId = terrainNodes.get(`${gridX},${gridY}`);
+            
+            if (terrainNodeId) {
+                const terrainNode = nodes.get(terrainNodeId);
+                const distance = Math.sqrt(
+                    Math.pow(terrainNode.x - marker.x, 2) + 
+                    Math.pow(terrainNode.y - marker.y, 2)
                 );
                 
-                const fwd = { from: markerNodeId, to: closestRoadNode, cost: terrainCost, distance: closestDistance };
-                const rev = { from: closestRoadNode, to: markerNodeId, cost: terrainCost, distance: closestDistance };
-                edges.push(fwd); edgeMap.set(`${markerNodeId}|${closestRoadNode}`, fwd);
-                edges.push(rev); edgeMap.set(`${closestRoadNode}|${markerNodeId}`, rev);
+                const connectionCost = getTerrainCostBetweenPoints(markerPos, terrainNode);
+                
+                const fwd = {
+                    from: markerNodeId,
+                    to: terrainNodeId,
+                    cost: connectionCost,
+                    distance: distance,
+                    type: 'terrain_bridge'
+                };
+                const rev = {
+                    from: terrainNodeId,
+                    to: markerNodeId,
+                    cost: connectionCost,
+                    distance: distance,
+                    type: 'terrain_bridge'
+                };
+                
+                edges.push(fwd, rev);
+                edgeMap.set(`${markerNodeId}|${terrainNodeId}`, fwd);
+                edgeMap.set(`${terrainNodeId}|${markerNodeId}`, rev);
             }
         });
         
-        // Connect markers directly if no roads available or they're far from roads
-        bridge.state.markers.forEach((marker1, i) => {
-            bridge.state.markers.forEach((marker2, j) => {
-                if (i >= j) return; // Avoid duplicate edges and self-loops
-                
-                const marker1NodeId = `marker_${marker1.id}`;
-                const marker2NodeId = `marker_${marker2.id}`;
-                
-                const distance = Math.sqrt(
-                    Math.pow(marker2.x - marker1.x, 2) + 
-                    Math.pow(marker2.y - marker1.y, 2)
-                );
-                
-                // Increased connection distance to improve pathfinding
-                if (distance < 1000) { // Increased from 500 to 1000
-                    const terrainCost = getTerrainCostBetweenPoints(
-                        {x: marker1.x, y: marker1.y},
-                        {x: marker2.x, y: marker2.y}
-                    );
-                    
-                    console.log(`Terrain cost between ${marker1.name} and ${marker2.name}: ${terrainCost}`);
-                    
-                    // Create connections even through difficult terrain (with high cost)
-                    if (terrainCost < Infinity) {
-                        const fwd = { from: marker1NodeId, to: marker2NodeId, cost: terrainCost, distance };
-                        const rev = { from: marker2NodeId, to: marker1NodeId, cost: terrainCost, distance };
-                        edges.push(fwd); edgeMap.set(`${marker1NodeId}|${marker2NodeId}`, fwd);
-                        edges.push(rev); edgeMap.set(`${marker2NodeId}|${marker1NodeId}`, rev);
-                    }
-                }
-            });
-        });
-        
         routingGraph = { nodes, edges, edgeMap };
-        
-        // If a calculation was waiting for the graph, start it now
-        if (isCalculatingRoute) {
-            recomputeRoute();
-        }
+        console.log(`Built graph with ${nodes.size} nodes and ${edges.length} edges`);
     }
 
     /**
-     * Dijkstra's algorithm implementation for pathfinding
+     * Get map bounds for terrain grid generation
+     */
+    function getMapBounds() {
+        // Default bounds - could be enhanced to use actual map data
+        return {
+            minX: 0,
+            maxX: 2500,
+            minY: 0,
+            maxY: 2500
+        };
+    }
+
+    /**
+     * Get terrain cost at a specific point
+     */
+    function getTerrainCostAtPoint(x, y) {
+        // Check if point is in any unpassable areas
+        const unpassableFeatures = bridge.state.terrain.features.filter(f => 
+            f.properties.kind === 'unpassable' || f.properties.kind === 'blocked'
+        );
+        
+        for (const feature of unpassableFeatures) {
+            if (feature.geometry.type === 'Polygon') {
+                if (pointInPolygon([x, y], feature.geometry.coordinates[0])) {
+                    return Infinity; // Unpassable
+                }
+            }
+        }
+        
+        // Check for different terrain types (matching what's available in DM mode)
+        const difficultFeatures = bridge.state.terrain.features.filter(f => 
+            ['difficult', 'forest'].includes(f.properties.kind)
+        );
+        
+        for (const feature of difficultFeatures) {
+            if (feature.geometry.type === 'Polygon') {
+                if (pointInPolygon([x, y], feature.geometry.coordinates[0])) {
+                    // Map terrain types to costs
+                    const kind = feature.properties.kind;
+                    return TERRAIN_COSTS[kind] || TERRAIN_COSTS.difficult;
+                }
+            }
+        }
+        
+        // Default to normal terrain (open areas)
+        return TERRAIN_COSTS.normal;
+    }
+
+    /**
+     * Check if point is inside polygon
+     */
+    function pointInPolygon(point, polygon) {
+        const [x, y] = point;
+        let inside = false;
+        
+        for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+            const [xi, yi] = polygon[i];
+            const [xj, yj] = polygon[j];
+            
+            if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) {
+                inside = !inside;
+            }
+        }
+        
+        return inside;
+    }
+
+    /**
+     * A* algorithm implementation for efficient pathfinding
+     */
+    function findShortestPathAStar(graph, startNodeId, endNodeId) {
+        if (!graph.nodes.has(startNodeId) || !graph.nodes.has(endNodeId)) {
+            console.warn(`Node not found: start=${startNodeId}, end=${endNodeId}`);
+            return null;
+        }
+
+        const startNode = graph.nodes.get(startNodeId);
+        const endNode = graph.nodes.get(endNodeId);
+        
+        // A* data structures
+        const openSet = new Set([startNodeId]);
+        const cameFrom = new Map();
+        const gScore = new Map(); // Cost from start to node
+        const fScore = new Map(); // gScore + heuristic
+
+        // Initialize scores
+        for (let nodeId of graph.nodes.keys()) {
+            gScore.set(nodeId, Infinity);
+            fScore.set(nodeId, Infinity);
+        }
+        gScore.set(startNodeId, 0);
+        fScore.set(startNodeId, heuristic(startNode, endNode));
+
+        while (openSet.size > 0) {
+            // Find node in openSet with lowest fScore
+            let current = null;
+            let lowestF = Infinity;
+            for (let nodeId of openSet) {
+                const f = fScore.get(nodeId);
+                if (f < lowestF) {
+                    lowestF = f;
+                    current = nodeId;
+                }
+            }
+
+            if (current === endNodeId) {
+                // Reconstruct path
+                const path = [];
+                let node = current;
+                while (node !== undefined) {
+                    path.unshift(node);
+                    node = cameFrom.get(node);
+                }
+                return path;
+            }
+
+            openSet.delete(current);
+            
+            // Check all neighbors
+            for (let edge of graph.edges) {
+                if (edge.from === current) {
+                    const neighbor = edge.to;
+                    const tentativeGScore = gScore.get(current) + (edge.distance * edge.cost);
+                    
+                    if (tentativeGScore < gScore.get(neighbor)) {
+                        cameFrom.set(neighbor, current);
+                        gScore.set(neighbor, tentativeGScore);
+                        
+                        const neighborNode = graph.nodes.get(neighbor);
+                        fScore.set(neighbor, tentativeGScore + heuristic(neighborNode, endNode));
+                        
+                        if (!openSet.has(neighbor)) {
+                            openSet.add(neighbor);
+                        }
+                    }
+                }
+            }
+        }
+
+        return null; // No path found
+    }
+
+    /**
+     * Heuristic function for A* (Euclidean distance)
+     */
+    function heuristic(nodeA, nodeB) {
+        return Math.sqrt(
+            Math.pow(nodeB.x - nodeA.x, 2) + 
+            Math.pow(nodeB.y - nodeA.y, 2)
+        );
+    }
+
+    /**
+     * Dijkstra's algorithm implementation for pathfinding (fallback)
      */
     function findShortestPath(graph, startNodeId, endNodeId) {
         if (!graph.nodes.has(startNodeId) || !graph.nodes.has(endNodeId)) {
@@ -447,79 +712,173 @@
     function calculateLegPath(start, end, onComplete) {
         const startNodeId = `marker_${start.id}`;
         const endNodeId = `marker_${end.id}`;
-        const hasRoads = bridge.state.terrain.features.some(f => f.properties.kind === 'road');
-
-        // Graph path via Dijkstra (includes roads + marker connections)
-        const graphPath = findShortestPath(routingGraph, startNodeId, endNodeId);
-        let graphPixelPath = null;
-        let graphCostKm = Infinity;
-        if (graphPath && graphPath.length > 0) {
-            graphPixelPath = graphPath.map(id => { const n = routingGraph.nodes.get(id); return [n.y, n.x]; });
-            graphCostKm = computeGraphPathEffectiveKm(graphPath);
+        
+        console.log(`Calculating path from ${start.name} to ${end.name}`);
+        
+        // Use A* algorithm for efficient pathfinding across the hybrid graph
+        const graphPath = findShortestPathAStar(routingGraph, startNodeId, endNodeId);
+        
+        if (!graphPath || graphPath.length === 0) {
+            console.warn(`No path found between ${start.name} and ${end.name}`);
+            bridge.state.routeLegs.push({ 
+                from: start, 
+                to: end, 
+                distanceKm: 0, 
+                unreachable: true 
+            });
+            if (typeof onComplete === 'function') onComplete();
+            return;
         }
-
-        // Direct path (straight line) baseline
-        const straightPixelPath = [[start.y,start.x],[end.y,end.x]];
-        const terrainCostDirect = getTerrainCostBetweenPoints({x:start.x,y:start.y},{x:end.x,y:end.y});
-        const baseDirectKm = computePixelPathKm(straightPixelPath);
-        const directCostKm = terrainCostDirect === Infinity ? Infinity : baseDirectKm * (terrainCostDirect === TERRAIN_COSTS.difficult ? TERRAIN_COSTS.difficult : 1);
-
-        let useDirect = false;
-        if (!hasRoads || !graphPixelPath) {
-            useDirect = true; // nothing better
-        } else {
-            const transitions = countRoadTransitionsSimple(graphPath);
-            const graphEffectiveKm = graphCostKm + (transitions * LEAVE_ROAD_PENALTY);
-            if (directCostKm < graphEffectiveKm * DIRECT_ADVANTAGE_THRESHOLD) {
-                useDirect = true;
-            } else {
-                // Render graph (road-biased) path
-                const polyline = L.polyline(graphPixelPath, { color:'#cc2222', weight:3, pane:'routePane' }).addTo(bridge.map);
-                bridge.state.routePolylines.push(polyline);
-                bridge.state.routeLegs.push({ from:start, to:end, distanceKm: graphCostKm, hybrid:true });
-            }
-        }
-
-        if (useDirect) {
-            // Evaluate terrain cost: if blocked mark unreachable else adjust by difficult
-            if (terrainCostDirect === Infinity) {
-                bridge.state.routeLegs.push({ from:start, to:end, distanceKm:0, unreachable:true });
-            } else {
-                const adjusted = directCostKm;
-                const polyline = L.polyline(straightPixelPath, { color: terrainCostDirect>1?'orange':'purple', weight:3, dashArray:'4,4', pane:'routePane' }).addTo(bridge.map);
-                bridge.state.routePolylines.push(polyline);
-                bridge.state.routeLegs.push({ from:start, to:end, distanceKm: adjusted, fallback:true });
-            }
-        }
+        
+        // Convert path to pixel coordinates and analyze path segments
+        const pathSegments = analyzePathSegments(graphPath);
+        const totalCostKm = computeGraphPathCost(graphPath);
+        
+        // Render path with different styles for roads vs terrain
+        renderHybridPath(pathSegments);
+        
+        // Add leg to route
+        bridge.state.routeLegs.push({ 
+            from: start, 
+            to: end, 
+            distanceKm: totalCostKm, 
+            hybrid: true,
+            segments: pathSegments
+        });
+        
         if (typeof onComplete === 'function') onComplete();
+    }
+
+    /**
+     * Analyze path segments to distinguish between road and terrain traversal
+     */
+    function analyzePathSegments(pathIds) {
+        const segments = [];
+        let currentSegment = null;
+        
+        for (let i = 0; i < pathIds.length; i++) {
+            const nodeId = pathIds[i];
+            const node = routingGraph.nodes.get(nodeId);
+            const point = [node.y, node.x]; // Leaflet uses [lat, lng]
+            
+            // Determine segment type based on next edge
+            let segmentType = 'terrain';
+            if (i < pathIds.length - 1) {
+                const nextNodeId = pathIds[i + 1];
+                const edgeKey = `${nodeId}|${nextNodeId}`;
+                const edge = routingGraph.edgeMap.get(edgeKey);
+                
+                if (edge && (edge.type === 'road' || edge.type === 'road_intersection')) {
+                    segmentType = 'road';
+                } else if (edge && edge.type.includes('bridge')) {
+                    segmentType = 'bridge';
+                }
+            }
+            
+            // Group consecutive points of the same type
+            if (!currentSegment || currentSegment.type !== segmentType) {
+                if (currentSegment) {
+                    segments.push(currentSegment);
+                }
+                currentSegment = {
+                    type: segmentType,
+                    points: [point]
+                };
+            } else {
+                currentSegment.points.push(point);
+            }
+        }
+        
+        if (currentSegment) {
+            segments.push(currentSegment);
+        }
+        
+        return segments;
+    }
+
+    /**
+     * Render hybrid path with different styles for different segment types
+     */
+    function renderHybridPath(segments) {
+        segments.forEach(segment => {
+            if (segment.points.length < 2) return;
+            
+            let style;
+            switch (segment.type) {
+                case 'road':
+                    style = { 
+                        color: '#2563eb', // Blue for roads
+                        weight: 4, 
+                        opacity: 0.9,
+                        pane: 'routePane'
+                    };
+                    break;
+                case 'terrain':
+                    style = { 
+                        color: '#dc2626', // Red for terrain traversal
+                        weight: 3, 
+                        opacity: 0.8,
+                        dashArray: '8, 8', // Dashed for off-road
+                        pane: 'routePane'
+                    };
+                    break;
+                case 'bridge':
+                    style = { 
+                        color: '#7c3aed', // Purple for bridges
+                        weight: 3, 
+                        opacity: 0.7,
+                        dashArray: '4, 4',
+                        pane: 'routePane'
+                    };
+                    break;
+                default:
+                    style = { 
+                        color: '#6b7280', // Gray fallback
+                        weight: 2, 
+                        opacity: 0.6,
+                        pane: 'routePane'
+                    };
+            }
+            
+            const polyline = L.polyline(segment.points, style).addTo(bridge.map);
+            bridge.state.routePolylines.push(polyline);
+        });
+    }
+
+    /**
+     * Compute total cost of graph path in kilometers
+     */
+    function computeGraphPathCost(pathIds) {
+        if (!pathIds || pathIds.length < 2) return 0;
+        
+        let totalCostPx = 0;
+        
+        for (let i = 1; i < pathIds.length; i++) {
+            const edgeKey = `${pathIds[i-1]}|${pathIds[i]}`;
+            const edge = routingGraph.edgeMap.get(edgeKey);
+            
+            if (!edge) {
+                console.warn(`Missing edge: ${edgeKey}`);
+                return Infinity;
+            }
+            
+            totalCostPx += edge.distance * edge.cost;
+        }
+        
+        return totalCostPx * bridge.config.kmPerPixel;
     }
 
     // Compute effective km of graph path using edge cost * distance
     function computeGraphPathEffectiveKm(pathIds) {
         if (!pathIds || pathIds.length < 2) return Infinity;
-        let costPxWeighted = 0; // (distancePx * terrainMultiplier)
-        for (let i=1;i<pathIds.length;i++) {
+        let costPxWeighted = 0;
+        for (let i = 1; i < pathIds.length; i++) {
             const key = `${pathIds[i-1]}|${pathIds[i]}`;
             const edge = routingGraph.edgeMap.get(key);
-            if (!edge) return Infinity; // incomplete
-            costPxWeighted += edge.distance * edge.cost; // cost already multiplier
+            if (!edge) return Infinity;
+            costPxWeighted += edge.distance * edge.cost;
         }
-        return costPxWeighted * bridge.config.kmPerPixel; // convert to km
-    }
-
-    function countRoadTransitionsSimple(pathIds) {
-        if (!pathIds) return 0;
-        let t=0; for (let i=1;i<pathIds.length;i++) { const a=pathIds[i-1].startsWith('road_'); const b=pathIds[i].startsWith('road_'); if (a!==b) t++; } return t;
-    }
-
-    function computePixelPathKm(pixelPath) {
-        let totalDistancePx = 0;
-        for (let i = 1; i < pixelPath.length; i++) {
-            const dx = pixelPath[i][1] - pixelPath[i-1][1];
-            const dy = pixelPath[i][0] - pixelPath[i-1][0];
-            totalDistancePx += Math.sqrt(dx * dx + dy * dy);
-        }
-        return totalDistancePx * bridge.config.kmPerPixel;
+        return costPxWeighted * bridge.config.kmPerPixel;
     }
 
     function updateRouteSummaryFromLegs() {
@@ -529,42 +888,142 @@
             updateRouteSummaryEmpty(); 
             return; 
         }
-        const totalKm = bridge.state.routeLegs.reduce((a,l)=>a+l.distanceKm,0);
-        const legsHtml = bridge.state.routeLegs.map((l,i)=>{
-            let legInfo = `Leg ${i+1}: ${l.from.name} → ${l.to.name}: ${l.distanceKm.toFixed(2)} km`;
-            if (l.unreachable) {
-                legInfo += ' (BLOCKED!)';
-            } else if (l.fallback) {
-                if (l.terrainType === 'difficult') {
-                    legInfo += ' (difficult terrain)';
-                } else {
-                    legInfo += ' (direct)';
-                }
+        
+        const totalKm = bridge.state.routeLegs.reduce((a, l) => a + l.distanceKm, 0);
+        const hasUnreachable = bridge.state.routeLegs.some(l => l.unreachable);
+        
+        // Analyze route composition
+        let roadKm = 0;
+        let terrainKm = 0;
+        let bridgeKm = 0;
+        
+        bridge.state.routeLegs.forEach(leg => {
+            if (leg.segments) {
+                leg.segments.forEach(segment => {
+                    const segmentDistance = computeSegmentDistance(segment.points);
+                    switch (segment.type) {
+                        case 'road':
+                            roadKm += segmentDistance;
+                            break;
+                        case 'terrain':
+                            terrainKm += segmentDistance;
+                            break;
+                        case 'bridge':
+                            bridgeKm += segmentDistance;
+                            break;
+                    }
+                });
             }
+        });
+        
+        const legsHtml = bridge.state.routeLegs.map((l, i) => {
+            let legInfo = `Leg ${i + 1}: ${l.from.name} → ${l.to.name}: ${l.distanceKm.toFixed(2)} km`;
+            
+            if (l.unreachable) {
+                legInfo += ' <span class="route-status blocked">BLOCKED!</span>';
+            } else if (l.hybrid) {
+                legInfo += ' <span class="route-status hybrid">hybrid route</span>';
+            } else if (l.fallback) {
+                legInfo += ' <span class="route-status terrain">direct terrain</span>';
+            }
+            
             return `<li>${legInfo}</li>`;
         }).join('');
         
-        const hasBlocked = bridge.state.routeLegs.some(l => l.unreachable);
-        const hasTerrainPenalty = bridge.state.routeLegs.some(l => l.terrainType === 'difficult');
-        
-        let warningHtml = '';
-        if (hasBlocked) {
-            warningHtml = '<p class="route-warning">⚠️ Some destinations are unreachable due to terrain!</p>';
-        } else if (hasTerrainPenalty) {
-            warningHtml = '<p class="route-info">ℹ️ Route includes difficult terrain (longer travel time)</p>';
+        // Generate warnings and info
+        let alertsHtml = '';
+        if (hasUnreachable) {
+            alertsHtml += '<div class="route-alert warning">⚠️ Some destinations are unreachable due to terrain barriers!</div>';
+        } else if (terrainKm > roadKm) {
+            alertsHtml += '<div class="route-alert info">ℹ️ Route primarily uses off-road terrain (slower travel)</div>';
+        } else if (terrainKm > 0) {
+            alertsHtml += '<div class="route-alert info">ℹ️ Route includes some off-road terrain sections</div>';
         }
         
-        summaryDiv.innerHTML = `
-            <h3>Route Summary</h3>
-            ${warningHtml}
-            <p><strong>Total Distance:</strong> ${totalKm.toFixed(2)} km</p>
-            <ul class="route-legs">${legsHtml}</ul>
-            <div class="travel-times">
-                <p><strong>Walking:</strong> ${(totalKm / bridge.config.profiles.walk.speed).toFixed(1)} days</p>
-                <p><strong>Wagon:</strong> ${(totalKm / bridge.config.profiles.wagon.speed).toFixed(1)} days</p>
-                <p><strong>Horse:</strong> ${(totalKm / bridge.config.profiles.horse.speed).toFixed(1)} days</p>
+        // Route composition breakdown
+        const compositionHtml = `
+            <div class="route-composition">
+                <h4>Route Composition</h4>
+                <div class="composition-item road">
+                    <span class="composition-color" style="background-color: #2563eb;"></span>
+                    Roads: ${roadKm.toFixed(1)} km (${((roadKm / totalKm) * 100).toFixed(0)}%)
+                </div>
+                <div class="composition-item terrain">
+                    <span class="composition-color" style="background-color: #dc2626;"></span>
+                    Off-road: ${terrainKm.toFixed(1)} km (${((terrainKm / totalKm) * 100).toFixed(0)}%)
+                </div>
+                ${bridgeKm > 0 ? `
+                <div class="composition-item bridge">
+                    <span class="composition-color" style="background-color: #7c3aed;"></span>
+                    Connections: ${bridgeKm.toFixed(1)} km (${((bridgeKm / totalKm) * 100).toFixed(0)}%)
+                </div>` : ''}
             </div>
         `;
+        
+        summaryDiv.innerHTML = `
+            <h3>Hybrid Route Summary</h3>
+            ${alertsHtml}
+            <div class="route-totals">
+                <p><strong>Total Distance:</strong> ${totalKm.toFixed(2)} km</p>
+                ${compositionHtml}
+            </div>
+            <div class="route-legs">
+                <h4>Route Legs</h4>
+                <ul>${legsHtml}</ul>
+            </div>
+            <div class="travel-times">
+                <h4>Estimated Travel Times</h4>
+                <div class="travel-time-item">
+                    <strong>Walking:</strong> ${(totalKm / bridge.config.profiles.walk.speed).toFixed(1)} days
+                </div>
+                <div class="travel-time-item">
+                    <strong>Wagon:</strong> ${(totalKm / bridge.config.profiles.wagon.speed).toFixed(1)} days
+                    ${terrainKm > 0 ? '<small>(+25% for off-road sections)</small>' : ''}
+                </div>
+                <div class="travel-time-item">
+                    <strong>Horse:</strong> ${(totalKm / bridge.config.profiles.horse.speed).toFixed(1)} days
+                    ${terrainKm > 0 ? '<small>(+15% for off-road sections)</small>' : ''}
+                </div>
+            </div>
+        `;
+        
+        // Add some basic styling
+        if (!document.getElementById('hybrid-routing-styles')) {
+            const style = document.createElement('style');
+            style.id = 'hybrid-routing-styles';
+            style.textContent = `
+                .route-alert { padding: 8px 12px; margin: 8px 0; border-radius: 4px; font-size: 14px; }
+                .route-alert.warning { background: #fef3c7; border: 1px solid #f59e0b; color: #92400e; }
+                .route-alert.info { background: #dbeafe; border: 1px solid #3b82f6; color: #1e40af; }
+                .route-status { font-size: 11px; padding: 2px 6px; border-radius: 3px; color: white; }
+                .route-status.blocked { background: #dc2626; }
+                .route-status.hybrid { background: #059669; }
+                .route-status.terrain { background: #d97706; }
+                .route-composition { margin: 10px 0; }
+                .composition-item { display: flex; align-items: center; margin: 4px 0; font-size: 13px; }
+                .composition-color { width: 12px; height: 12px; margin-right: 8px; border-radius: 2px; }
+                .route-totals, .route-legs, .travel-times { margin: 12px 0; }
+                .travel-time-item { margin: 4px 0; }
+                .travel-time-item small { color: #666; display: block; margin-left: 20px; }
+            `;
+            document.head.appendChild(style);
+        }
+    }
+
+    /**
+     * Compute distance of a path segment in kilometers
+     */
+    function computeSegmentDistance(points) {
+        if (!points || points.length < 2) return 0;
+        
+        let totalDistancePx = 0;
+        for (let i = 1; i < points.length; i++) {
+            const dx = points[i][1] - points[i-1][1]; // x coordinates
+            const dy = points[i][0] - points[i-1][0]; // y coordinates (lat)
+            totalDistancePx += Math.sqrt(dx * dx + dy * dy);
+        }
+        
+        return totalDistancePx * bridge.config.kmPerPixel;
     }
 
     function updateRouteSummaryCalculating() {

@@ -3,5 +3,38 @@
     "overlays": {
         "regions": "overlays/regions.png",
         "borders": "overlays/borders.png"
+    },
+    "terrainTypes": {
+        "road": {
+            "cost": 1.0,
+            "description": "Well-maintained roads",
+            "color": "#6a8caf"
+        },
+        "difficult": {
+            "cost": 5.0,
+            "description": "Challenging terrain",
+            "color": "#a0522d"
+        },
+        "forest": {
+            "cost": 3.0,
+            "description": "Dense woodland",
+            "color": "#228B22"
+        },
+        "unpassable": {
+            "cost": null,
+            "description": "Impassable barriers",
+            "color": "#c0392b"
+        },
+        "normal": {
+            "cost": 2.0,
+            "description": "Open terrain",
+            "color": "#90EE90"
+        }
+    },
+    "routingConfig": {
+        "terrainGridSize": 50,
+        "roadConnectionDistance": 150,
+        "useAStar": true,
+        "preferRoads": true
     }
 }

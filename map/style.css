@@ -478,13 +478,23 @@ body, html {
     background: #e8930c;
 }
 
-.blocked-btn {
+.forest-btn {
+    background: #228B22;
+    color: white;
+    border-color: #1e7a1e;
+}
+
+.forest-btn:hover {
+    background: #1e7a1e;
+}
+
+.unpassable-btn {
     background: #d0021b;
     color: white;
     border-color: #b8001a;
 }
 
-.blocked-btn:hover {
+.unpassable-btn:hover {
     background: #b8001a;
 }
 
