@@ -26,42 +26,8 @@
      * Set up dynamic marker scaling based on zoom level
      */
     function setupMarkerScaling() {
-        if (!bridge.map) return;
-        
-        const applyMarkerScale = () => {
-            const zoom = bridge.map.getZoom();
-            const maxZoom = bridge.map.getMaxZoom();
-            const minZoom = bridge.map.getMinZoom();
-            
-            // Much more conservative scaling - minimum 85% at max zoom, starts scaling only at higher zooms
-            const minScale = 0.85;  // Keep 85% minimum size instead of 60%
-            const scaleStartZoom = minZoom + (maxZoom - minZoom) * 0.6; // Start scaling only at 60% through zoom range
-            
-            let scale = 1.0;
-            if (zoom > scaleStartZoom) {
-                const scalingRange = maxZoom - scaleStartZoom;
-                const zoomIntoScaling = zoom - scaleStartZoom;
-                const normalizedZoom = zoomIntoScaling / scalingRange;
-                scale = Math.max(minScale, 1 - (normalizedZoom * 0.15)); // Only scale down by 15% max
-            }
-            
-            // Apply scale to all custom markers
-            bridge.map.eachLayer(layer => {
-                if (layer instanceof L.Marker) {
-                    const iconElement = layer.getElement();
-                    if (iconElement && (iconElement.classList.contains('custom-marker') || iconElement.classList.contains('custom-image-marker'))) {
-                        iconElement.style.transform = `scale(${scale})`;
-                    }
-                }
-            });
-        };
-        
-        // Apply scaling on zoom events
-        bridge.map.on('zoom', applyMarkerScale);
-        bridge.map.on('zoomend', applyMarkerScale);
-        
-        // Apply initial scaling
-        setTimeout(applyMarkerScale, 100);
+        // Remove zoom event scaling to prevent spazzing - just rely on CSS
+        console.log("Marker scaling setup complete (CSS-based only)");
     }
 
     function renderMarkers() {
@@ -91,17 +57,17 @@
                     markerOptions.icon = L.divIcon({
                         html: `<img src="${markerData.iconUrl}" class="custom-marker-image" style="width:100%; height:100%;">`,
                         className: 'custom-image-marker',
-                        iconSize: [32, 32],
-                        iconAnchor: [16, 32],
-                        popupAnchor: [0, -32]
+                        iconSize: [48, 48],  // Much larger: 48x48 instead of 32x32
+                        iconAnchor: [24, 48],
+                        popupAnchor: [0, -48]
                     });
                 } else if (markerData.customIcon) {
-                    // Use emoji/text icon - larger size for visibility
+                    // Use emoji/text icon - much larger size for visibility
                     markerOptions.icon = L.divIcon({
                         html: `<div class="custom-marker-icon">${markerData.customIcon}</div>`,
                         className: 'custom-marker',
-                        iconSize: [32, 32],
-                        iconAnchor: [16, 32],
+                        iconSize: [48, 48],  // Much larger: 48x48 instead of 32x32
+                        iconAnchor: [24, 48],
                         popupAnchor: [0, -32]
                     });
                 }
@@ -237,34 +203,6 @@
             });
             // Removed the automatic info sidebar opening - now "Show on Map" just zooms to location
         }
-        
-        // Apply marker scaling after rendering
-        setTimeout(() => {
-            const zoom = bridge.map.getZoom();
-            const maxZoom = bridge.map.getMaxZoom();
-            const minZoom = bridge.map.getMinZoom();
-            
-            // Much more conservative scaling - minimum 85% at max zoom, starts scaling only at higher zooms
-            const minScale = 0.85;  // Keep 85% minimum size instead of 60%
-            const scaleStartZoom = minZoom + (maxZoom - minZoom) * 0.6; // Start scaling only at 60% through zoom range
-            
-            let scale = 1.0;
-            if (zoom > scaleStartZoom) {
-                const scalingRange = maxZoom - scaleStartZoom;
-                const zoomIntoScaling = zoom - scaleStartZoom;
-                const normalizedZoom = zoomIntoScaling / scalingRange;
-                scale = Math.max(minScale, 1 - (normalizedZoom * 0.15)); // Only scale down by 15% max
-            }
-            
-            bridge.map.eachLayer(layer => {
-                if (layer instanceof L.Marker) {
-                    const iconElement = layer.getElement();
-                    if (iconElement && (iconElement.classList.contains('custom-marker') || iconElement.classList.contains('custom-image-marker'))) {
-                        iconElement.style.transform = `scale(${scale})`;
-                    }
-                }
-            });
-        }, 50);
     }
 
     window.__nimea_markers_init = initMarkersModule;

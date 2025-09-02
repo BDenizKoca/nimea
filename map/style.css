@@ -527,17 +527,17 @@ body, html {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
-    font-size: 24px;
+    width: 48px;  /* Increased from 32px to 48px */
+    height: 48px; /* Increased from 32px to 48px */
+    font-size: 32px; /* Increased from 24px to 32px */
     background: rgba(255, 255, 255, 0.9);
-    border: 2px solid #333;
+    border: 3px solid #333; /* Slightly thicker border */
     border-radius: 50%;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    box-shadow: 0 3px 6px rgba(0,0,0,0.3); /* Slightly larger shadow */
     cursor: pointer;
     /* Minimum scale to ensure visibility at max zoom */
-    min-width: 24px;
-    min-height: 24px;
+    min-width: 36px; /* Increased minimum size */
+    min-height: 36px; /* Increased minimum size */
     /* Remove any background that might appear as black circle */
     background-clip: padding-box;
 }
