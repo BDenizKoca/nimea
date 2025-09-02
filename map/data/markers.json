@@ -35,6 +35,39 @@
       "summary": "free",
       "images": [],
       "public": true
+    },
+    {
+      "id": "Camkale",
+      "name": "Çamkale",
+      "x": 1527.9998290885778,
+      "y": 894.9844308886532,
+      "type": "city",
+      "faction": "Çamkale Krallığı",
+      "summary": "Çamkale Krallığı",
+      "images": [],
+      "public": true
+    },
+    {
+      "id": "ruatan",
+      "name": "Ruatan",
+      "x": 1384.999847688527,
+      "y": 1658.9843218106353,
+      "type": "city",
+      "faction": "Ruatan Krallığı",
+      "summary": "Ruatan",
+      "images": [],
+      "public": true
+    },
+    {
+      "id": "evergreen",
+      "name": "Evergreen",
+      "x": 845.999943517365,
+      "y": 762.9844702261285,
+      "type": "city",
+      "faction": "Evergreen Krallıgı",
+      "summary": "Evergreen",
+      "images": [],
+      "public": true
     }
   ]
 }
