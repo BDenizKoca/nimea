@@ -135,9 +135,7 @@
                 duration: 1.5, // 1.5 second animation
                 easeLinearity: 0.25 // Smooth easing
             });
-            setTimeout(() => {
-                bridge.uiModule.openInfoSidebar(focusMarkerInstance.data);
-            }, 800); // Reduced delay since animation is smoother
+            // Removed the automatic info sidebar opening - now "Show on Map" just zooms to location
         }
     }
 
