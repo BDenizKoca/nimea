@@ -11,6 +11,7 @@
     let pathfinding = null;
     let terrainUtils = null;
     let visualizer = null;
+    let pathNaturalizer = null;
 
     // Routing state
     let routingGraph = null;
@@ -44,15 +45,17 @@
         pathfinding = window.__nimea_pathfinding;
         terrainUtils = window.__nimea_terrain_utils;
         visualizer = window.__nimea_visualizer;
+        pathNaturalizer = window.__nimea_path_naturalizer;
 
-        if (!graphBuilder || !pathfinding || !terrainUtils || !visualizer) {
-            console.error("Routing modules not loaded. Required: graph-builder, pathfinding, terrain-utils, visualizer");
+        if (!graphBuilder || !pathfinding || !terrainUtils || !visualizer || !pathNaturalizer) {
+            console.error("Routing modules not loaded. Required: graph-builder, pathfinding, terrain-utils, visualizer, path-naturalizer");
             return;
         }
 
         // Initialize modules with dependencies
         graphBuilder.initGraphBuilder(bridge, TERRAIN_COSTS, TERRAIN_GRID_SIZE, ROAD_CONNECTION_DISTANCE, terrainUtils);
         terrainUtils.initTerrainUtils(bridge, TERRAIN_COSTS);
+        pathNaturalizer.initPathNaturalizer(bridge, terrainUtils);
         visualizer.initVisualizer(bridge);
         
         // Expose public functions on the bridge

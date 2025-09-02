@@ -5,12 +5,17 @@
 
     // This will be set by the main routing module
     let bridge = {};
+    let pathNaturalizer = null;
 
     /**
      * Initialize the visualizer with dependencies
      */
     function initVisualizer(bridgeObj) {
         bridge = bridgeObj;
+        pathNaturalizer = window.__nimea_path_naturalizer;
+        if (!pathNaturalizer) {
+            console.warn("Path naturalizer not available - using basic path rendering");
+        }
     }
 
     /**
@@ -138,16 +143,51 @@
         
         if (allPoints.length < 2) return;
         
-        // Create a unified blue route line
+        // Convert Leaflet [lat, lng] format to [x, y] for naturalization
+        const coordinatesForNaturalization = allPoints.map(point => [point[1], point[0]]); // swap to [x, y]
+        
+        let finalPoints = allPoints; // Default to original points
+        
+        // Apply path naturalization if available
+        if (pathNaturalizer) {
+            try {
+                // Naturalize the path using terrain-aware nudging and smoothing
+                const naturalizedCoords = pathNaturalizer.naturalizePath(
+                    coordinatesForNaturalization, 
+                    null, // terrainGrid will use built-in terrain utilities
+                    {
+                        nudgeStep: 8,           // Resample every 8 map units for smooth curves
+                        nudgeOffset: 4,         // Check terrain 4 units away
+                        nudgeStrength: 1.0,     // Moderate nudging strength
+                        smoothIterations: 2,    // 2 iterations of smoothing
+                        smoothRatio: 0.25,      // Standard corner cutting
+                        terrainSensitivity: 1.0 // Full terrain awareness
+                    }
+                );
+                
+                // Convert back to Leaflet format [lat, lng]
+                finalPoints = pathNaturalizer.coordinatesToLeafletFormat(naturalizedCoords);
+                
+                console.log(`Naturalized path: ${allPoints.length} → ${finalPoints.length} points`);
+            } catch (error) {
+                console.warn("Path naturalization failed, using original path:", error);
+                finalPoints = allPoints;
+            }
+        }
+        
+        // Create a unified blue route line with natural curves
         const unifiedStyle = {
             color: '#1e40af', // Solid blue
-            weight: 6,
-            opacity: 0.7,
+            weight: 4,        // Slightly thinner for more elegant look
+            opacity: 0.8,     // Slightly more opaque
             pane: 'routePane',
-            className: 'unified-route-line'
+            className: 'unified-route-line',
+            smoothFactor: 1.0, // Leaflet's built-in smoothing
+            lineCap: 'round',  // Rounded line caps for organic appearance
+            lineJoin: 'round'  // Rounded line joins
         };
         
-        const unifiedPolyline = L.polyline(allPoints, unifiedStyle).addTo(bridge.map);
+        const unifiedPolyline = L.polyline(finalPoints, unifiedStyle).addTo(bridge.map);
         bridge.state.routePolylines.push(unifiedPolyline);
     }
 
