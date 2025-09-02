@@ -18,8 +18,8 @@
     };
 
     // Single simplified tuning constants (adjust here if desired)
-    const DIRECT_ADVANTAGE_THRESHOLD = 0.7; // Direct must be 30% cheaper to beat road-biased path
-    const LEAVE_ROAD_PENALTY = 2.0;         // Penalty (in km-equivalent) per transition off/on roads
+    const DIRECT_ADVANTAGE_THRESHOLD = 0.8; // Direct must be 20% cheaper (stricter) to beat road-biased path
+    const LEAVE_ROAD_PENALTY = 0.5;         // Smaller penalty per transition; roads already cheap
 
     function initRouting(map) {
         bridge = window.__nimea;
@@ -173,8 +173,9 @@
     }
 
     function buildRoutingGraph() {
-        const nodes = new Map(); // nodeId -> {x, y, type}
-        const edges = []; // {from, to, cost, distance}
+    const nodes = new Map(); // nodeId -> {x, y, type}
+    const edges = []; // {from, to, cost, distance}
+    const edgeMap = new Map(); // `${from}|${to}` -> edge
         
         // Add all markers as nodes
         bridge.state.markers.forEach(marker => {
@@ -218,20 +219,12 @@
                 );
                 
                 // Roads have low cost
-                edges.push({
-                    from: fromId,
-                    to: toId,
-                    cost: TERRAIN_COSTS.road,
-                    distance: distance
-                });
+                const fwd = { from: fromId, to: toId, cost: TERRAIN_COSTS.road, distance };
+                edges.push(fwd); edgeMap.set(`${fromId}|${toId}`, fwd);
                 
                 // Add reverse edge for bidirectional travel
-                edges.push({
-                    from: toId,
-                    to: fromId,
-                    cost: TERRAIN_COSTS.road,
-                    distance: distance
-                });
+                const rev = { from: toId, to: fromId, cost: TERRAIN_COSTS.road, distance };
+                edges.push(rev); edgeMap.set(`${toId}|${fromId}`, rev);
             }
         });
         
@@ -265,19 +258,10 @@
                     nodes.get(closestRoadNode)
                 );
                 
-                edges.push({
-                    from: markerNodeId,
-                    to: closestRoadNode,
-                    cost: terrainCost,
-                    distance: closestDistance
-                });
-                
-                edges.push({
-                    from: closestRoadNode,
-                    to: markerNodeId,
-                    cost: terrainCost,
-                    distance: closestDistance
-                });
+                const fwd = { from: markerNodeId, to: closestRoadNode, cost: terrainCost, distance: closestDistance };
+                const rev = { from: closestRoadNode, to: markerNodeId, cost: terrainCost, distance: closestDistance };
+                edges.push(fwd); edgeMap.set(`${markerNodeId}|${closestRoadNode}`, fwd);
+                edges.push(rev); edgeMap.set(`${closestRoadNode}|${markerNodeId}`, rev);
             }
         });
         
@@ -305,25 +289,16 @@
                     
                     // Create connections even through difficult terrain (with high cost)
                     if (terrainCost < Infinity) {
-                        edges.push({
-                            from: marker1NodeId,
-                            to: marker2NodeId,
-                            cost: terrainCost,
-                            distance: distance
-                        });
-                        
-                        edges.push({
-                            from: marker2NodeId,
-                            to: marker1NodeId,
-                            cost: terrainCost,
-                            distance: distance
-                        });
+                        const fwd = { from: marker1NodeId, to: marker2NodeId, cost: terrainCost, distance };
+                        const rev = { from: marker2NodeId, to: marker1NodeId, cost: terrainCost, distance };
+                        edges.push(fwd); edgeMap.set(`${marker1NodeId}|${marker2NodeId}`, fwd);
+                        edges.push(rev); edgeMap.set(`${marker2NodeId}|${marker1NodeId}`, rev);
                     }
                 }
             });
         });
         
-        routingGraph = { nodes, edges };
+        routingGraph = { nodes, edges, edgeMap };
         
         // If a calculation was waiting for the graph, start it now
         if (isCalculatingRoute) {
@@ -477,44 +452,59 @@
         // Graph path via Dijkstra (includes roads + marker connections)
         const graphPath = findShortestPath(routingGraph, startNodeId, endNodeId);
         let graphPixelPath = null;
+        let graphCostKm = Infinity;
         if (graphPath && graphPath.length > 0) {
             graphPixelPath = graphPath.map(id => { const n = routingGraph.nodes.get(id); return [n.y, n.x]; });
+            graphCostKm = computeGraphPathEffectiveKm(graphPath);
         }
 
         // Direct path (straight line) baseline
         const straightPixelPath = [[start.y,start.x],[end.y,end.x]];
-        const directDistanceKm = computePixelPathKm(straightPixelPath); // scaled to km
+        const terrainCostDirect = getTerrainCostBetweenPoints({x:start.x,y:start.y},{x:end.x,y:end.y});
+        const baseDirectKm = computePixelPathKm(straightPixelPath);
+        const directCostKm = terrainCostDirect === Infinity ? Infinity : baseDirectKm * (terrainCostDirect === TERRAIN_COSTS.difficult ? TERRAIN_COSTS.difficult : 1);
 
         let useDirect = false;
         if (!hasRoads || !graphPixelPath) {
             useDirect = true; // nothing better
         } else {
-            const graphDistanceKm = computePixelPathKm(graphPixelPath);
             const transitions = countRoadTransitionsSimple(graphPath);
-            const graphEffectiveKm = graphDistanceKm + (transitions * (LEAVE_ROAD_PENALTY * bridge.config.kmPerPixel));
-            if (directDistanceKm < graphEffectiveKm * DIRECT_ADVANTAGE_THRESHOLD) {
+            const graphEffectiveKm = graphCostKm + (transitions * LEAVE_ROAD_PENALTY);
+            if (directCostKm < graphEffectiveKm * DIRECT_ADVANTAGE_THRESHOLD) {
                 useDirect = true;
             } else {
                 // Render graph (road-biased) path
                 const polyline = L.polyline(graphPixelPath, { color:'#cc2222', weight:3, pane:'routePane' }).addTo(bridge.map);
                 bridge.state.routePolylines.push(polyline);
-                bridge.state.routeLegs.push({ from:start, to:end, distanceKm: graphDistanceKm, hybrid:true });
+                bridge.state.routeLegs.push({ from:start, to:end, distanceKm: graphCostKm, hybrid:true });
             }
         }
 
         if (useDirect) {
             // Evaluate terrain cost: if blocked mark unreachable else adjust by difficult
-            const terrainCost = getTerrainCostBetweenPoints({x:start.x,y:start.y},{x:end.x,y:end.y});
-            if (terrainCost === Infinity) {
+            if (terrainCostDirect === Infinity) {
                 bridge.state.routeLegs.push({ from:start, to:end, distanceKm:0, unreachable:true });
             } else {
-                const adjusted = directDistanceKm * (terrainCost === TERRAIN_COSTS.difficult ? TERRAIN_COSTS.difficult : 1);
-                const polyline = L.polyline(straightPixelPath, { color: terrainCost>1?'orange':'purple', weight:3, dashArray:'4,4', pane:'routePane' }).addTo(bridge.map);
+                const adjusted = directCostKm;
+                const polyline = L.polyline(straightPixelPath, { color: terrainCostDirect>1?'orange':'purple', weight:3, dashArray:'4,4', pane:'routePane' }).addTo(bridge.map);
                 bridge.state.routePolylines.push(polyline);
                 bridge.state.routeLegs.push({ from:start, to:end, distanceKm: adjusted, fallback:true });
             }
         }
         if (typeof onComplete === 'function') onComplete();
+    }
+
+    // Compute effective km of graph path using edge cost * distance
+    function computeGraphPathEffectiveKm(pathIds) {
+        if (!pathIds || pathIds.length < 2) return Infinity;
+        let costPxWeighted = 0; // (distancePx * terrainMultiplier)
+        for (let i=1;i<pathIds.length;i++) {
+            const key = `${pathIds[i-1]}|${pathIds[i]}`;
+            const edge = routingGraph.edgeMap.get(key);
+            if (!edge) return Infinity; // incomplete
+            costPxWeighted += edge.distance * edge.cost; // cost already multiplier
+        }
+        return costPxWeighted * bridge.config.kmPerPixel; // convert to km
     }
 
     function countRoadTransitionsSimple(pathIds) {
