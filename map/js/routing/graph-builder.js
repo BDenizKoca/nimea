@@ -205,22 +205,28 @@
      * Build markers layer - add all map markers as nodes
      */
     function buildMarkersLayer(nodes) {
+        console.log(`Building markers layer with ${bridge.state.markers.length} markers`);
         bridge.state.markers.forEach(marker => {
             const nodeId = `marker_${marker.id}`;
+            console.log(`Adding marker node: ${nodeId} (${marker.name}) at (${marker.x}, ${marker.y}) isWaypoint: ${marker.isWaypoint}`);
             nodes.set(nodeId, {
                 x: marker.x,
                 y: marker.y,
                 type: 'marker',
-                markerId: marker.id
+                markerId: marker.id,
+                isWaypoint: marker.isWaypoint || false
             });
         });
+        console.log(`Markers layer built with ${nodes.size} total nodes`);
     }
 
     /**
      * Build bridge connections - connect markers to road and terrain layers
      */
     function buildBridgeConnections(nodes, edges, edgeMap) {
+        console.log(`Building bridge connections for ${bridge.state.markers.length} markers`);
         bridge.state.markers.forEach(marker => {
+            console.log(`Connecting marker ${marker.name} (${marker.id}) to road and terrain layers`);
             connectMarkerToRoads(marker, nodes, edges, edgeMap);
             connectMarkerToTerrain(marker, nodes, edges, edgeMap);
         });
@@ -369,7 +375,50 @@
         });
         
         if (connectionsAttempted.length === 0) {
-            console.warn(`Failed to connect marker ${marker.name} to terrain grid`);
+            console.warn(`⚠️ Failed to connect marker ${marker.name} to terrain grid - trying emergency connections`);
+            
+            // Emergency fallback: try connecting to ANY nearby terrain node
+            for (let [nodeId, node] of nodes) {
+                if (node.type === 'terrain_node') {
+                    const distance = Math.sqrt(
+                        Math.pow(node.x - marker.x, 2) + 
+                        Math.pow(node.y - marker.y, 2)
+                    );
+                    
+                    if (distance <= TERRAIN_GRID_SIZE * 3) { // Expanded search radius
+                        const connectionCost = getTerrainCostBetweenPoints(markerPos, node);
+                        
+                        const fwd = {
+                            from: markerNodeId,
+                            to: nodeId,
+                            cost: connectionCost,
+                            distance: distance,
+                            type: 'terrain_bridge_emergency'
+                        };
+                        const rev = {
+                            from: nodeId,
+                            to: markerNodeId,
+                            cost: connectionCost,
+                            distance: distance,
+                            type: 'terrain_bridge_emergency'
+                        };
+                        
+                        edges.push(fwd, rev);
+                        edgeMap.set(`${markerNodeId}|${nodeId}`, fwd);
+                        edgeMap.set(`${nodeId}|${markerNodeId}`, rev);
+                        connectionsAttempted.push(nodeId);
+                        
+                        console.log(`✅ Emergency connected ${marker.name} to terrain node ${nodeId} (distance: ${distance.toFixed(1)})`);
+                        break; // Only need one emergency connection
+                    }
+                }
+            }
+        }
+        
+        if (connectionsAttempted.length === 0) {
+            console.error(`❌ CRITICAL: Failed to connect marker ${marker.name} to ANY terrain nodes!`);
+        } else {
+            console.log(`✅ Connected marker ${marker.name} to ${connectionsAttempted.length} terrain nodes`);
         }
     }
 

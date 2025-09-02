@@ -356,6 +356,33 @@
             this.bridge.state.markers.push(markerData);
             this.pendingMarker.on('click', () => this.bridge.openInfoSidebar(markerData));
             
+            // Add touch support for DM mode markers
+            this.pendingMarker.on('touchstart', (e) => {
+                e.originalEvent.preventDefault();
+                this.pendingMarker._touchStartTime = Date.now();
+                this.pendingMarker._touchStartPos = e.originalEvent.touches[0];
+            });
+
+            this.pendingMarker.on('touchend', (e) => {
+                e.originalEvent.preventDefault();
+                
+                if (this.pendingMarker._touchStartTime && this.pendingMarker._touchStartPos) {
+                    const touchDuration = Date.now() - this.pendingMarker._touchStartTime;
+                    const touchEnd = e.originalEvent.changedTouches[0];
+                    
+                    const deltaX = Math.abs(touchEnd.clientX - this.pendingMarker._touchStartPos.clientX);
+                    const deltaY = Math.abs(touchEnd.clientY - this.pendingMarker._touchStartPos.clientY);
+                    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                    
+                    if (touchDuration < 500 && distance < 10) {
+                        this.bridge.openInfoSidebar(markerData);
+                    }
+                    
+                    this.pendingMarker._touchStartTime = null;
+                    this.pendingMarker._touchStartPos = null;
+                }
+            });
+            
             this.pendingMarker.options.isPending = false; // Unmark it
             this.pendingMarker = null;
             
@@ -449,6 +476,34 @@
                     this.bridge.state.markers.push(markerData);
                     const marker = L.marker([markerData.y, markerData.x]).addTo(this.bridge.map);
                     marker.on('click', () => this.bridge.openInfoSidebar(markerData));
+                    
+                    // Add touch support for bulk imported markers
+                    marker.on('touchstart', (e) => {
+                        e.originalEvent.preventDefault();
+                        marker._touchStartTime = Date.now();
+                        marker._touchStartPos = e.originalEvent.touches[0];
+                    });
+
+                    marker.on('touchend', (e) => {
+                        e.originalEvent.preventDefault();
+                        
+                        if (marker._touchStartTime && marker._touchStartPos) {
+                            const touchDuration = Date.now() - marker._touchStartTime;
+                            const touchEnd = e.originalEvent.changedTouches[0];
+                            
+                            const deltaX = Math.abs(touchEnd.clientX - marker._touchStartPos.clientX);
+                            const deltaY = Math.abs(touchEnd.clientY - marker._touchStartPos.clientY);
+                            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                            
+                            if (touchDuration < 500 && distance < 10) {
+                                this.bridge.openInfoSidebar(markerData);
+                            }
+                            
+                            marker._touchStartTime = null;
+                            marker._touchStartPos = null;
+                        }
+                    });
+                    
                     imported++;
                     
                 } catch (error) {

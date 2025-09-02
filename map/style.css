@@ -939,3 +939,71 @@ button:focus, .leaflet-control-button:focus {
 .leaflet-popup-content {
     text-align: center;
 }
+
+/* Mobile Touch Enhancements */
+@media (max-width: 768px), (pointer: coarse) {
+    /* Increase touch targets for markers */
+    .leaflet-marker-icon {
+        transform-origin: center center;
+        transition: transform 0.2s ease;
+    }
+    
+    /* Visual feedback for touch */
+    .leaflet-marker-icon:active {
+        transform: scale(1.1);
+    }
+    
+    /* Improve sidebar touch interaction */
+    .sidebar {
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Better touch targets for buttons */
+    button, .mini-btn {
+        min-height: 44px;
+        min-width: 44px;
+        padding: 8px 12px;
+    }
+    
+    /* Prevent zoom on input focus */
+    input, select, textarea {
+        font-size: 16px;
+    }
+    
+    /* Improve drag handles on mobile */
+    .drag-handle {
+        font-size: 20px;
+        padding: 8px;
+        min-width: 44px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* Better route stop interaction */
+    .route-stop-row {
+        min-height: 50px;
+        padding: 12px 8px;
+    }
+    
+    /* Touch-friendly waypoint markers */
+    .waypoint-marker {
+        min-width: 28px;
+        min-height: 28px;
+        font-size: 14px;
+        line-height: 28px;
+    }
+}
+
+/* Prevent text selection on touch devices during drag */
+@media (pointer: coarse) {
+    .route-stop-row[draggable="true"] {
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+    }
+}

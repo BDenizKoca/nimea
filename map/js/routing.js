@@ -92,6 +92,11 @@
         // Add waypoint to markers for routing purposes
         bridge.state.markers.push(waypoint);
         
+        // Invalidate routing graph to include the new waypoint
+        invalidateGraph();
+        
+        console.log(`Created waypoint ${waypoint.name} at (${waypoint.x}, ${waypoint.y})`);
+        
         // Create visual marker on map
         const icon = L.divIcon({
             html: `<div class="waypoint-marker">${waypointCounter}</div>`,
@@ -106,6 +111,36 @@
         marker.on('click', () => {
             if (confirm(`Delete ${waypoint.name}?`)) {
                 deleteWaypoint(waypoint.id, marker);
+            }
+        });
+
+        // Add touch support for waypoint deletion on mobile
+        marker.on('touchstart', (e) => {
+            e.originalEvent.preventDefault();
+            marker._touchStartTime = Date.now();
+            marker._touchStartPos = e.originalEvent.touches[0];
+        });
+
+        marker.on('touchend', (e) => {
+            e.originalEvent.preventDefault();
+            
+            if (marker._touchStartTime && marker._touchStartPos) {
+                const touchDuration = Date.now() - marker._touchStartTime;
+                const touchEnd = e.originalEvent.changedTouches[0];
+                
+                const deltaX = Math.abs(touchEnd.clientX - marker._touchStartPos.clientX);
+                const deltaY = Math.abs(touchEnd.clientY - marker._touchStartPos.clientY);
+                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                
+                // Consider it a tap if: duration < 500ms and movement < 10px
+                if (touchDuration < 500 && distance < 10) {
+                    if (confirm(`Delete ${waypoint.name}?`)) {
+                        deleteWaypoint(waypoint.id, marker);
+                    }
+                }
+                
+                marker._touchStartTime = null;
+                marker._touchStartPos = null;
             }
         });
 
@@ -204,25 +239,34 @@
         if (clearBtn) clearBtn.addEventListener('click', clearRoute);
 
         // Setup drag and drop functionality (re-initialize after DOM update)
-        setupDragAndDrop(stopsDiv);
+        if (bridge.state.route.length > 1) {
+            setupDragAndDrop(stopsDiv);
+        }
     }
 
     /**
      * Setup drag and drop functionality for route reordering
      */
     function setupDragAndDrop(container) {
-        // Remove any existing event listeners to prevent duplicates
-        container.removeEventListener('dragstart', handleDragStart);
-        container.removeEventListener('dragend', handleDragEnd);
-        container.removeEventListener('dragover', handleDragOver);
-        container.removeEventListener('drop', handleDrop);
-        container.removeEventListener('dragenter', handleDragEnter);
-        
+        // Store drag state
         let draggedElement = null;
         let draggedIndex = null;
 
+        // Clear any existing handlers by cloning the container
+        const newContainer = container.cloneNode(true);
+        container.parentNode.replaceChild(newContainer, container);
+        
+        // Update reference to the new container
+        const stopsDiv = document.getElementById('route-stops');
+        
         // Drag start handler
         function handleDragStart(e) {
+            // Only handle draggable route rows
+            if (!e.target.matches('.route-stop-row[draggable="true"]') && 
+                !e.target.closest('.route-stop-row[draggable="true"]')) {
+                return;
+            }
+            
             const draggableRow = e.target.closest('.route-stop-row[draggable="true"]');
             if (!draggableRow) return;
             
@@ -233,25 +277,23 @@
             e.dataTransfer.effectAllowed = 'move';
             e.dataTransfer.setData('text/plain', draggedIndex.toString());
             
-            console.log(`Drag started: index ${draggedIndex}`);
+            console.log(`🟢 Drag started: index ${draggedIndex}, element:`, draggableRow);
         }
 
         // Drag end handler
         function handleDragEnd(e) {
-            const draggableRow = e.target.closest('.route-stop-row[draggable="true"]');
-            if (draggableRow) {
-                draggableRow.classList.remove('dragging');
+            if (draggedElement) {
+                draggedElement.classList.remove('dragging');
             }
             
             // Clean up drop indicators
-            container.querySelectorAll('.drop-indicator').forEach(indicator => {
+            stopsDiv.querySelectorAll('.drop-indicator').forEach(indicator => {
                 indicator.remove();
             });
             
+            console.log('🔴 Drag ended');
             draggedElement = null;
             draggedIndex = null;
-            
-            console.log('Drag ended');
         }
 
         // Drag over handler
@@ -264,7 +306,7 @@
             const targetRow = e.target.closest('.route-stop-row');
             if (targetRow && targetRow !== draggedElement && !targetRow.classList.contains('dragging')) {
                 // Remove existing indicators
-                container.querySelectorAll('.drop-indicator').forEach(indicator => {
+                stopsDiv.querySelectorAll('.drop-indicator').forEach(indicator => {
                     indicator.remove();
                 });
                 
@@ -294,10 +336,14 @@
         function handleDrop(e) {
             e.preventDefault();
             
-            if (!draggedElement || draggedIndex === null) return;
+            if (!draggedElement || draggedIndex === null) {
+                console.warn('⚠️ Drop event but no dragged element');
+                return;
+            }
             
             const targetRow = e.target.closest('.route-stop-row');
             if (!targetRow || targetRow === draggedElement || targetRow.classList.contains('dragging')) {
+                console.warn('⚠️ Invalid drop target');
                 return;
             }
             
@@ -315,26 +361,26 @@
                 newIndex--;
             }
             
-            console.log(`Dropping: from ${draggedIndex} to ${newIndex}`);
+            console.log(`🟡 Drop: from ${draggedIndex} to ${newIndex}`);
             
-            if (draggedIndex !== newIndex) {
+            if (draggedIndex !== newIndex && newIndex >= 0) {
                 reorderRoute(draggedIndex, newIndex);
             }
             
             // Clean up drop indicators
-            container.querySelectorAll('.drop-indicator').forEach(indicator => {
+            stopsDiv.querySelectorAll('.drop-indicator').forEach(indicator => {
                 indicator.remove();
             });
         }
 
-        // Use event delegation to handle all drag events
-        container.addEventListener('dragstart', handleDragStart, true);
-        container.addEventListener('dragend', handleDragEnd, true);
-        container.addEventListener('dragover', handleDragOver, true);
-        container.addEventListener('dragenter', handleDragEnter, true);
-        container.addEventListener('drop', handleDrop, true);
+        // Add event listeners with capture to ensure they fire
+        stopsDiv.addEventListener('dragstart', handleDragStart, true);
+        stopsDiv.addEventListener('dragend', handleDragEnd, true);
+        stopsDiv.addEventListener('dragover', handleDragOver, true);
+        stopsDiv.addEventListener('dragenter', handleDragEnter, true);
+        stopsDiv.addEventListener('drop', handleDrop, true);
         
-        console.log('Drag and drop initialized for', container.querySelectorAll('.route-stop-row[draggable="true"]').length, 'items');
+        console.log('🔧 Drag and drop initialized for', stopsDiv.querySelectorAll('.route-stop-row[draggable="true"]').length, 'items');
     }
 
     /**
