@@ -100,7 +100,18 @@
         }
 
         try {
+            // Add debugging to understand what's happening
+            console.log("updateRouteDisplay called - bridge.state:", bridge.state);
+            console.log("bridge.state.route:", bridge.state.route, "type:", typeof bridge.state.route, "isArray:", Array.isArray(bridge.state.route));
+            
+            if (!bridge.state.route || !Array.isArray(bridge.state.route)) {
+                console.error("bridge.state.route is not a valid array:", bridge.state.route);
+                stopsDiv.innerHTML = '<div class="error-message">Route data is invalid. Please refresh the page.</div>';
+                return;
+            }
+            
             stopsDiv.innerHTML = bridge.state.route.map((stop, idx) => {
+                console.log(`Rendering stop ${idx}:`, stop);
                 const stopType = stop.isWaypoint ? 'waypoint' : 'marker';
                 return `<div class="route-stop-row" draggable="true" data-route-index="${idx}">
                             <span class="drag-handle">⋮⋮</span>
