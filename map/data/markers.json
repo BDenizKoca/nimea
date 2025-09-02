@@ -26,15 +26,16 @@
       "public": true
     },
     {
-      "id": "nortreen",
-      "name": "Nortreen",
+      "id": "camkale",
+      "name": "Çamkale",
       "x": 1531,
       "y": 890,
       "type": "city",
-      "faction": "fref",
-      "summary": "free",
+      "faction": "Bağımsız şehir.",
+      "summary": "Mihver Çam gölgesinde krallık ile yönetilen ülke.",
       "images": [],
-      "public": true
+      "public": true,
+      "wikiSlug": "camkale"
     },
     {
       "id": "custodiskapi",
