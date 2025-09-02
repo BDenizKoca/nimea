@@ -54,7 +54,8 @@
             console.log(`Global zoom update: zoom ${currentZoom}, size ${newSize}px`);
             
             bridge.markerLayerGroup.eachLayer(function(layer) {
-                if (layer.markerData) {
+                if (layer.markerData && (layer.markerData.iconUrl || layer.markerData.customIcon)) {
+                    // Only scale markers with custom icons
                     updateMarkerIcon(layer, layer.markerData, newSize);
                 }
             });
@@ -94,16 +95,8 @@
                 iconAnchor: [newSize/2, newSize],
                 popupAnchor: [0, -newSize]
             });
-        } else {
-            // Default marker
-            newIcon = new ZoomIcon({
-                html: `<div class="custom-marker-icon" style="font-size: ${newSize * 0.6}px; width: ${newSize}px; height: ${newSize}px;">📍</div>`,
-                className: 'custom-marker zoom-responsive-marker',
-                iconSize: [newSize, newSize],
-                iconAnchor: [newSize/2, newSize],
-                popupAnchor: [0, -newSize]
-            });
         }
+        // Remove the default fallback - let Leaflet handle default markers
         
         if (newIcon) {
             marker.setIcon(newIcon);
@@ -169,10 +162,14 @@
                 // Store marker data directly on the marker object
                 marker.markerData = markerData;
                 
-                // Set initial icon immediately using current zoom level
-                const currentZoom = bridge.map.getZoom();
-                const initialSize = calculateIconSize(currentZoom);
-                updateMarkerIcon(marker, markerData, initialSize);
+                // Only set custom icons for markers that actually have custom icons
+                // Let default markers use Leaflet's nice pin icons
+                if (markerData.iconUrl || markerData.customIcon) {
+                    // Set initial custom icon immediately using current zoom level
+                    const currentZoom = bridge.map.getZoom();
+                    const initialSize = calculateIconSize(currentZoom);
+                    updateMarkerIcon(marker, markerData, initialSize);
+                }
                 
                 // Add to our marker layer group for efficient eachLayer iteration
                 if (bridge.markerLayerGroup) {
