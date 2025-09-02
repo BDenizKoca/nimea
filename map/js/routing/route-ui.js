@@ -60,6 +60,7 @@
      */
     function handleRouteStopClick(e) {
         const target = e.target;
+        console.log("Route stop click detected:", target, "classes:", target.classList.toString(), "dataset:", target.dataset);
         
         // Handle remove button clicks
         if (target.classList.contains('mini-btn') && target.dataset.ridx !== undefined) {
@@ -68,10 +69,15 @@
             const ridx = parseInt(target.dataset.ridx, 10);
             console.log("Remove button clicked for index:", ridx);
             if (bridge.routingModule && bridge.routingModule.removeRouteIndex) {
+                console.log("Calling removeRouteIndex with:", ridx);
                 bridge.routingModule.removeRouteIndex(ridx);
+            } else {
+                console.error("removeRouteIndex not available on bridge.routingModule");
             }
             return;
         }
+        
+        console.log("Click not handled - target doesn't match remove button criteria");
     }
 
     /**
