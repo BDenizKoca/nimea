@@ -26,8 +26,83 @@
      * Set up dynamic marker scaling based on zoom level
      */
     function setupMarkerScaling() {
-        // Remove zoom event scaling to prevent spazzing - just rely on CSS
-        console.log("Marker scaling setup complete (CSS-based only)");
+        // No JavaScript zoom events - pure CSS solution to prevent spazzing
+        console.log("Marker scaling setup complete (CSS-only to prevent spazzing)");
+    }
+
+    /**
+     * Create a zoom-responsive icon class
+     */
+    function createZoomResponsiveIcon(baseSize = 48) {
+        const ZoomIcon = L.DivIcon.extend({
+            options: {
+                className: 'custom-marker zoom-responsive-marker',
+                iconSize: [baseSize, baseSize],
+                iconAnchor: [baseSize/2, baseSize],
+                popupAnchor: [0, -baseSize]
+            }
+        });
+        return ZoomIcon;
+    }
+
+    /**
+     * Calculate icon size based on zoom level using your formula
+     */
+    function calculateIconSize(zoom, baseSize = 60) {
+        // Using your formula: newSize = 60/((20 - actualZoom )*2)
+        const newSize = baseSize / ((20 - zoom) * 2);
+        // Clamp size between reasonable bounds
+        return Math.max(20, Math.min(80, newSize));
+    }
+
+    /**
+     * Set up zoom-based scaling for a specific marker
+     */
+    function setupMarkerZoomScaling(marker, markerData) {
+        if (!bridge.map || !marker) return;
+
+        const ZoomIcon = createZoomResponsiveIcon();
+        
+        const updateMarkerSize = () => {
+            const zoom = bridge.map.getZoom();
+            const newSize = calculateIconSize(zoom);
+            
+            let newIcon;
+            if (markerData.iconUrl) {
+                // Image marker
+                newIcon = new ZoomIcon({
+                    html: `<img src="${markerData.iconUrl}" class="custom-marker-image" style="width:100%; height:100%;">`,
+                    className: 'custom-image-marker zoom-responsive-marker',
+                    iconSize: [newSize, newSize],
+                    iconAnchor: [newSize/2, newSize],
+                    popupAnchor: [0, -newSize]
+                });
+            } else if (markerData.customIcon) {
+                // Custom icon (emoji/text)
+                newIcon = new ZoomIcon({
+                    html: `<div class="custom-marker-icon" style="font-size: ${newSize * 0.6}px">${markerData.customIcon}</div>`,
+                    className: 'custom-marker zoom-responsive-marker',
+                    iconSize: [newSize, newSize],
+                    iconAnchor: [newSize/2, newSize],
+                    popupAnchor: [0, -newSize]
+                });
+            }
+            
+            if (newIcon) {
+                marker.setIcon(newIcon);
+            }
+        };
+
+        // Set up zoom event listener for this specific marker
+        bridge.map.on('zoomend', updateMarkerSize);
+        
+        // Initial size setup
+        updateMarkerSize();
+        
+        // Store the cleanup function on the marker for later removal
+        marker._zoomCleanup = () => {
+            bridge.map.off('zoomend', updateMarkerSize);
+        };
     }
 
     function renderMarkers() {
@@ -73,6 +148,9 @@
                 }
 
                 const marker = L.marker([markerData.y, markerData.x], markerOptions).addTo(bridge.map);
+                
+                // Set up zoom-based scaling for this marker using your formula
+                setupMarkerZoomScaling(marker, markerData);
                 
                 // Store marker data directly on the marker object for direct-touch.js to use
                 marker.markerData = markerData;
