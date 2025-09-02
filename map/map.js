@@ -146,6 +146,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Add necessary functions to the bridge for modules to use
             window.__nimea.generateWikiLink = generateWikiLink;
+            window.__nimea.generateIdFromName = generateIdFromName;
+            window.__nimea.openInfoSidebar = openInfoSidebar;
             window.__nimea.markDirty = markDirty;
 
             // Initial render calls
@@ -190,6 +192,15 @@ document.addEventListener('DOMContentLoaded', () => {
             return `/wiki/locations-regions/${markerData.id}/`;
         }
         return null;
+    }
+
+    function generateIdFromName(name) {
+        if (!name) return '';
+        return name.toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, '')
+            .replace(/\s+/g, '-')
+            .replace(/-+/g, '-')
+            .replace(/^-|-$/g, '');
     }
 
     // --- Module Delegations ---

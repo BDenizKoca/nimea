@@ -371,6 +371,7 @@
     }
 
     function openMarkerCreationModal(latLng) {
+        console.log('Opening marker creation modal at:', latLng);
         const modal = document.getElementById('marker-creation-modal');
         const form = document.getElementById('marker-form');
         form.reset();
@@ -441,12 +442,14 @@
         bridge.state.markers.push(newMarkerData);
         pendingMarker.on('click', () => bridge.openInfoSidebar(newMarkerData));
         
+        console.log('Marker added to state:', newMarkerData.name);
         bridge.markDirty('markers');
         
         document.getElementById('marker-creation-modal').classList.add('hidden');
         pendingMarker.options.isPending = false; // Unmark it
         pendingMarker = null;
         
+        console.log('Marker creation completed successfully');
         bridge.showNotification(`Marker "${name}" created successfully!`, 'success');
     }
 
@@ -652,7 +655,7 @@
      */
     async function publishAll() {
         if (!window.gitClient || !window.gitClient.isAuthenticated) {
-            bridge.showNotification('Login required to publish', 'error');
+            bridge.showNotification('Login required to publish changes. Use Download button to save offline.', 'error');
             return;
         }
         bridge.showNotification('Publishing changes...', 'info');
@@ -672,7 +675,7 @@
             bridge.showNotification('Published & site rebuild triggered!', 'success');
         } catch (e) {
             console.error('Publish failed:', e);
-            bridge.showNotification('Publish failed (see console)', 'error');
+            bridge.showNotification('Publish failed. Try Download button to save offline, then manually commit files.', 'error');
         }
     }
 

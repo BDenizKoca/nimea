@@ -138,7 +138,8 @@ Timestamp: ${new Date().toISOString()}`;
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${this.token}`,
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
                 body: JSON.stringify(updateData)
             });

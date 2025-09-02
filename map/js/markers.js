@@ -15,6 +15,8 @@
         bridge.markersModule = {
             renderMarkers
         };
+        
+        console.log("Markers module initialized.");
     }
 
     function renderMarkers() {
