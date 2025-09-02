@@ -17,7 +17,6 @@ document.addEventListener('DOMContentLoaded', () => {
             normal: 1,
             road: 0.5,
             difficult: 3,
-            blocked: Infinity,
         },
         gridCellSize: 24, // in pixels
     };

@@ -40,10 +40,14 @@
             style: function(feature) {
                 const kind = feature.properties.kind;
                 switch (kind) {
-                    case 'road':      return { color: "#0000ff", weight: 2, opacity: 0.7 };
-                    case 'unpassable':return { color: "#ff0000", weight: 1, opacity: 0.5, fillOpacity: 0.2 };
-                    case 'difficult': return { color: "#ffa500", weight: 1, opacity: 0.5, dashArray: '5, 5' };
-                    default:          return { color: "#cccccc", weight: 1, opacity: 0.5 };
+                    case 'road':
+                        return { color: "#6a8caf", weight: 3, opacity: 0.8 }; // A solid, thicker blue-grey for roads
+                    case 'difficult':
+                        return { color: "#a0522d", weight: 2, opacity: 0.7, fillColor: "#a0522d", fillOpacity: 0.2, dashArray: '8, 8' }; // A dashed, earthy brown for difficult terrain
+                    case 'unpassable':
+                        return { color: "#c0392b", weight: 2, opacity: 0.8, fillColor: "#c0392b", fillOpacity: 0.4 }; // A bold red for unpassable areas
+                    default:
+                        return { color: "#cccccc", weight: 1, opacity: 0.5 };
                 }
             },
             onEachFeature: function (feature, layer) {

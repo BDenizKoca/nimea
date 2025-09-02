@@ -188,10 +188,8 @@
                 container.innerHTML = `
                     <div class="leaflet-bar leaflet-control">
                         <a class="leaflet-control-button terrain-mode-btn" data-mode="road" title="Paint Roads">🛤️</a>
-                        <a class="leaflet-control-button terrain-mode-btn" data-mode="river" title="Paint Rivers">🌊</a>
-                        <a class="leaflet-control-button terrain-mode-btn" data-mode="ocean" title="Paint Ocean/Sea">🌐</a>
                         <a class="leaflet-control-button terrain-mode-btn" data-mode="difficult" title="Paint Difficult Terrain">🏔️</a>
-                        <a class="leaflet-control-button terrain-mode-btn" data-mode="blocked" title="Paint Blocked Areas">🚫</a>
+                        <a class="leaflet-control-button terrain-mode-btn" data-mode="unpassable" title="Paint Unpassable Areas">🚫</a>
                         <a class="leaflet-control-button" id="clear-terrain-mode" title="Normal Drawing">✏️</a>
                     </div>
                 `;
@@ -638,7 +636,7 @@ a.click();
     function styleTerrainLayer(layer, terrainType) {
         const styles = bridge.config.terrainStyles || {
             road: { color: '#4a90e2', weight: 4, opacity: 0.9, dashArray: '0' },
-            unpassable: { color: '#d0021b', weight: 3, opacity: 0.9, fillColor: '#d0021b', fillOpacity: 0.4, dashArray: '2,6' },
+            unpassable: { color: '#d0021b', weight: 3, opacity: 0.9, fillColor: '#d0021b', fillOpacity: 0.4 },
             difficult: { color: '#f5a623', weight: 3, opacity: 0.85, fillColor: '#f5a623', fillOpacity: 0.25, dashArray: '4,4' },
         };
 
