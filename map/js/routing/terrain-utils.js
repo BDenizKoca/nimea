@@ -20,21 +20,25 @@
      * Checks terrain features to determine movement cost
      */
     function getTerrainCostAtPoint(x, y) {
-        // Check if point is in any unpassable areas
-        const unpassableFeatures = bridge.state.terrain.features.filter(f => 
-            f.properties.kind === 'unpassable' || f.properties.kind === 'blocked'
+        // Check different terrain types (avoiding infinite costs that block routing)
+        const terrainFeatures = bridge.state.terrain.features;
+        
+        // Check for high-cost terrain first (blocked/unpassable)
+        const highCostFeatures = terrainFeatures.filter(f => 
+            ['unpassable', 'blocked'].includes(f.properties.kind)
         );
         
-        for (const feature of unpassableFeatures) {
+        for (const feature of highCostFeatures) {
             if (feature.geometry.type === 'Polygon') {
                 if (pointInPolygon([x, y], feature.geometry.coordinates[0])) {
-                    return Infinity; // Unpassable
+                    // High cost but not infinite - allows pathfinding around obstacles
+                    return TERRAIN_COSTS[feature.properties.kind] || TERRAIN_COSTS.blocked;
                 }
             }
         }
         
-        // Check for different terrain types (matching what's available in DM mode)
-        const difficultFeatures = bridge.state.terrain.features.filter(f => 
+        // Check for difficult terrain types
+        const difficultFeatures = terrainFeatures.filter(f => 
             ['difficult', 'forest'].includes(f.properties.kind)
         );
         
@@ -57,22 +61,25 @@
      * Used for bridge connections between graph layers
      */
     function getTerrainCostBetweenPoints(from, to) {
-        // Check if path crosses unpassable/blocked areas
-        const unpassableFeatures = bridge.state.terrain.features.filter(f => 
-            f.properties.kind === 'unpassable' || f.properties.kind === 'blocked'
+        const terrainFeatures = bridge.state.terrain.features;
+        
+        // Check for high-cost terrain (blocked/unpassable)
+        const highCostFeatures = terrainFeatures.filter(f => 
+            ['unpassable', 'blocked'].includes(f.properties.kind)
         );
         
-        for (const feature of unpassableFeatures) {
+        for (const feature of highCostFeatures) {
             if (feature.geometry.type === 'Polygon') {
                 // Simple line-polygon intersection check
                 if (lineIntersectsPolygon([from.x, from.y], [to.x, to.y], feature.geometry.coordinates[0])) {
-                    return Infinity; // Unpassable
+                    // High cost but not infinite - allows pathfinding around
+                    return TERRAIN_COSTS[feature.properties.kind] || TERRAIN_COSTS.blocked;
                 }
             }
         }
         
         // Check for difficult terrain (increases cost)
-        const difficultFeatures = bridge.state.terrain.features.filter(f => 
+        const difficultFeatures = terrainFeatures.filter(f => 
             ['difficult', 'forest'].includes(f.properties.kind)
         );
         

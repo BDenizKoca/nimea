@@ -849,6 +849,42 @@ button:focus, .leaflet-control-button:focus {
     opacity: 0.8;
 }
 
+/* Route Status and Error Messages */
+.route-status {
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-left: 8px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.route-status.blocked {
+    background: #ffebee;
+    color: #c62828;
+    border: 1px solid #e57373;
+}
+
+.route-status.hybrid {
+    background: #e8f5e8;
+    color: #2e7d32;
+    border: 1px solid #81c784;
+}
+
+.route-status.terrain {
+    background: #fff3e0;
+    color: #ef6c00;
+    border: 1px solid #ffb74d;
+}
+
+.route-error {
+    color: #d32f2f;
+    font-style: italic;
+    display: block;
+    margin-top: 4px;
+    font-size: 11px;
+}
+
 .leaflet-popup-content {
     text-align: center;
 }

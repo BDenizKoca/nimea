@@ -250,6 +250,9 @@
             
             if (l.unreachable) {
                 legInfo += ' <span class="route-status blocked">BLOCKED!</span>';
+                if (l.error) {
+                    legInfo += `<br><small class="route-error">Error: ${l.error}</small>`;
+                }
             } else if (l.hybrid) {
                 legInfo += ' <span class="route-status hybrid">hybrid route</span>';
             } else if (l.fallback) {

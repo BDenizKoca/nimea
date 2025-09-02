@@ -23,12 +23,13 @@
         road: 1.0,       // Primary paths: roads are fastest (cost = 1)
         difficult: 5.0,  // Existing difficult terrain (matches DM mode)
         forest: 3.0,     // New forest terrain type (moderate difficulty)
-        unpassable: Infinity, // Blocked areas (matches DM mode)
+        unpassable: 50.0, // High cost but not infinite - allow pathfinding around
+        blocked: 50.0,   // High cost but not infinite - allow pathfinding around
         normal: 2.0      // Default fallback terrain for empty areas
     };
 
-    const TERRAIN_GRID_SIZE = 50;
-    const ROAD_CONNECTION_DISTANCE = 150;
+    const TERRAIN_GRID_SIZE = 25;  // Denser grid for better connectivity
+    const ROAD_CONNECTION_DISTANCE = 300; // Increased range for road connections
 
     /**
      * Initialize routing system with all dependencies
@@ -421,22 +422,69 @@
         const startNodeId = `marker_${start.id}`;
         const endNodeId = `marker_${end.id}`;
         
-        console.log(`Calculating path from ${start.name} to ${end.name}`);
+        console.log(`Calculating path from ${start.name} (${start.x}, ${start.y}) to ${end.name} (${end.x}, ${end.y})`);
+        
+        // Check if nodes exist in graph
+        if (!routingGraph.nodes.has(startNodeId)) {
+            console.error(`Start node ${startNodeId} not found in graph`);
+            bridge.state.routeLegs.push({ 
+                from: start, 
+                to: end, 
+                distanceKm: 0, 
+                unreachable: true,
+                error: `Start marker ${start.name} not in routing graph`
+            });
+            if (typeof onComplete === 'function') onComplete();
+            return;
+        }
+        
+        if (!routingGraph.nodes.has(endNodeId)) {
+            console.error(`End node ${endNodeId} not found in graph`);
+            bridge.state.routeLegs.push({ 
+                from: start, 
+                to: end, 
+                distanceKm: 0, 
+                unreachable: true,
+                error: `End marker ${end.name} not in routing graph`
+            });
+            if (typeof onComplete === 'function') onComplete();
+            return;
+        }
+        
+        console.log(`Graph contains ${routingGraph.nodes.size} nodes and ${routingGraph.edges.length} edges`);
         
         // Use A* algorithm for efficient pathfinding across the hybrid graph
         const graphPath = pathfinding.findShortestPathAStar(routingGraph, startNodeId, endNodeId);
         
         if (!graphPath || graphPath.length === 0) {
-            console.warn(`No path found between ${start.name} and ${end.name}`);
+            console.warn(`No path found between ${start.name} and ${end.name} - checking connectivity...`);
+            
+            // Debug: Check if start/end have any connections
+            const startConnections = routingGraph.edges.filter(e => e.from === startNodeId || e.to === startNodeId);
+            const endConnections = routingGraph.edges.filter(e => e.from === endNodeId || e.to === endNodeId);
+            
+            console.log(`Start node ${startNodeId} has ${startConnections.length} connections`);
+            console.log(`End node ${endNodeId} has ${endConnections.length} connections`);
+            
+            if (startConnections.length === 0) {
+                console.error(`Start marker ${start.name} has no graph connections`);
+            }
+            if (endConnections.length === 0) {
+                console.error(`End marker ${end.name} has no graph connections`);
+            }
+            
             bridge.state.routeLegs.push({ 
                 from: start, 
                 to: end, 
                 distanceKm: 0, 
-                unreachable: true 
+                unreachable: true,
+                error: `No path found - Start: ${startConnections.length} connections, End: ${endConnections.length} connections`
             });
             if (typeof onComplete === 'function') onComplete();
             return;
         }
+        
+        console.log(`Found path with ${graphPath.length} nodes`);
         
         // Convert path to segments and render
         const pathSegments = visualizer.analyzePathSegments(graphPath, routingGraph);

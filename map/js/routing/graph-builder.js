@@ -132,22 +132,20 @@
         const mapBounds = getMapBounds();
         const terrainNodes = new Map();
         
-        // Create terrain grid nodes
+        // Create terrain grid nodes (include all nodes, even high-cost ones)
         for (let x = mapBounds.minX; x <= mapBounds.maxX; x += TERRAIN_GRID_SIZE) {
             for (let y = mapBounds.minY; y <= mapBounds.maxY; y += TERRAIN_GRID_SIZE) {
                 const nodeId = `terrain_${Math.round(x)}_${Math.round(y)}`;
                 const terrainCost = getTerrainCostAtPoint(x, y);
                 
-                // Only add passable terrain nodes
-                if (terrainCost < Infinity) {
-                    nodes.set(nodeId, {
-                        x: x,
-                        y: y,
-                        type: 'terrain_node',
-                        terrainCost: terrainCost
-                    });
-                    terrainNodes.set(`${Math.round(x)},${Math.round(y)}`, nodeId);
-                }
+                // Add all nodes, even high-cost ones (no infinite costs anymore)
+                nodes.set(nodeId, {
+                    x: x,
+                    y: y,
+                    type: 'terrain_node',
+                    terrainCost: terrainCost
+                });
+                terrainNodes.set(`${Math.round(x)},${Math.round(y)}`, nodeId);
             }
         }
         
@@ -285,7 +283,10 @@
         const markerNodeId = `marker_${marker.id}`;
         const markerPos = { x: marker.x, y: marker.y };
         
-        // Connect markers to terrain grid (fallback connections)
+        // Try multiple connection strategies for better connectivity
+        const connectionsAttempted = [];
+        
+        // Strategy 1: Connect to nearest grid point
         const gridX = Math.round(marker.x / TERRAIN_GRID_SIZE) * TERRAIN_GRID_SIZE;
         const gridY = Math.round(marker.y / TERRAIN_GRID_SIZE) * TERRAIN_GRID_SIZE;
         const terrainNodeId = `terrain_${gridX}_${gridY}`;
@@ -317,6 +318,58 @@
             edges.push(fwd, rev);
             edgeMap.set(`${markerNodeId}|${terrainNodeId}`, fwd);
             edgeMap.set(`${terrainNodeId}|${markerNodeId}`, rev);
+            connectionsAttempted.push(terrainNodeId);
+        }
+        
+        // Strategy 2: Connect to surrounding grid points for redundancy
+        const offsets = [
+            [-TERRAIN_GRID_SIZE, 0], [TERRAIN_GRID_SIZE, 0],   // horizontal neighbors
+            [0, -TERRAIN_GRID_SIZE], [0, TERRAIN_GRID_SIZE],   // vertical neighbors
+            [-TERRAIN_GRID_SIZE, -TERRAIN_GRID_SIZE], [TERRAIN_GRID_SIZE, TERRAIN_GRID_SIZE], // diagonals
+            [-TERRAIN_GRID_SIZE, TERRAIN_GRID_SIZE], [TERRAIN_GRID_SIZE, -TERRAIN_GRID_SIZE]
+        ];
+        
+        offsets.forEach(([dx, dy]) => {
+            const neighborX = gridX + dx;
+            const neighborY = gridY + dy;
+            const neighborNodeId = `terrain_${neighborX}_${neighborY}`;
+            
+            if (nodes.has(neighborNodeId) && !connectionsAttempted.includes(neighborNodeId)) {
+                const neighborNode = nodes.get(neighborNodeId);
+                const distance = Math.sqrt(
+                    Math.pow(neighborNode.x - marker.x, 2) + 
+                    Math.pow(neighborNode.y - marker.y, 2)
+                );
+                
+                // Only connect to nearby neighbors to avoid overly long connections
+                if (distance <= TERRAIN_GRID_SIZE * 1.5) {
+                    const connectionCost = getTerrainCostBetweenPoints(markerPos, neighborNode);
+                    
+                    const fwd = {
+                        from: markerNodeId,
+                        to: neighborNodeId,
+                        cost: connectionCost,
+                        distance: distance,
+                        type: 'terrain_bridge_backup'
+                    };
+                    const rev = {
+                        from: neighborNodeId,
+                        to: markerNodeId,
+                        cost: connectionCost,
+                        distance: distance,
+                        type: 'terrain_bridge_backup'
+                    };
+                    
+                    edges.push(fwd, rev);
+                    edgeMap.set(`${markerNodeId}|${neighborNodeId}`, fwd);
+                    edgeMap.set(`${neighborNodeId}|${markerNodeId}`, rev);
+                    connectionsAttempted.push(neighborNodeId);
+                }
+            }
+        });
+        
+        if (connectionsAttempted.length === 0) {
+            console.warn(`Failed to connect marker ${marker.name} to terrain grid`);
         }
     }
 
