@@ -17,8 +17,8 @@
     {
       "id": "aurelium",
       "name": "Aurelium",
-      "x": 2000,
-      "y": 1200,
+      "x": 1705,
+      "y": 1248,
       "type": "city",
       "faction": "Empire of Aurelius",
       "summary": "The magnificent capital of the Empire of Aurelius and the largest urban center in Nimea.",
@@ -28,8 +28,8 @@
     {
       "id": "nortreen",
       "name": "Nortreen",
-      "x": 2063.999634764632,
-      "y": 2407.93772526788,
+      "x": 1484,
+      "y": 996,
       "type": "city",
       "faction": "fref",
       "summary": "free",
@@ -39,8 +39,8 @@
     {
       "id": "Camkale",
       "name": "Çamkale",
-      "x": 1527.9998290885778,
-      "y": 894.9844308886532,
+      "x": 1156,
+      "y": 1420,
       "type": "city",
       "faction": "Çamkale Krallığı",
       "summary": "Çamkale Krallığı",
