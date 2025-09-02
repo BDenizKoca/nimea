@@ -12,8 +12,8 @@
 <body>
     <header class="map-header">
         <nav class="map-nav">
-            <a href="../" class="nav-link">🏠 Home</a>
-            <a href="../wiki/" class="nav-link">📚 Wiki</a>
+            <a href="../" class="nav-link">Home</a>
+            <a href="../wiki/" class="nav-link">Wiki</a>
             <h1 class="map-title">Nimea Interactive Map</h1>
         </nav>
     </header>
@@ -23,11 +23,9 @@
     <div class="map-legend hidden" id="map-legend" role="region" aria-label="Map Legend">
         <h4>Legend</h4>
         <ul>
-            <li><span class="legend-swatch legend-road"></span> Road (0.5x cost)</li>
-            <li><span class="legend-swatch legend-river"></span> River (3x cost)</li>
-            <li><span class="legend-swatch legend-ocean"></span> Ocean/Sea (Impassable)</li>
-            <li><span class="legend-swatch legend-diff"></span> Difficult (3x cost)</li>
-            <li><span class="legend-swatch legend-block"></span> Blocked (Impassable)</li>
+            <li><span class="legend-swatch legend-road"></span> Road</li>
+            <li><span class="legend-swatch legend-difficult"></span> Difficult Terrain</li>
+            <li><span class="legend-swatch legend-unpassable"></span> Unpassable Terrain</li>
             <li><span class="legend-swatch legend-route"></span> Route Path</li>
         </ul>
         <div class="legend-note">Scale: 175 px = 100 km</div>
@@ -143,14 +141,14 @@ Thornhold,2000,1500,fortress,Empire,Mountain fortress,true"></textarea>
             <div class="terrain-options">
                 <button type="button" class="terrain-btn road-btn" data-type="road">
                     🛤️ Road<br>
-                    <small>Faster travel (0.5x cost)</small>
+                    <small>Faster travel</small>
                 </button>
                 <button type="button" class="terrain-btn difficult-btn" data-type="difficult">
                     🏔️ Difficult<br>
-                    <small>Slower travel (3x cost)</small>
+                    <small>Slower travel</small>
                 </button>
-                <button type="button" class="terrain-btn blocked-btn" data-type="blocked">
-                    🚫 Blocked<br>
+                <button type="button" class="terrain-btn unpassable-btn" data-type="unpassable">
+                    🚫 Unpassable<br>
                     <small>Impassable terrain</small>
                 </button>
             </div>
@@ -183,6 +181,7 @@ Thornhold,2000,1500,fortress,Empire,Mountain fortress,true"></textarea>
     <script src="js/dm.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/markers.js"></script>
+    <script src="js/terrain.js"></script>
     <script src="map.js"></script>
 </body>
 </html>

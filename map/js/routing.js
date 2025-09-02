@@ -141,13 +141,13 @@
         const TILE_NORMAL = 1;
         const TILE_ROAD = 2;
         const TILE_DIFFICULT = 3;
-        const TILE_OCEAN = 4;
+        const TILE_UNPASSABLE = 4;
 
         const grid = Array(rows).fill(null).map(() => Array(cols).fill(TILE_NORMAL));
 
         if (bridge.state.terrain.features && bridge.state.terrain.features.length > 0) {
-            const blockedFeatures = bridge.state.terrain.features.filter(f => f.properties.kind === 'blocked' || f.properties.kind === 'ocean');
-            const difficultFeatures = bridge.state.terrain.features.filter(f => f.properties.kind === 'difficult' || f.properties.kind === 'river');
+            const unpassableFeatures = bridge.state.terrain.features.filter(f => f.properties.kind === 'unpassable');
+            const difficultFeatures = bridge.state.terrain.features.filter(f => f.properties.kind === 'difficult');
             const roadFeatures = bridge.state.terrain.features.filter(f => f.properties.kind === 'road');
 
             for (let r = 0; r < rows; r++) {
@@ -157,10 +157,10 @@
                     let tileType = TILE_NORMAL;
                     let isImpassable = false;
 
-                    for (const feature of blockedFeatures) {
+                    for (const feature of unpassableFeatures) {
                         if (feature.geometry.type === 'Polygon' && turf.booleanPointInPolygon(point, feature)) {
                             isImpassable = true;
-                            tileType = TILE_OCEAN;
+                            tileType = TILE_UNPASSABLE;
                             break;
                         }
                     }
@@ -206,7 +206,7 @@
         easystar.enableDiagonals();
         easystar.disableCornerCutting();
 
-        pathfindingGrid = { cols, rows, width: mapWidth, height: mapHeight, TILE_NORMAL, TILE_ROAD, TILE_DIFFICULT, TILE_OCEAN };
+        pathfindingGrid = { cols, rows, width: mapWidth, height: mapHeight, TILE_NORMAL, TILE_ROAD, TILE_DIFFICULT, TILE_UNPASSABLE };
     }
 
     function calculateLegPath(start, end, onComplete) {

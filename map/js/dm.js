@@ -32,7 +32,11 @@
         // This makes the DM module more self-contained
         bridge.generateIdFromName = bridge.generateIdFromName || generateIdFromName;
         bridge.styleTerrainLayer = bridge.styleTerrainLayer || styleTerrainLayer;
-        bridge.renderExistingTerrain = bridge.renderExistingTerrain || renderExistingTerrain;
+        bridge.renderExistingTerrain = bridge.renderExistingTerrain || function() {
+            if (bridge.terrainModule) {
+                bridge.terrainModule.renderTerrain();
+            }
+        };
         bridge.openInfoSidebar = bridge.openInfoSidebar || function() { console.error('openInfoSidebar not implemented on bridge'); };
 
 
@@ -46,13 +50,6 @@
     async function setupDmMode() {
         // Always add authentication controls so login is discoverable
         addAuthenticationControls();
-        
-        // Always render terrain for consistency between modes
-        if (typeof bridge.renderExistingTerrain === 'function') {
-            bridge.renderExistingTerrain();
-        } else {
-            console.warn('renderExistingTerrain function not found on bridge. Terrain may not display.');
-        }
         
         // If not in DM mode, we're done here.
         if (!bridge.state.isDmMode) {
@@ -86,7 +83,6 @@
         });
 
         // Add custom DM controls
-        addTerrainModeControls();
         addPublishControls();
         addBulkImportButton();
 
@@ -446,9 +442,11 @@
 
         const feature = pendingTerrain.toGeoJSON();
         feature.properties.kind = terrainType;
-        bridge.state.terrain.features.push(feature);
         
-        bridge.styleTerrainLayer(pendingTerrain, terrainType);
+        // The terrain module will now handle the visual representation
+        if (bridge.terrainModule) {
+            bridge.terrainModule.renderTerrain();
+        }
         
         bridge.showNotification(`${terrainType} terrain added`, 'success');
         bridge.markDirty('terrain');
@@ -639,29 +637,19 @@ a.click();
     function styleTerrainLayer(layer, terrainType) {
         const styles = bridge.config.terrainStyles || {
             road: { color: '#4a90e2', weight: 4, opacity: 0.9, dashArray: '0' },
-            river: { color: '#1f78d1', weight: 4, opacity: 0.85, dashArray: '6,4' },
-            ocean: { color: '#0d3c66', weight: 2, opacity: 0.6, fillColor: '#0d3c66', fillOpacity: 0.35 },
+            unpassable: { color: '#d0021b', weight: 3, opacity: 0.9, fillColor: '#d0021b', fillOpacity: 0.4, dashArray: '2,6' },
             difficult: { color: '#f5a623', weight: 3, opacity: 0.85, fillColor: '#f5a623', fillOpacity: 0.25, dashArray: '4,4' },
-            blocked: { color: '#d0021b', weight: 3, opacity: 0.9, fillColor: '#d0021b', fillOpacity: 0.4, dashArray: '2,6' }
         };
 
         if (layer.setStyle && styles[terrainType]) {
             layer.setStyle(styles[terrainType]);
         }
-
-        const costs = bridge.config.terrainCosts || {};
-        const cost = costs[terrainType] || 1;
-        const costLabel = cost === Infinity ? 'Impassable' : `${cost}x cost`;
-        layer.bindPopup(`<b>${terrainType.charAt(0).toUpperCase() + terrainType.slice(1)}</b><br><small>${costLabel}</small>`);
     }
 
     function renderExistingTerrain() {
-        console.log('Rendering existing terrain:', bridge.state.terrain.features.length, 'features');
-        bridge.state.terrain.features.forEach(feature => {
-            const terrainType = feature.properties.kind;
-            const layer = L.geoJSON(feature).addTo(bridge.map);
-            styleTerrainLayer(layer.getLayers()[0], terrainType);
-        });
+        if (bridge.terrainModule) {
+            bridge.terrainModule.renderTerrain();
+        }
     }
 
 

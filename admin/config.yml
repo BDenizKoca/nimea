@@ -131,3 +131,33 @@ collections:
       - { label: "Public", name: "public", widget: "boolean", default: true }
       - { label: "Body", name: "body", widget: "markdown", hint: "The main content of the page" }
 
+  - name: "terrain"
+    label: "Terrain"
+    folder: "data"
+    create: false
+    files:
+      - label: "Terrain"
+        name: "terrain"
+        file: "data/terrain.geojson"
+        fields:
+          - { label: "Type", name: "type", widget: "hidden", default: "FeatureCollection" }
+          - name: "features"
+            label: "Terrain Features"
+            widget: "list"
+            fields:
+              - { label: "Type", name: "type", widget: "hidden", default: "Feature" }
+              - name: "properties"
+                label: "Properties"
+                widget: "object"
+                fields:
+                  - label: "Kind"
+                    name: "kind"
+                    widget: "select"
+                    options: ["road", "unpassable", "difficult"]
+              - name: "geometry"
+                label: "Geometry"
+                widget: "object"
+                fields:
+                  - { label: "Type", name: "type", widget: "string" }
+                  - { label: "Coordinates", name: "coordinates", widget: "list" }
+

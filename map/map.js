@@ -129,6 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (window.__nimea_dm_init) window.__nimea_dm_init(window.__nimea);
             if (window.__nimea_ui_init) window.__nimea_ui_init(window.__nimea);
             if (window.__nimea_markers_init) window.__nimea_markers_init(window.__nimea);
+            if (window.__nimea_terrain_init) window.__nimea_terrain_init(window.__nimea);
 
             // Add necessary functions to the bridge for modules to use
             window.__nimea.generateWikiLink = generateWikiLink;
@@ -138,6 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (window.__nimea.markersModule) {
                 window.__nimea.markersModule.renderMarkers();
             }
+            // Terrain is now handled by its own module and only rendered in DM mode
             setupOverlays();
             await setupDmMode();
 
@@ -217,16 +219,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (config.overlays && originalMapBounds) {
             if (config.overlays.regions) {
                 console.log('Adding regions overlay:', config.overlays.regions);
-                state.overlays.regions = L.imageOverlay(`../${config.overlays.regions}`, originalMapBounds, { opacity: 0.7 }).addTo(map);
+                state.overlays.regions = L.imageOverlay(`../${config.overlays.regions}`, originalMapBounds, { opacity: 0.7 });
             }
             if (config.overlays.borders) {
                 console.log('Adding borders overlay:', config.overlays.borders);
-                state.overlays.borders = L.imageOverlay(`../${config.overlays.borders}`, originalMapBounds, { opacity: 0.8 }).addTo(map);
+                state.overlays.borders = L.imageOverlay(`../${config.overlays.borders}`, originalMapBounds, { opacity: 0.8 });
             }
         }
-        // Apply current mode (default both) after overlays are created
+        // Apply current mode (default none) after overlays are created
         if (window.__nimea.uiModule) {
-            window.__nimea.uiModule.applyOverlayMode(state.currentOverlayMode || 'both');
+            window.__nimea.uiModule.applyOverlayMode(state.currentOverlayMode || 'none');
         }
     }
 });

@@ -24,8 +24,10 @@
 
         // Initial setup
         setupSidebars();
-        setupOverlayControls();
-        setupLegend();
+        if (bridge.state.isDmMode) {
+            setupOverlayControls();
+            setupLegend();
+        }
         setupMobileUI();
 
         console.log("UI module initialized.");
