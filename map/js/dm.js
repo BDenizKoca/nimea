@@ -48,13 +48,13 @@
      * This is the main entry point for DM functionality.
      */
     async function setupDmMode() {
-        // Always add authentication controls so login is discoverable
-        addAuthenticationControls();
-        
         // If not in DM mode, we're done here.
         if (!bridge.state.isDmMode) {
             return;
         }
+
+        // From here, we are in DM mode
+        addAuthenticationControls();
 
         console.log('Setting up DM mode controls (DM mode active)...');
 
@@ -83,6 +83,7 @@
         });
 
         // Add custom DM controls
+        addTerrainModeControls();
         addPublishControls();
         addBulkImportButton();
 

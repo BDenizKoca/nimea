@@ -46,7 +46,7 @@
         const stopsDiv = document.getElementById('route-stops');
         if (!stopsDiv) return;
         stopsDiv.innerHTML = bridge.state.route.map((stop, idx) => {
-            return `<div class="route-stop-row">${idx+1}. ${stop.name} ${bridge.state.route.length>1?`<button class="mini-btn" data-ridx="${idx}" title="Remove stop" ${idx===0||idx===bridge.state.route.length-1?'disabled':''}>✖</button>`:''}</div>`;
+            return `<div class="route-stop-row">${idx+1}. ${stop.name} <button class="mini-btn" data-ridx="${idx}" title="Remove stop">✖</button></div>`;
         }).join('') + (bridge.state.route.length?`<div class="route-actions"><button id="clear-route-btn" class="clear-route-btn">Clear Route</button></div>`:'');
         
         stopsDiv.querySelectorAll('button[data-ridx]').forEach(btn => {
@@ -61,7 +61,6 @@
     }
 
     function removeRouteIndex(idx) {
-        if (idx <= 0 || idx >= bridge.state.route.length-1) return; // keep endpoints for now
         bridge.state.route.splice(idx,1);
         recomputeRoute();
     }
