@@ -21,6 +21,7 @@
             this.setupMarkerCreationModal();
             this.setupBulkImportModal();
             this.setupTerrainTypeModal();
+            this.setupModalClickOutsideToClose(); // Add click-outside-to-close functionality
         }
 
         /**
@@ -524,6 +525,45 @@
          */
         setPendingTerrain(terrain) {
             this.pendingTerrain = terrain;
+        }
+
+        /**
+         * Sets up click-outside-to-close functionality for all modals
+         */
+        setupModalClickOutsideToClose() {
+            // Get all modal elements
+            const modals = document.querySelectorAll('.modal');
+            
+            modals.forEach(modal => {
+                // Skip if already has click outside handler
+                if (modal.hasAttribute('data-click-outside-setup')) return;
+                modal.setAttribute('data-click-outside-setup', 'true');
+                
+                modal.addEventListener('click', (e) => {
+                    // Only close if clicking on the modal backdrop (not the content)
+                    if (e.target === modal) {
+                        modal.classList.add('hidden');
+                        
+                        // Clean up any pending operations
+                        if (modal.id === 'marker-creation-modal' && this.pendingMarker) {
+                            this.bridge.map.removeLayer(this.pendingMarker);
+                            this.pendingMarker = null;
+                        }
+                        if (modal.id === 'terrain-type-modal' && this.pendingTerrain) {
+                            this.bridge.map.removeLayer(this.pendingTerrain);
+                            this.pendingTerrain = null;
+                        }
+                    }
+                });
+                
+                // Prevent clicks on modal content from bubbling up to close the modal
+                const modalContent = modal.querySelector('.modal-content');
+                if (modalContent) {
+                    modalContent.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                    });
+                }
+            });
         }
     }
 

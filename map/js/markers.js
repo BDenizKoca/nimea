@@ -35,7 +35,30 @@
                     draggable: bridge.state.isDmMode // Make draggable only in DM mode
                 }).addTo(bridge.map);
                 
-                marker.on('click', () => bridge.uiModule.openInfoSidebar(markerData));
+                marker.on('click', () => {
+                    // Check if marker is currently visible in viewport
+                    const markerPoint = bridge.map.latLngToContainerPoint([markerData.y, markerData.x]);
+                    const mapSize = bridge.map.getSize();
+                    
+                    // If marker is not well visible or zoom is too low, smoothly zoom to it
+                    if (bridge.map.getZoom() < 2 || 
+                        markerPoint.x < 100 || markerPoint.x > mapSize.x - 100 ||
+                        markerPoint.y < 100 || markerPoint.y > mapSize.y - 100) {
+                        
+                        bridge.map.flyTo([markerData.y, markerData.x], Math.max(2.5, bridge.map.getZoom()), {
+                            duration: 1.2,
+                            easeLinearity: 0.25
+                        });
+                        
+                        // Open sidebar after animation
+                        setTimeout(() => {
+                            bridge.uiModule.openInfoSidebar(markerData);
+                        }, 600);
+                    } else {
+                        // Marker is already well visible, just open sidebar
+                        bridge.uiModule.openInfoSidebar(markerData);
+                    }
+                });
                 
                 // Handle marker drag end in DM mode
                 if (bridge.state.isDmMode) {
@@ -65,10 +88,14 @@
         
         // Focus on specific marker if requested
         if (focusMarkerInstance) {
-            bridge.map.setView([focusMarkerInstance.data.y, focusMarkerInstance.data.x], 3);
+            // Use flyTo for smooth zoom animation instead of abrupt setView
+            bridge.map.flyTo([focusMarkerInstance.data.y, focusMarkerInstance.data.x], 3, {
+                duration: 1.5, // 1.5 second animation
+                easeLinearity: 0.25 // Smooth easing
+            });
             setTimeout(() => {
                 bridge.uiModule.openInfoSidebar(focusMarkerInstance.data);
-            }, 500);
+            }, 800); // Reduced delay since animation is smoother
         }
     }
 

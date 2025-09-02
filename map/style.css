@@ -297,6 +297,22 @@ body, html {
     display: flex;
     align-items: center;
     justify-content: center;
+    cursor: pointer; /* Indicates clickable background */
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    cursor: default; /* Reset cursor for content area */
 }
 
 .modal.hidden {
