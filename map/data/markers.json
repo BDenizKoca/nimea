@@ -69,6 +69,36 @@
       "summary": "Evergreen",
       "images": [],
       "public": true
+    },
+    {
+      "id": "kuzey-kent",
+      "name": "Kuzey Kent",
+      "x": 1556.999927,
+      "y": 2263.49217,
+      "type": "city",
+      "summary": "Kuzey",
+      "images": [],
+      "public": true
+    },
+    {
+      "id": "ky-kent",
+      "name": "kıyı kent",
+      "x": 2084.499884,
+      "y": 785.492198,
+      "type": "city",
+      "summary": "kıyı kenti",
+      "images": [],
+      "public": true
+    },
+    {
+      "id": "uurumtepe",
+      "name": "uçurumtepe",
+      "x": 597.49996,
+      "y": 512.492254,
+      "type": "city",
+      "summary": "uçurumlarla kaplı",
+      "images": [],
+      "public": true
     }
   ]
 }
