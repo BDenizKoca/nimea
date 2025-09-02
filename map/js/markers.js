@@ -36,31 +36,29 @@
                 }).addTo(bridge.map);
                 
                 marker.on('click', () => {
+                    // Single click: Just open info sidebar
+                    bridge.uiModule.openInfoSidebar(markerData);
+                });
+
+                marker.on('dblclick', () => {
+                    // Double click: Focus mode with zoom and center
                     // Check if marker is currently visible in viewport
                     const markerPoint = bridge.map.latLngToContainerPoint([markerData.y, markerData.x]);
                     const mapSize = bridge.map.getSize();
                     
-                    // If marker is not well visible or zoom is too low, smoothly zoom to it
-                    if (bridge.map.getZoom() < 2 || 
-                        markerPoint.x < 100 || markerPoint.x > mapSize.x - 100 ||
-                        markerPoint.y < 100 || markerPoint.y > mapSize.y - 100) {
-                        
-                        // Close info sidebar before navigating
-                        bridge.uiModule.closeInfoSidebar();
-                        
-                        bridge.map.flyTo([markerData.y, markerData.x], Math.max(2.2, bridge.map.getZoom()), {
-                            duration: 1.2,
-                            easeLinearity: 0.25
-                        });
-                        
-                        // Open sidebar after animation
-                        setTimeout(() => {
-                            bridge.uiModule.openInfoSidebar(markerData);
-                        }, 600);
-                    } else {
-                        // Marker is already well visible, just open sidebar
+                    // Close info sidebar before navigating
+                    bridge.uiModule.closeInfoSidebar();
+                    
+                    // Always zoom and center on double click
+                    bridge.map.flyTo([markerData.y, markerData.x], Math.max(2.2, bridge.map.getZoom()), {
+                        duration: 1.2,
+                        easeLinearity: 0.25
+                    });
+                    
+                    // Open sidebar after animation
+                    setTimeout(() => {
                         bridge.uiModule.openInfoSidebar(markerData);
-                    }
+                    }, 600);
                 });
                 
                 // Handle marker drag end in DM mode
