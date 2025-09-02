@@ -94,6 +94,14 @@
         const wikiLink = bridge.generateWikiLink(data);
         const addRouteBtn = bridge.state.isDmMode ? '' : `<button class="add-to-route" data-id="${data.id}">Add to Route</button>`;
         
+        // Add edit button for DM mode
+        const dmButtons = bridge.state.isDmMode ? `
+            <div class="dm-actions">
+                <button class="edit-marker-btn" data-id="${data.id}">✏️ Edit Marker</button>
+                <button class="delete-marker-btn" data-id="${data.id}">🗑️ Delete</button>
+            </div>
+        ` : '';
+        
         const content = `
             <h2>${data.name}</h2>
             <p>${data.summary}</p>
@@ -102,6 +110,7 @@
             ${data.images && data.images.length > 0 ? data.images.map(img => `<img src="../${img}" alt="${data.name}" style="width:100%;">`).join('') : ''}
             ${wikiLink ? `<a href="${wikiLink}" class="wiki-link" target="_blank">📚 View in Wiki</a>` : ''}
             ${addRouteBtn}
+            ${dmButtons}
         `;
         infoContent.innerHTML = content;
         infoSidebar.classList.add('open');
@@ -114,6 +123,34 @@
                     const marker = bridge.state.markers.find(m => m.id === markerId);
                     if (marker && bridge.routingModule) {
                         bridge.routingModule.addToRoute(marker);
+                    }
+                });
+            }
+        } else {
+            // Add event listeners for DM buttons
+            const editBtn = infoContent.querySelector('.edit-marker-btn');
+            if (editBtn) {
+                editBtn.addEventListener('click', (e) => {
+                    const markerId = e.target.dataset.id;
+                    const marker = bridge.state.markers.find(m => m.id === markerId);
+                    if (marker && bridge.dmModule && bridge.dmModule.editMarker) {
+                        bridge.dmModule.editMarker(marker);
+                        // Close the info sidebar after clicking edit
+                        infoSidebar.classList.remove('open');
+                    }
+                });
+            }
+            
+            const deleteBtn = infoContent.querySelector('.delete-marker-btn');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', (e) => {
+                    const markerId = e.target.dataset.id;
+                    if (confirm(`Are you sure you want to delete the marker "${data.name}"? This cannot be undone.`)) {
+                        if (bridge.dmModule && bridge.dmModule.deleteMarker) {
+                            bridge.dmModule.deleteMarker(markerId);
+                            // Close the info sidebar after deletion
+                            infoSidebar.classList.remove('open');
+                        }
                     }
                 });
             }

@@ -33,6 +33,34 @@ class GitGatewayClient {
             throw new Error('Netlify Identity not loaded');
         }
         await this.setupNetlifyIdentity();
+        
+        // Check if Git Gateway is configured
+        await this.checkGitGatewayConfig();
+    }
+    
+    /**
+     * Check if Git Gateway is properly configured
+     * This can help diagnose configuration issues
+     */
+    async checkGitGatewayConfig() {
+        try {
+            // Try to fetch Git Gateway health check
+            const response = await fetch('/.netlify/git/settings', {
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                console.log('Git Gateway config:', data);
+            } else {
+                console.warn('Git Gateway may not be properly configured:', 
+                    response.status, response.statusText);
+            }
+        } catch (error) {
+            console.warn('Could not check Git Gateway config:', error);
+        }
     }
 
     setupNetlifyIdentity() {
@@ -62,7 +90,15 @@ class GitGatewayClient {
         this.user = user;
         this.token = user.token?.access_token;
         this.isAuthenticated = true;
+        
+        // Log user info to help with debugging
         console.log('DM authenticated:', user.user_metadata?.full_name || user.email);
+        console.log('Auth token details:', {
+            tokenPresent: !!this.token,
+            userId: user.id,
+            userEmail: user.email,
+            roles: user.app_metadata?.roles || []
+        });
     }
 
     handleUserLogout() {
@@ -179,14 +215,22 @@ Timestamp: ${new Date().toISOString()}`;
             console.log(`Saving ${filePath} with data:`, {
                 token: this.token ? 'present' : 'missing',
                 hasContent: !!content,
-                sha: currentFile?.sha ? 'present' : 'missing'
+                sha: currentFile?.sha ? 'present' : 'missing',
+                userId: this.user?.id || 'missing'
             });
             
-            const response = await fetch(`${this.baseURL}/contents/${filePath}?t=${timestamp}`, {
+            // Build URL with parameters to try to work around Netlify Git Gateway issues
+            const url = new URL(`${window.location.origin}${this.baseURL}/contents/${filePath}`);
+            url.searchParams.append('t', timestamp);
+            
+            // Attempt fix for "Operator microservice headers missing" by trying a different approach
+            const headers = this.getAuthHeaders();
+            
+            const response = await fetch(url.toString(), {
                 method: 'PUT',
-                headers: this.getAuthHeaders(),
+                headers,
                 body: JSON.stringify(updateData),
-                credentials: 'same-origin'
+                credentials: 'include'  // Changed from 'same-origin' to 'include' for cross-site cookies
             });
 
             if (!response.ok) {
@@ -237,10 +281,18 @@ Timestamp: ${new Date().toISOString()}`;
             throw new Error('Not authenticated');
         }
         
+        // Include necessary headers for Netlify Git Gateway
+        // Adding specific headers to solve "Operator microservice headers missing" error
+        const userId = this.user?.id || '';
+        const userEmail = this.user?.email || '';
+        
         return {
             'Authorization': `Bearer ${this.token}`,
             'Accept': 'application/json',
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            // Add Netlify-specific headers that might be expected by the Git Gateway
+            'X-Netlify-User': userId,
+            'X-Netlify-User-Email': userEmail
         };
     }
 
@@ -258,9 +310,14 @@ Timestamp: ${new Date().toISOString()}`;
             const headers = this.getAuthHeaders();
             delete headers['Content-Type']; // Not needed for GET requests
             
-            const response = await fetch(`${this.baseURL}/contents/${filePath}?t=${timestamp}`, {
+            // Build URL with parameters to try to work around Netlify Git Gateway issues
+            const url = new URL(`${window.location.origin}${this.baseURL}/contents/${filePath}`);
+            url.searchParams.append('t', timestamp);
+            
+            const response = await fetch(url.toString(), {
                 method: 'GET',
-                headers
+                headers,
+                credentials: 'include'  // Changed to 'include' for cross-site cookies
             });
 
             if (response.status === 404) {

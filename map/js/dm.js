@@ -28,6 +28,8 @@
             setupDmMode,
             saveMarkerFromForm,
             updateMarkerPosition,
+            editMarker,
+            deleteMarker
         };
         
         // Add helper functions from the main script that we need to the bridge if they aren't there
@@ -349,9 +351,20 @@
         const nameInput = document.getElementById('marker-name');
         const idInput = document.getElementById('marker-id');
         const cancelBtn = document.getElementById('cancel-marker');
+        const saveBtn = document.getElementById('save-marker');
 
+        // Update ID when name changes, but only for new markers (not when editing)
         nameInput.addEventListener('input', () => {
-            idInput.value = bridge.generateIdFromName(nameInput.value);
+            // Only auto-generate ID if we're creating a new marker (not editing)
+            // and the ID field hasn't been manually modified
+            if (!form.dataset.editMode && !idInput.dataset.manuallyEdited) {
+                idInput.value = bridge.generateIdFromName(nameInput.value);
+            }
+        });
+        
+        // Track if ID has been manually edited
+        idInput.addEventListener('input', () => {
+            idInput.dataset.manuallyEdited = 'true';
         });
 
         cancelBtn.addEventListener('click', () => {
@@ -376,7 +389,18 @@
         console.log('Opening marker creation modal at:', latLng);
         const modal = document.getElementById('marker-creation-modal');
         const form = document.getElementById('marker-form');
+        const saveBtn = document.getElementById('save-marker');
+        const title = modal.querySelector('h3');
+        
+        // Reset form and set to creation mode
         form.reset();
+        form.removeAttribute('data-edit-mode');
+        form.removeAttribute('data-original-id');
+        document.getElementById('marker-id').removeAttribute('data-manually-edited');
+        
+        // Update UI for creation mode
+        title.textContent = 'Create New Marker';
+        saveBtn.textContent = 'Create Marker';
         
         // Store raw coordinates in hidden fields
         document.getElementById('marker-lat').value = latLng.lat;
@@ -389,15 +413,63 @@
         modal.classList.remove('hidden');
         document.getElementById('marker-name').focus();
     }
+    
+    /**
+     * Opens the marker edit modal with existing marker data
+     * @param {Object} markerData - The marker data to edit
+     */
+    function editMarker(markerData) {
+        if (!markerData || !markerData.id) {
+            console.error('Invalid marker data for editing');
+            return;
+        }
+        
+        console.log('Opening edit modal for marker:', markerData.name);
+        const modal = document.getElementById('marker-creation-modal');
+        const form = document.getElementById('marker-form');
+        const title = modal.querySelector('h3');
+        const saveBtn = document.getElementById('save-marker');
+        
+        // Set form to edit mode and store original ID
+        form.dataset.editMode = 'true';
+        form.dataset.originalId = markerData.id;
+        
+        // Update UI for edit mode
+        title.textContent = 'Edit Marker';
+        saveBtn.textContent = 'Save Changes';
+        
+        // Fill in all existing values
+        document.getElementById('marker-name').value = markerData.name || '';
+        document.getElementById('marker-id').value = markerData.id || '';
+        document.getElementById('marker-id').dataset.manuallyEdited = 'true'; // Prevent auto-generation
+        document.getElementById('marker-type').value = markerData.type || 'other';
+        document.getElementById('marker-faction').value = markerData.faction || '';
+        document.getElementById('marker-summary').value = markerData.summary || '';
+        document.getElementById('marker-wiki-slug').value = markerData.wikiSlug || '';
+        document.getElementById('marker-public').checked = markerData.public !== false;
+        
+        // Store coordinates
+        document.getElementById('marker-lat').value = markerData.y;
+        document.getElementById('marker-lng').value = markerData.x;
+        document.getElementById('marker-coordinates').value = `X: ${Math.round(markerData.x)}, Y: ${Math.round(markerData.y)}`;
+        
+        // Show the modal
+        modal.classList.remove('hidden');
+        document.getElementById('marker-name').focus();
+    }
 
     function saveMarkerFromForm() {
-        if (!pendingMarker) {
+        const form = document.getElementById('marker-form');
+        const isEditMode = form.dataset.editMode === 'true';
+        const originalId = isEditMode ? form.dataset.originalId : null;
+        
+        // When editing, we don't need a pending marker
+        if (!isEditMode && !pendingMarker) {
             bridge.showNotification('Error: No pending marker to save. Please try again.', 'error');
             document.getElementById('marker-creation-modal').classList.add('hidden');
             return;
         }
 
-        const form = document.getElementById('marker-form');
         const formData = new FormData(form);
         
         const id = formData.get('marker-id');
@@ -424,35 +496,68 @@
             bridge.showNotification('ID can only contain letters, numbers, hyphens, and underscores', 'error');
             return;
         }
-        if (bridge.state.markers.some(m => m.id === id)) {
+        
+        // Check for ID conflicts, but allow the same ID when editing
+        if (!isEditMode && bridge.state.markers.some(m => m.id === id)) {
             bridge.showNotification('Marker ID already exists', 'error');
             return;
         }
+        
+        // Also check if we're editing but changing the ID to one that already exists
+        if (isEditMode && id !== originalId && bridge.state.markers.some(m => m.id === id)) {
+            bridge.showNotification('Cannot change ID: another marker with this ID already exists', 'error');
+            return;
+        }
 
-        const newMarkerData = {
+        const markerData = {
             id, name,
             x: lng,
             y: lat,
             type,
             faction: faction || undefined,
             summary,
-            images: [],
+            images: [], // Preserve existing images in edit mode
             public: isPublic,
             wikiSlug: wikiSlug ? wikiSlug.trim() || undefined : undefined,
         };
 
-        bridge.state.markers.push(newMarkerData);
-        pendingMarker.on('click', () => bridge.openInfoSidebar(newMarkerData));
+        if (isEditMode) {
+            // Edit existing marker
+            const markerIndex = bridge.state.markers.findIndex(m => m.id === originalId);
+            if (markerIndex === -1) {
+                bridge.showNotification('Error: Could not find original marker to update', 'error');
+                return;
+            }
+            
+            // Preserve any images from the original marker
+            if (bridge.state.markers[markerIndex].images && bridge.state.markers[markerIndex].images.length > 0) {
+                markerData.images = [...bridge.state.markers[markerIndex].images];
+            }
+            
+            // Replace the existing marker
+            bridge.state.markers[markerIndex] = markerData;
+            
+            // Need to refresh all markers to update the marker on the map
+            if (bridge.markersModule && bridge.markersModule.renderMarkers) {
+                bridge.markersModule.renderMarkers();
+            }
+            
+            console.log('Marker updated:', markerData.name);
+            bridge.showNotification(`Marker "${name}" updated successfully!`, 'success');
+        } else {
+            // Create new marker
+            bridge.state.markers.push(markerData);
+            pendingMarker.on('click', () => bridge.openInfoSidebar(markerData));
+            
+            pendingMarker.options.isPending = false; // Unmark it
+            pendingMarker = null;
+            
+            console.log('New marker created:', markerData.name);
+            bridge.showNotification(`Marker "${name}" created successfully!`, 'success');
+        }
         
-        console.log('Marker added to state:', newMarkerData.name);
         bridge.markDirty('markers');
-        
         document.getElementById('marker-creation-modal').classList.add('hidden');
-        pendingMarker.options.isPending = false; // Unmark it
-        pendingMarker = null;
-        
-        console.log('Marker creation completed successfully');
-        bridge.showNotification(`Marker "${name}" created successfully!`, 'success');
     }
 
     /**
@@ -470,6 +575,33 @@
         } else {
             console.error('Could not find marker to update:', markerData.id);
         }
+    }
+    
+    /**
+     * Deletes a marker by its ID
+     * @param {string} markerId - The ID of the marker to delete
+     */
+    function deleteMarker(markerId) {
+        if (!markerId) return;
+        
+        const markerIndex = bridge.state.markers.findIndex(m => m.id === markerId);
+        if (markerIndex === -1) {
+            console.error('Could not find marker to delete:', markerId);
+            return;
+        }
+        
+        const markerName = bridge.state.markers[markerIndex].name;
+        
+        // Remove the marker from the state
+        bridge.state.markers.splice(markerIndex, 1);
+        
+        // Re-render all markers to remove it from the map
+        if (bridge.markersModule && bridge.markersModule.renderMarkers) {
+            bridge.markersModule.renderMarkers();
+        }
+        
+        bridge.markDirty('markers');
+        bridge.showNotification(`Marker "${markerName}" deleted`, 'success');
     }
 
     /**
