@@ -251,6 +251,9 @@
         // Store drag state
         let draggedElement = null;
         let draggedIndex = null;
+        let touchDragging = false;
+        let touchStartY = 0;
+        let touchCurrentRow = null;
 
         // Clear any existing handlers by cloning the container
         const newContainer = container.cloneNode(true);
@@ -381,6 +384,68 @@
         stopsDiv.addEventListener('drop', handleDrop, true);
         
         console.log('🔧 Drag and drop initialized for', stopsDiv.querySelectorAll('.route-stop-row[draggable="true"]').length, 'items');
+
+        // --- Mobile touch fallback (long press + move) ---
+        // Activate only if no native drag events (basic heuristic: touch events present)
+        if ('ontouchstart' in window) {
+            const rows = stopsDiv.querySelectorAll('.route-stop-row');
+            rows.forEach(row => {
+                row.addEventListener('touchstart', (e) => {
+                    if (e.touches.length !== 1) return;
+                    touchStartY = e.touches[0].clientY;
+                    touchCurrentRow = row;
+                    row.classList.add('touch-press');
+                    // Long press threshold
+                    row._longPressTimer = setTimeout(() => {
+                        touchDragging = true;
+                        row.classList.add('dragging');
+                    }, 250); // 250ms long-press
+                }, { passive: true });
+                row.addEventListener('touchmove', (e) => {
+                    if (!touchCurrentRow) return;
+                    const y = e.touches[0].clientY;
+                    if (!touchDragging) {
+                        // Cancel if moved too far before long press
+                        if (Math.abs(y - touchStartY) > 12) {
+                            clearTimeout(touchCurrentRow._longPressTimer);
+                            touchCurrentRow.classList.remove('touch-press');
+                            touchCurrentRow = null;
+                        }
+                        return;
+                    }
+                    e.preventDefault();
+                    // Determine target row under finger
+                    const elementAtPoint = document.elementFromPoint(e.touches[0].clientX, y);
+                    const targetRow = elementAtPoint ? elementAtPoint.closest('.route-stop-row') : null;
+                    if (targetRow && targetRow !== touchCurrentRow) {
+                        const rowsArr = Array.from(stopsDiv.querySelectorAll('.route-stop-row'));
+                        const fromIdx = parseInt(touchCurrentRow.dataset.routeIndex, 10);
+                        let toIdx = parseInt(targetRow.dataset.routeIndex, 10);
+                        if (toIdx !== fromIdx) {
+                            reorderRoute(fromIdx, toIdx);
+                        }
+                    }
+                }, { passive: false });
+                row.addEventListener('touchend', () => {
+                    if (touchCurrentRow) {
+                        clearTimeout(touchCurrentRow._longPressTimer);
+                        touchCurrentRow.classList.remove('touch-press');
+                        touchCurrentRow.classList.remove('dragging');
+                    }
+                    touchDragging = false;
+                    touchCurrentRow = null;
+                });
+                row.addEventListener('touchcancel', () => {
+                    if (touchCurrentRow) {
+                        clearTimeout(touchCurrentRow._longPressTimer);
+                        touchCurrentRow.classList.remove('touch-press');
+                        touchCurrentRow.classList.remove('dragging');
+                    }
+                    touchDragging = false;
+                    touchCurrentRow = null;
+                });
+            });
+        }
     }
 
     /**
@@ -416,6 +481,12 @@
         if (bridge.state.routePolyline) { 
             bridge.map.removeLayer(bridge.state.routePolyline); 
             bridge.state.routePolyline = null; 
+        }
+
+        // Remove unified route line if present
+        if (bridge.state.routeUnifiedPolyline) {
+            bridge.map.removeLayer(bridge.state.routeUnifiedPolyline);
+            bridge.state.routeUnifiedPolyline = null;
         }
 
         updateRouteDisplay();
@@ -473,6 +544,12 @@
             if (legIndex >= bridge.state.route.length - 1) {
                 // All legs are calculated
                 visualizer.updateRouteSummaryFromLegs();
+                // Render a single unified line across all legs (prevents segment gaps)
+                try {
+                    visualizer.renderFullUnifiedRoute(bridge.state.routeLegs);
+                } catch (e) {
+                    console.warn('Unified full-route rendering failed:', e);
+                }
                 isCalculatingRoute = false;
                 return;
             }
@@ -566,7 +643,7 @@
         const totalCostKm = pathfinding.computeGraphPathCost(graphPath, routingGraph.edgeMap, bridge.config.kmPerPixel);
         
         // Render path with different styles for roads vs terrain
-        visualizer.renderHybridPath(pathSegments);
+    // (Removed per-leg rendering; final unified rendering occurs after all legs complete.)
         
         // Add leg to route
         bridge.state.routeLegs.push({ 

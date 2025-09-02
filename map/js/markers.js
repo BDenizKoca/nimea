@@ -54,41 +54,25 @@
                 });
 
                 marker.on('touchend', (e) => {
-                    // Prevent default to avoid conflicts
                     e.originalEvent.preventDefault();
-                    
                     if (marker._touchStartTime && marker._touchStartPos) {
                         const touchDuration = Date.now() - marker._touchStartTime;
                         const touchEnd = e.originalEvent.changedTouches[0];
-                        
-                        // Calculate distance moved during touch
                         const deltaX = Math.abs(touchEnd.clientX - marker._touchStartPos.clientX);
                         const deltaY = Math.abs(touchEnd.clientY - marker._touchStartPos.clientY);
                         const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-                        
-                        // Consider it a tap if: duration < 500ms and movement < 10px
                         if (touchDuration < 500 && distance < 10) {
                             const now = Date.now();
-                            
-                            // Check for double-tap (within 400ms of previous tap)
-                            if (marker._lastTapTime && (now - marker._lastTapTime) < 400) {
-                                // Double tap: Focus mode
+                            if (marker._lastTapTime && (now - marker._lastTapTime) < 350) {
+                                // Double tap: focus
                                 focusOnMarker(markerData);
-                                marker._lastTapTime = null; // Prevent triple-tap
+                                marker._lastTapTime = null;
                             } else {
-                                // Single tap: Open info sidebar (with delay to check for double-tap)
+                                // Immediate single tap behavior (no waiting)
+                                bridge.uiModule.openInfoSidebar(markerData);
                                 marker._lastTapTime = now;
-                                setTimeout(() => {
-                                    if (marker._lastTapTime === now) {
-                                        // No double-tap occurred, open info sidebar
-                                        bridge.uiModule.openInfoSidebar(markerData);
-                                        marker._lastTapTime = null;
-                                    }
-                                }, 300);
                             }
                         }
-                        
-                        // Clean up
                         marker._touchStartTime = null;
                         marker._touchStartPos = null;
                     }

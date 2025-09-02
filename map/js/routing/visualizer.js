@@ -177,18 +177,119 @@
         
         // Create a unified blue route line with natural curves
         const unifiedStyle = {
-            color: '#1e40af', // Solid blue
-            weight: 4,        // Slightly thinner for more elegant look
-            opacity: 0.8,     // Slightly more opaque
+            color: '#1e3a8a', // Slightly deeper blue
+            weight: 3,        // Thinner per user request
+            opacity: 0.85,
             pane: 'routePane',
             className: 'unified-route-line',
-            smoothFactor: 1.0, // Leaflet's built-in smoothing
-            lineCap: 'round',  // Rounded line caps for organic appearance
-            lineJoin: 'round'  // Rounded line joins
+            smoothFactor: 1.0,
+            lineCap: 'round',
+            lineJoin: 'round'
         };
-        
+
+        // Replace existing polyline if present
+        if (bridge.state.routeUnifiedPolyline) {
+            bridge.map.removeLayer(bridge.state.routeUnifiedPolyline);
+            bridge.state.routeUnifiedPolyline = null;
+        }
+
         const unifiedPolyline = L.polyline(finalPoints, unifiedStyle).addTo(bridge.map);
-        bridge.state.routePolylines.push(unifiedPolyline);
+        bridge.state.routeUnifiedPolyline = unifiedPolyline;
+    }
+
+    /**
+     * Render a single unified route spanning all legs (post-leg computation) with gentle waviness.
+     * Uses the already computed leg segments to collect original node sequences.
+     */
+    function renderFullUnifiedRoute(routeLegs) {
+        if (!routeLegs || !routeLegs.length) return;
+
+        // Gather all segment points in Leaflet [lat,lng]
+        const points = [];
+        routeLegs.forEach((leg, li) => {
+            if (!leg.segments) return;
+            leg.segments.forEach((segment, si) => {
+                if (!segment.points || segment.points.length === 0) return;
+                if (points.length === 0) {
+                    points.push(...segment.points);
+                } else {
+                    // Avoid duplicate junction point
+                    points.push(...segment.points.slice(1));
+                }
+            });
+        });
+        if (points.length < 2) return;
+
+        // Convert to [x,y] for optional naturalization (reuse existing naturalize pipeline)
+        let processed = points.map(p => [p[1], p[0]]);
+        if (pathNaturalizer) {
+            try {
+                processed = pathNaturalizer.naturalizePath(processed, null, {
+                    nudgeStep: 10,
+                    nudgeOffset: 5,
+                    nudgeStrength: 0.8,
+                    smoothIterations: 2,
+                    smoothRatio: 0.22,
+                    terrainSensitivity: 0.8
+                });
+            } catch (e) {
+                console.warn('Naturalization in unified route failed, falling back to raw:', e);
+            }
+        }
+
+        // Apply gentle sine-wave waviness along the path for aesthetic (does not alter endpoints much)
+        const wavy = applyWaviness(processed, 6, 3); // wavelength px, amplitude px
+        const leafletPts = pathNaturalizer ? pathNaturalizer.coordinatesToLeafletFormat(wavy) : wavy.map(c => [c[1], c[0]]);
+
+        // Render using same unified style (reuse function but here direct to map)
+        if (bridge.state.routeUnifiedPolyline) {
+            bridge.map.removeLayer(bridge.state.routeUnifiedPolyline);
+            bridge.state.routeUnifiedPolyline = null;
+        }
+        const unifiedPolyline = L.polyline(leafletPts, {
+            color: '#1e3a8a',
+            weight: 3,
+            opacity: 0.85,
+            pane: 'routePane',
+            className: 'unified-route-line',
+            lineCap: 'round',
+            lineJoin: 'round'
+        }).addTo(bridge.map);
+        bridge.state.routeUnifiedPolyline = unifiedPolyline;
+    }
+
+    /**
+     * Apply a subtle waviness to a polyline by offsetting points along perpendicular directions.
+     * amplitudePx: maximum perpendicular displacement
+     * wavelengthPx: distance over which wave completes one cycle
+     */
+    function applyWaviness(points, wavelengthPx = 8, amplitudePx = 2) {
+        if (!points || points.length < 3) return points;
+        let total = 0;
+        const out = [points[0]];
+        for (let i = 1; i < points.length - 1; i++) {
+            const prev = points[i - 1];
+            const cur = points[i];
+            const next = points[i + 1];
+            const dx = cur[0] - prev[0];
+            const dy = cur[1] - prev[1];
+            const segLen = Math.sqrt(dx*dx + dy*dy) || 1;
+            total += segLen;
+            // Unit direction
+            const ux = dx / segLen;
+            const uy = dy / segLen;
+            // Perpendicular
+            const px = -uy;
+            const py = ux;
+            const phase = (2 * Math.PI * (total / wavelengthPx));
+            // Taper amplitude near endpoints
+            const t = i / (points.length - 1);
+            const taper = Math.sin(Math.PI * t); // 0 at ends, 1 mid
+            const offset = Math.sin(phase) * amplitudePx * taper;
+            out.push([cur[0] + px * offset, cur[1] + py * offset]);
+        }
+        out.push(points[points.length - 1]);
+        return out;
     }
 
     /**
@@ -382,7 +483,8 @@
         computeSegmentDistance,
         updateRouteSummaryFromLegs,
         updateRouteSummaryCalculating,
-        updateRouteSummaryEmpty
+        updateRouteSummaryEmpty,
+        renderFullUnifiedRoute
     };
 
 })(window);
