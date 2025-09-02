@@ -52,5 +52,39 @@
         });
       }
     </script>
+
+    <!-- Image Modal -->
+    <div class="image-modal-overlay" id="image-modal-overlay">
+        <img src="" alt="Enlarged view" class="image-modal-content" id="image-modal-content">
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const mainContent = document.querySelector('main');
+            const modalOverlay = document.getElementById('image-modal-overlay');
+            const modalImage = document.getElementById('image-modal-content');
+
+            if (mainContent && modalOverlay && modalImage) {
+                mainContent.addEventListener('click', (event) => {
+                    // Check if the clicked element is an image and not inside a link
+                    if (event.target.tagName === 'IMG' && !event.target.closest('a')) {
+                        // Exclude cover and portrait images from being modal
+                        if (event.target.closest('.cover-image') || event.target.closest('.portrait-image')) {
+                            return;
+                        }
+                        
+                        modalImage.src = event.target.src;
+                        modalOverlay.classList.add('visible');
+                    }
+                });
+
+                modalOverlay.addEventListener('click', () => {
+                    modalOverlay.classList.remove('visible');
+                    // Optional: clear src after fade out to prevent showing old image briefly
+                    setTimeout(() => { modalImage.src = ''; }, 300);
+                });
+            }
+        });
+    </script>
 </body>
 </html>

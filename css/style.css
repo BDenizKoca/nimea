@@ -115,6 +115,39 @@ main img:not(.cover-image img):not(.portrait-image img) {
     border-radius: 4px;
     margin: 1rem 0;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    cursor: zoom-in; /* Indicate images can be enlarged */
+}
+
+/* Image Modal for click-to-enlarge */
+.image-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.image-modal-overlay.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.image-modal-content {
+    max-width: 90vw;
+    max-height: 90vh;
+    object-fit: contain;
+    border: 5px solid white;
+    border-radius: 5px;
+    box-shadow: 0 0 30px rgba(0,0,0,0.5);
 }
 
 /* Advanced image alignment classes for content */

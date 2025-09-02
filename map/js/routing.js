@@ -91,6 +91,12 @@
         if (bridge.state.routePolyline) { bridge.map.removeLayer(bridge.state.routePolyline); bridge.state.routePolyline = null; }
         updateRouteDisplay();
         updateRouteSummaryEmpty();
+
+        // Close sidebar
+        const routeSidebar = document.getElementById('route-sidebar');
+        if (routeSidebar) {
+            routeSidebar.classList.remove('open');
+        }
     }
 
     function recomputeRoute() {

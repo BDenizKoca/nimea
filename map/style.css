@@ -11,10 +11,10 @@ body, html {
 /* The identity widget injects elements with classes .netlify-identity-modal & .netlify-identity-overlay */
 /* We boost their stacking without touching other app layers */
 .netlify-identity-overlay {
-    z-index: 10000 !important; /* Above notifications (4000) */
+    z-index: 20000 !important; /* Above everything else */
 }
 .netlify-identity-modal {
-    z-index: 10001 !important;
+    z-index: 20001 !important;
     position: fixed !important; /* Guard against any absolute default inside map container */
 }
 
@@ -183,7 +183,7 @@ body, html {
     width: 100%;
     height: calc(100% - 60px); /* Subtract header height */
     margin-top: 60px; /* Account for fixed header */
-    background-color: #f0f0f0;
+    background-color: #ffffff;
 }
 
 .sidebar {

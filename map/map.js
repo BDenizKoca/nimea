@@ -70,7 +70,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // Use setView with a higher zoom level to fill the screen better
         const centerY = height / 2;
         const centerX = width / 2;
-        map.setView([centerY, centerX], 0.5); // Higher zoom level to fill screen
+        
+        // Adjust initial zoom based on screen width
+        const isMobile = window.innerWidth <= 700;
+        const initialZoom = isMobile ? -0.5 : 0.5; // Zoom out more on mobile
+        
+        map.setView([centerY, centerX], initialZoom);
         
         loadInitialData();
     };
