@@ -83,6 +83,34 @@
                 </div>
                 
                 <div class="form-group">
+                    <label for="marker-icon">Custom Icon</label>
+                    <div class="icon-input-container">
+                        <input type="text" id="marker-icon" name="marker-icon" placeholder="🏰 or ⚔️ or leave empty for default" maxlength="10">
+                        <div class="icon-suggestions">
+                            <span class="icon-option" data-icon="🏰">🏰</span>
+                            <span class="icon-option" data-icon="🏘️">🏘️</span>
+                            <span class="icon-option" data-icon="🏛️">🏛️</span>
+                            <span class="icon-option" data-icon="⚔️">⚔️</span>
+                            <span class="icon-option" data-icon="🗡️">🗡️</span>
+                            <span class="icon-option" data-icon="🛡️">🛡️</span>
+                            <span class="icon-option" data-icon="🏴‍☠️">🏴‍☠️</span>
+                            <span class="icon-option" data-icon="⭐">⭐</span>
+                            <span class="icon-option" data-icon="💎">💎</span>
+                            <span class="icon-option" data-icon="🗻">🗻</span>
+                            <span class="icon-option" data-icon="🌋">🌋</span>
+                            <span class="icon-option" data-icon="🏔️">🏔️</span>
+                        </div>
+                    </div>
+                    <small>Click an icon above or type your own emoji/symbol</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="marker-icon-url">Or Custom Image URL</label>
+                    <input type="url" id="marker-icon-url" name="marker-icon-url" placeholder="https://example.com/icon.png">
+                    <small>Use an image URL for custom PNG/JPG icons (overrides emoji if both provided)</small>
+                </div>
+                
+                <div class="form-group">
                     <label for="marker-faction">Faction</label>
                     <input type="text" id="marker-faction" name="marker-faction" placeholder="e.g., Empire of Aurelius">
                 </div>

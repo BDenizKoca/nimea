@@ -32,6 +32,7 @@
             const form = document.getElementById('marker-form');
             const nameInput = document.getElementById('marker-name');
             const idInput = document.getElementById('marker-id');
+            const iconInput = document.getElementById('marker-icon');
             const cancelBtn = document.getElementById('cancel-marker');
 
             // Update ID when name changes, but only for new markers (not when editing)
@@ -46,6 +47,28 @@
             // Track if ID has been manually edited
             idInput.addEventListener('input', () => {
                 idInput.dataset.manuallyEdited = 'true';
+            });
+
+            // Icon selector functionality
+            const iconOptions = document.querySelectorAll('.icon-option');
+            iconOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    const selectedIcon = option.dataset.icon;
+                    iconInput.value = selectedIcon;
+                    
+                    // Visual feedback
+                    iconOptions.forEach(opt => opt.style.background = 'white');
+                    option.style.background = '#007bff';
+                    option.style.color = 'white';
+                });
+            });
+
+            // Clear icon selection visual when input changes manually
+            iconInput.addEventListener('input', () => {
+                iconOptions.forEach(opt => {
+                    opt.style.background = 'white';
+                    opt.style.color = 'initial';
+                });
             });
 
             cancelBtn.addEventListener('click', () => {
@@ -190,7 +213,20 @@
             document.getElementById('marker-faction').value = markerData.faction || '';
             document.getElementById('marker-summary').value = markerData.summary || '';
             document.getElementById('marker-wiki-slug').value = markerData.wikiSlug || '';
+            document.getElementById('marker-icon').value = markerData.customIcon || '';
             document.getElementById('marker-public').checked = markerData.public !== false;
+            
+            // Update icon selector visual state
+            const iconOptions = document.querySelectorAll('.icon-option');
+            iconOptions.forEach(option => {
+                if (option.dataset.icon === markerData.customIcon) {
+                    option.style.background = '#007bff';
+                    option.style.color = 'white';
+                } else {
+                    option.style.background = 'white';
+                    option.style.color = 'initial';
+                }
+            });
             
             // Store coordinates
             document.getElementById('marker-lat').value = markerData.y;
@@ -245,6 +281,8 @@
             const summary = formData.get('marker-summary');
             const type = formData.get('marker-type');
             const faction = formData.get('marker-faction');
+            const customIcon = formData.get('marker-icon');
+            const iconUrl = formData.get('marker-icon-url');
             const isPublic = formData.get('marker-public') === 'on';
             const wikiSlug = formData.get('marker-wiki-slug');
             
@@ -264,6 +302,8 @@
                 type,
                 faction: faction || undefined,
                 summary,
+                customIcon: customIcon ? customIcon.trim() : undefined,
+                iconUrl: iconUrl ? iconUrl.trim() : undefined,
                 images: [], // Preserve existing images in edit mode
                 public: isPublic,
                 wikiSlug: wikiSlug ? wikiSlug.trim() || undefined : undefined,

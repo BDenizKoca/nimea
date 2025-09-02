@@ -34,10 +34,34 @@
             if (markerData.isWaypoint) return;
             
             if (markerData.public || bridge.state.isDmMode) {
-                const marker = L.marker([markerData.y, markerData.x], {
+                // Create custom icon if specified, otherwise use default
+                let markerOptions = {
                     draggable: bridge.state.isDmMode, // Make draggable only in DM mode
                     riseOnHover: true  // Ensures marker appears above others on hover
-                }).addTo(bridge.map);
+                };
+
+                // Add custom icon if available
+                if (markerData.iconUrl) {
+                    // Prioritize image URL over emoji
+                    markerOptions.icon = L.icon({
+                        iconUrl: markerData.iconUrl,
+                        iconSize: [24, 24],
+                        iconAnchor: [12, 12],
+                        popupAnchor: [0, -12],
+                        className: 'custom-image-marker'
+                    });
+                } else if (markerData.customIcon) {
+                    // Use emoji/text icon
+                    markerOptions.icon = L.divIcon({
+                        html: `<div class="custom-marker-icon">${markerData.customIcon}</div>`,
+                        className: 'custom-marker',
+                        iconSize: [24, 24],
+                        iconAnchor: [12, 12],
+                        popupAnchor: [0, -12]
+                    });
+                }
+
+                const marker = L.marker([markerData.y, markerData.x], markerOptions).addTo(bridge.map);
                 
                 // Store marker data directly on the marker object for direct-touch.js to use
                 marker.markerData = markerData;

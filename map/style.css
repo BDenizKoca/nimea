@@ -455,6 +455,89 @@ body, html {
     margin-top: 30px;
 }
 
+/* Icon selector styles */
+.icon-input-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.icon-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 8px;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+}
+
+.icon-option {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s ease;
+}
+
+.icon-option:hover {
+    background: #e9ecef;
+    border-color: #adb5bd;
+    transform: scale(1.1);
+}
+
+.icon-option:active {
+    transform: scale(0.95);
+}
+
+#marker-icon {
+    font-size: 16px;
+    text-align: center;
+    padding: 8px 12px;
+}
+
+/* Custom marker icon styles */
+.custom-marker {
+    background: none !important;
+    border: none !important;
+}
+
+.custom-marker-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    font-size: 18px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid #333;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    transition: transform 0.2s ease;
+}
+
+.custom-marker-icon:hover {
+    transform: scale(1.1);
+}
+
+/* Custom image marker styles */
+.custom-image-marker {
+    border-radius: 50% !important;
+    border: 2px solid #333 !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
+    transition: transform 0.2s ease !important;
+}
+
+.custom-image-marker:hover {
+    transform: scale(1.1) !important;
+}
+
 .form-actions button {
     padding: 10px 20px;
     border: none;
