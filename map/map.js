@@ -189,6 +189,22 @@ document.addEventListener('DOMContentLoaded', () => {
             if (publishButton) {
                 publishButton.classList.add('dirty');
             }
+            // Also refresh DM publish UI control if present
+            try {
+                if (window.__nimea && window.__nimea.dmModule && window.DmControls) {
+                    const btn = document.getElementById('dm-publish-json');
+                    if (btn && window.__nimea.dmModule && window.__nimea.dmModule.setupDmMode) {
+                        // Use UI module or dmControls if available
+                        if (window.__nimea.uiModule && window.__nimea.uiModule.updatePublishUI) {
+                            window.__nimea.uiModule.updatePublishUI();
+                        }
+                        // Fallback: manual style change
+                        btn.classList.add('dirty-ready');
+                    }
+                }
+            } catch (e) {
+                console.warn('Could not update publish UI after dirty change', e);
+            }
         }
     }
 

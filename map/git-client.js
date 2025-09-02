@@ -118,6 +118,13 @@ class GitGatewayClient {
             userName: user.user_metadata?.full_name || 'not set',
             roles: user.app_metadata?.roles || []
         });
+
+        // Dispatch a custom event so UI components can react to late auth resolution
+        try {
+            document.dispatchEvent(new CustomEvent('gitclient:login', { detail: { userEmail: user.email } }));
+        } catch (e) {
+            console.warn('Could not dispatch gitclient:login event', e);
+        }
     }
 
     handleUserLogout() {
@@ -125,6 +132,11 @@ class GitGatewayClient {
         this.token = null;
         this.isAuthenticated = false;
         console.log('DM logged out');
+        try {
+            document.dispatchEvent(new CustomEvent('gitclient:logout'));
+        } catch (e) {
+            console.warn('Could not dispatch gitclient:logout event', e);
+        }
     }
 
     async login() {

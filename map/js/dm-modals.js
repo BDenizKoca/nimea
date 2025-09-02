@@ -385,6 +385,22 @@
             this.bridge.showNotification(`${terrainType} terrain added`, 'success');
             this.bridge.markDirty('terrain');
 
+            // Refresh publish UI so the UNSAVED badge / button state updates immediately
+            try {
+                if (this.bridge.dmModule && this.bridge.state && this.bridge.state.isDmMode) {
+                    if (this.bridge.uiModule && this.bridge.uiModule.updatePublishUI) {
+                        this.bridge.uiModule.updatePublishUI();
+                    } else if (window.DmControls) {
+                        // Attempt to find existing control instance via DOM manipulation (lightweight fallback)
+                        const publishBtn = document.getElementById('dm-publish-json');
+                        if (publishBtn) {
+                            publishBtn.style.outline = '2px solid #d9534f';
+                            setTimeout(()=>publishBtn.style.outline='',1200);
+                        }
+                    }
+                }
+            } catch (e) { console.warn('Failed to refresh publish UI after terrain save', e); }
+
             // Invalidate the routing graph so the next calculation uses the new terrain
             if (this.bridge.routingModule && this.bridge.routingModule.invalidateGraph) {
                 this.bridge.routingModule.invalidateGraph();
