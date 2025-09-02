@@ -527,23 +527,66 @@ body, html {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 48px;  /* Increased from 32px to 48px */
-    height: 48px; /* Increased from 32px to 48px */
-    font-size: 32px; /* Increased from 24px to 32px */
+    width: 48px;  /* Base size for high zoom levels */
+    height: 48px; 
+    font-size: 32px; 
     background: rgba(255, 255, 255, 0.9);
-    border: 3px solid #333; /* Slightly thicker border */
+    border: 3px solid #333;
     border-radius: 50%;
-    box-shadow: 0 3px 6px rgba(0,0,0,0.3); /* Slightly larger shadow */
+    box-shadow: 0 3px 6px rgba(0,0,0,0.3);
     cursor: pointer;
-    /* Minimum scale to ensure visibility at max zoom */
-    min-width: 36px; /* Increased minimum size */
-    min-height: 36px; /* Increased minimum size */
-    /* Remove any background that might appear as black circle */
+    min-width: 36px;
+    min-height: 36px;
     background-clip: padding-box;
+    /* Smooth scaling transition */
+    transition: transform 0.2s ease-out;
+    transform-origin: center bottom;
+}
+
+/* Progressive scaling based on zoom levels */
+.leaflet-zoom-animated .custom-marker-icon,
+.leaflet-container .custom-marker-icon {
+    /* Default scale for lower zoom levels - smaller when zoomed out */
+    transform: scale(0.7);
+}
+
+/* Scale up significantly when zoomed in - detect high zoom states */
+.leaflet-container.leaflet-zoom-anim .custom-marker-icon,
+.leaflet-container .leaflet-zoom-hide .custom-marker-icon {
+    transform: scale(1.2); /* Larger when zooming in */
+}
+
+/* Even larger for maximum zoom levels */
+.leaflet-container .leaflet-marker-pane .custom-marker-icon {
+    transform: scale(1.4); /* Biggest size for detailed view */
+}
+
+/* Alternative approach using CSS custom properties for zoom detection */
+.leaflet-container .custom-marker-icon {
+    --zoom-scale: 0.7; /* Default small scale */
+    transform: scale(var(--zoom-scale));
+}
+
+/* Override for higher zoom states */
+.leaflet-container .leaflet-marker-pane .custom-marker-icon {
+    --zoom-scale: 1.4; /* Large scale for high zoom */
+}
+
+/* Media query alternative for high-resolution displays */
+@media (min-resolution: 192dpi) {
+    .custom-marker-icon {
+        transform: scale(0.8);
+    }
+    
+    .leaflet-container .leaflet-marker-pane .custom-marker-icon {
+        transform: scale(1.6); /* Even larger on high-DPI when zoomed in */
+    }
 }
 
 .custom-marker-icon:hover {
     background: rgba(255, 255, 255, 1);
+    /* Slight scale up on hover for better visibility */
+    transform: scale(1.05);
 }
 
 /* Custom image marker styles with minimum scale */
