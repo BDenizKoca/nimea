@@ -119,10 +119,13 @@ Timestamp: ${new Date().toISOString()}`;
             // First, get the current file to get its SHA (if it exists)
             const currentFile = await this.getFileFromRepo(filePath);
             
+            // Correctly encode content to Base64 to handle all characters
+            const base64Content = await this.encodeContent(content);
+
             // Prepare the file update
             const updateData = {
                 message: commitMessage,
-                content: btoa(unescape(encodeURIComponent(content))), // Base64 encode
+                content: base64Content,
                 branch: 'main'
             };
 
@@ -153,6 +156,26 @@ Timestamp: ${new Date().toISOString()}`;
             console.error(`Error saving ${filePath}:`, error);
             throw error;
         }
+    }
+
+    /**
+     * Robustly encodes a string to Base64, handling Unicode characters.
+     * @param {string} content The string content to encode.
+     * @returns {Promise<string>} A promise that resolves with the Base64 encoded string.
+     */
+    encodeContent(content) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                // result is a data URL, e.g., "data:application/json;base64,ey..."
+                // We only need the part after the comma.
+                const base64 = reader.result.split(',')[1];
+                resolve(base64);
+            };
+            reader.onerror = (error) => reject(error);
+            const blob = new Blob([content], { type: 'application/json' });
+            reader.readAsDataURL(blob);
+        });
     }
 
     async getFileFromRepo(filePath) {
