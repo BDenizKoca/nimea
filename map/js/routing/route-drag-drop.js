@@ -20,8 +20,8 @@
      * Setup drag and drop functionality for route reordering
      */
     function setupDragAndDrop(container, reorderCallback) {
-        // Prevent duplicate initialization - check if already initialized
-        if (container._dragInitialized) return;
+        // Clear any existing handlers by removing all child event listeners
+        // We'll re-add them fresh to the existing DOM structure
         
         // Store drag state
         let draggedElement = null;
@@ -30,14 +30,8 @@
         let touchStartY = 0;
         let touchCurrentRow = null;
 
-        // Clear any existing handlers by cloning the container
-        const newContainer = container.cloneNode(true);
-        container.parentNode.replaceChild(newContainer, container);
-        
-        // Update reference to the new container and mark it as initialized
-        domCache.clear('route-stops'); // Clear cache since we cloned the element
-        const stopsDiv = domCache.get('route-stops');
-        stopsDiv._dragInitialized = true;
+        // Mark as initialized to prevent duplicate setup
+        container._dragInitialized = true;
         
         // Drag start handler
         function handleDragStart(e) {
@@ -191,84 +185,86 @@
             }
         }
 
-        rows().forEach(row => {
-            row.addEventListener('touchstart', (e) => {
-                if (e.touches.length !== 1) return;
-                touchStartY = e.touches[0].clientY;
-                touchCurrentRow = row;
-                dragOriginIndex = parseInt(row.dataset.routeIndex, 10);
-                row.classList.add('touch-press');
-                row._longPressTimer = setTimeout(() => {
-                    touchDragging = true;
-                    row.classList.add('dragging');
-                    // Fix height to avoid layout shift
-                    row.style.height = row.getBoundingClientRect().height + 'px';
-                }, 280); // slightly longer to reduce accidental drags
-            }, { passive: true });
+        // Use event delegation instead of attaching to individual rows
+        stopsDiv.addEventListener('touchstart', (e) => {
+            if (e.touches.length !== 1) return;
+            const row = e.target.closest('.route-stop-row');
+            if (!row) return;
+            
+            touchStartY = e.touches[0].clientY;
+            touchCurrentRow = row;
+            dragOriginIndex = parseInt(row.dataset.routeIndex, 10);
+            row.classList.add('touch-press');
+            row._longPressTimer = setTimeout(() => {
+                touchDragging = true;
+                row.classList.add('dragging');
+                // Fix height to avoid layout shift
+                row.style.height = row.getBoundingClientRect().height + 'px';
+            }, 280); // slightly longer to reduce accidental drags
+        }, { passive: true });
 
-            row.addEventListener('touchmove', (e) => {
-                if (!touchCurrentRow) return;
-                const y = e.touches[0].clientY;
-                if (!touchDragging) {
-                    if (Math.abs(y - touchStartY) > 14) { // tolerance
-                        clearTimeout(touchCurrentRow._longPressTimer);
-                        touchCurrentRow.classList.remove('touch-press');
-                        touchCurrentRow = null;
-                    }
-                    return;
-                }
-                e.preventDefault();
-                // Identify potential target index by comparing to row midpoints
-                const rowList = rows();
-                let provisionalIndex = dragOriginIndex;
-                for (let i = 0; i < rowList.length; i++) {
-                    const r = rowList[i];
-                    if (r === touchCurrentRow) continue; // skip dragged
-                    const rect = r.getBoundingClientRect();
-                    const midpoint = rect.top + rect.height / 2;
-                    if (y < midpoint) { // would insert before r
-                        provisionalIndex = parseInt(r.dataset.routeIndex, 10);
-                        clearHighlight();
-                        r.classList.add('touch-drop-before');
-                        targetHighlightRow = r;
-                        break;
-                    }
-                    // if we reach end, place after last
-                    if (i === rowList.length - 1) {
-                        provisionalIndex = parseInt(r.dataset.routeIndex, 10) + 1;
-                        clearHighlight();
-                        r.classList.add('touch-drop-after');
-                        targetHighlightRow = r;
-                    }
-                }
-                targetIndex = provisionalIndex;
-            }, { passive: false });
-
-            function finalizeTouchDrag(cancelled) {
-                if (touchCurrentRow) {
+        stopsDiv.addEventListener('touchmove', (e) => {
+            if (!touchCurrentRow) return;
+            const y = e.touches[0].clientY;
+            if (!touchDragging) {
+                if (Math.abs(y - touchStartY) > 14) { // tolerance
                     clearTimeout(touchCurrentRow._longPressTimer);
                     touchCurrentRow.classList.remove('touch-press');
-                    touchCurrentRow.classList.remove('dragging');
-                    touchCurrentRow.style.height = '';
+                    touchCurrentRow = null;
                 }
-                clearHighlight();
-                if (!cancelled && touchDragging && targetIndex !== null && dragOriginIndex !== null) {
-                    let finalTarget = targetIndex;
-                    // Adjust if moving downward past original position
-                    if (finalTarget > dragOriginIndex) finalTarget -= 1;
-                    if (finalTarget !== dragOriginIndex && finalTarget >= 0) {
-                        reorderCallback(dragOriginIndex, finalTarget);
-                    }
-                }
-                touchDragging = false;
-                touchCurrentRow = null;
-                dragOriginIndex = null;
-                targetIndex = null;
+                return;
             }
+            e.preventDefault();
+            // Identify potential target index by comparing to row midpoints
+            const rowList = rows();
+            let provisionalIndex = dragOriginIndex;
+            for (let i = 0; i < rowList.length; i++) {
+                const r = rowList[i];
+                if (r === touchCurrentRow) continue; // skip dragged
+                const rect = r.getBoundingClientRect();
+                const midpoint = rect.top + rect.height / 2;
+                if (y < midpoint) { // would insert before r
+                    provisionalIndex = parseInt(r.dataset.routeIndex, 10);
+                    clearHighlight();
+                    r.classList.add('touch-drop-before');
+                    targetHighlightRow = r;
+                    break;
+                }
+                // if we reach end, place after last
+                if (i === rowList.length - 1) {
+                    provisionalIndex = parseInt(r.dataset.routeIndex, 10) + 1;
+                    clearHighlight();
+                    r.classList.add('touch-drop-after');
+                    targetHighlightRow = r;
+                }
+            }
+            targetIndex = provisionalIndex;
+        }, { passive: false });
 
-            row.addEventListener('touchend', () => finalizeTouchDrag(false));
-            row.addEventListener('touchcancel', () => finalizeTouchDrag(true));
-        });
+        function finalizeTouchDrag(cancelled) {
+            if (touchCurrentRow) {
+                clearTimeout(touchCurrentRow._longPressTimer);
+                touchCurrentRow.classList.remove('touch-press');
+                touchCurrentRow.classList.remove('dragging');
+                touchCurrentRow.style.height = '';
+            }
+            clearHighlight();
+            if (!cancelled && touchDragging && targetIndex !== null && dragOriginIndex !== null) {
+                let finalTarget = targetIndex;
+                // Adjust if moving downward past original position
+                if (finalTarget > dragOriginIndex) finalTarget -= 1;
+                if (finalTarget !== dragOriginIndex && finalTarget >= 0) {
+                    reorderCallback(dragOriginIndex, finalTarget);
+                }
+            }
+            touchDragging = false;
+            touchCurrentRow = null;
+            dragOriginIndex = null;
+            targetIndex = null;
+        }
+
+        stopsDiv.addEventListener('touchend', () => finalizeTouchDrag(false));
+        stopsDiv.addEventListener('touchcancel', () => finalizeTouchDrag(true));
     }
 
     /**

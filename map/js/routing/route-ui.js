@@ -24,12 +24,21 @@
      */
     function setupRouteEventDelegation() {
         const stopsDiv = domCache.get('route-stops');
+        console.log("Setting up route event delegation - stopsDiv:", stopsDiv);
+        
         if (!stopsDiv) {
-            console.error("Route stops container not found");
+            console.error("Route stops container not found - trying direct getElementById");
+            const fallbackStopsDiv = document.getElementById('route-stops');
+            console.log("Fallback stopsDiv:", fallbackStopsDiv);
+            if (fallbackStopsDiv) {
+                console.log("Using fallback element for event delegation");
+                fallbackStopsDiv.addEventListener('click', handleRouteStopClick);
+            }
             return;
         }
         
         // Use permanent event delegation - this listener will handle all future button clicks
+        console.log("Adding click event listener to stopsDiv");
         stopsDiv.addEventListener('click', handleRouteStopClick);
         
         // Set up delegation for the clear button too (it's outside the stops div)
@@ -105,8 +114,10 @@
             // Event delegation handles all button clicks automatically
             // No need to manually attach event listeners here anymore
             
-            // Setup drag and drop functionality (re-initialize after DOM update)
-            if (bridge.state.route.length > 1 && !stopsDiv._dragInitialized) {
+            // Setup drag and drop functionality (ALWAYS re-initialize after DOM update)
+            if (bridge.state.route.length > 1) {
+                // Clear the flag since we're regenerating HTML and need fresh event listeners
+                stopsDiv._dragInitialized = false;
                 routeDragDrop.setupDragAndDrop(stopsDiv, reorderCallback);
             }
         } catch (error) {
