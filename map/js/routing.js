@@ -15,6 +15,7 @@
     // Routing state
     let routingGraph = null;
     let isCalculatingRoute = false; // Mutex to prevent concurrent calculations
+    let waypointCounter = 0; // Counter for waypoint naming
 
     // Configuration constants
     const TERRAIN_COSTS = {
@@ -59,10 +60,81 @@
             addToRoute,
             recomputeRoute,
             invalidateGraph,
+            createWaypoint,
+            deleteWaypoint,
             initRouting: () => { /* no-op, already initialized */ }
         };
         
         console.log("Routing module initialized with modular architecture.");
+    }
+
+    /**
+     * Create a temporary waypoint at the given coordinates
+     */
+    function createWaypoint(lat, lng) {
+        if (bridge.state.isDmMode) {
+            return; // waypoints disabled in DM mode
+        }
+
+        waypointCounter++;
+        const waypoint = {
+            id: `waypoint_${waypointCounter}`,
+            name: `Waypoint ${waypointCounter}`,
+            x: lng,
+            y: lat,
+            isWaypoint: true
+        };
+
+        // Add waypoint to markers for routing purposes
+        bridge.state.markers.push(waypoint);
+        
+        // Create visual marker on map
+        const icon = L.divIcon({
+            html: `<div class="waypoint-marker">${waypointCounter}</div>`,
+            className: 'waypoint-icon',
+            iconSize: [24, 24],
+            iconAnchor: [12, 12]
+        });
+        
+        const marker = L.marker([lat, lng], { icon }).addTo(bridge.map);
+        
+        // Click to delete waypoint
+        marker.on('click', () => {
+            if (confirm(`Delete ${waypoint.name}?`)) {
+                deleteWaypoint(waypoint.id, marker);
+            }
+        });
+
+        // Store reference to marker on waypoint
+        waypoint.marker = marker;
+
+        return waypoint;
+    }
+
+    /**
+     * Delete a waypoint
+     */
+    function deleteWaypoint(waypointId, marker) {
+        // Remove from markers array
+        const markerIndex = bridge.state.markers.findIndex(m => m.id === waypointId);
+        if (markerIndex > -1) {
+            bridge.state.markers.splice(markerIndex, 1);
+        }
+
+        // Remove from route if it's there
+        const routeIndex = bridge.state.route.findIndex(r => r.id === waypointId);
+        if (routeIndex > -1) {
+            bridge.state.route.splice(routeIndex, 1);
+            recomputeRoute();
+        }
+
+        // Remove from map
+        if (marker) {
+            bridge.map.removeLayer(marker);
+        }
+
+        // Invalidate routing graph to rebuild without this waypoint
+        invalidateGraph();
     }
 
     /**
@@ -98,15 +170,22 @@
     }
 
     /**
-     * Update route display with current stops
+     * Update route display with current stops and drag-drop support
      */
     function updateRouteDisplay() {
         const stopsDiv = document.getElementById('route-stops');
         if (!stopsDiv) return;
 
         stopsDiv.innerHTML = bridge.state.route.map((stop, idx) => {
-            return `<div class="route-stop-row">${idx+1}. ${stop.name} <button class="mini-btn" data-ridx="${idx}" title="Remove stop">✖</button></div>`;
-        }).join('') + (bridge.state.route.length ? `<div class="route-actions"><button id="clear-route-btn" class="clear-route-btn">Clear Route</button></div>` : '');
+            const stopType = stop.isWaypoint ? 'waypoint' : 'marker';
+            return `<div class="route-stop-row" draggable="true" data-route-index="${idx}">
+                        <span class="drag-handle">⋮⋮</span>
+                        <span class="stop-info">${idx+1}. ${stop.name}</span>
+                        <button class="mini-btn" data-ridx="${idx}" title="Remove stop">✖</button>
+                    </div>`;
+        }).join('') + (bridge.state.route.length ? `<div class="route-actions">
+                        <button id="clear-route-btn" class="clear-route-btn">Clear Route</button>
+                    </div>` : '');
         
         // Add event listeners for remove buttons
         stopsDiv.querySelectorAll('button[data-ridx]').forEach(btn => {
@@ -119,6 +198,76 @@
         // Add event listener for clear button
         const clearBtn = document.getElementById('clear-route-btn');
         if (clearBtn) clearBtn.addEventListener('click', clearRoute);
+
+        // Add drag and drop functionality
+        setupDragAndDrop(stopsDiv);
+    }
+
+    /**
+     * Setup drag and drop functionality for route reordering
+     */
+    function setupDragAndDrop(container) {
+        const draggables = container.querySelectorAll('.route-stop-row[draggable="true"]');
+        
+        draggables.forEach(draggable => {
+            draggable.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/plain', e.target.dataset.routeIndex);
+                e.target.classList.add('dragging');
+            });
+
+            draggable.addEventListener('dragend', (e) => {
+                e.target.classList.remove('dragging');
+            });
+
+            draggable.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                const afterElement = getDragAfterElement(container, e.clientY);
+                const dragging = container.querySelector('.dragging');
+                
+                if (afterElement == null) {
+                    container.appendChild(dragging);
+                } else {
+                    container.insertBefore(dragging, afterElement);
+                }
+            });
+
+            draggable.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const draggedIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
+                const targetIndex = parseInt(e.target.closest('.route-stop-row').dataset.routeIndex, 10);
+                
+                if (draggedIndex !== targetIndex) {
+                    reorderRoute(draggedIndex, targetIndex);
+                }
+            });
+        });
+    }
+
+    /**
+     * Get the element after which the dragged item should be inserted
+     */
+    function getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.route-stop-row:not(.dragging)')];
+        
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    /**
+     * Reorder route stops
+     */
+    function reorderRoute(fromIndex, toIndex) {
+        const item = bridge.state.route.splice(fromIndex, 1)[0];
+        bridge.state.route.splice(toIndex, 0, item);
+        recomputeRoute();
     }
 
     /**

@@ -748,3 +748,87 @@ button:focus, .leaflet-control-button:focus {
     outline: 3px solid #357abd;
     outline-offset: 2px;
 }
+
+/* === WAYPOINT STYLES === */
+.waypoint-icon {
+    background: none !important;
+    border: none !important;
+}
+
+.waypoint-marker {
+    width: 24px;
+    height: 24px;
+    background: #ff6b35;
+    border: 2px solid white;
+    border-radius: 50%;
+    color: white;
+    font-weight: bold;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.waypoint-marker:hover {
+    background: #e55a2e;
+    transform: scale(1.1);
+}
+
+/* === DRAG AND DROP ROUTE STYLES === */
+.route-stop-row {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    background: rgba(255,255,255,0.9);
+    margin: 2px 0;
+    border-radius: 4px;
+    cursor: grab;
+    transition: all 0.2s ease;
+}
+
+.route-stop-row:hover {
+    background: rgba(255,255,255,1);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.route-stop-row.dragging {
+    opacity: 0.5;
+    transform: rotate(5deg);
+    cursor: grabbing;
+}
+
+.drag-handle {
+    color: #666;
+    font-size: 16px;
+    margin-right: 8px;
+    cursor: grab;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.route-stop-row:active .drag-handle {
+    cursor: grabbing;
+}
+
+.stop-info {
+    flex: 1;
+    font-size: 14px;
+}
+
+.route-stop-row .mini-btn {
+    margin-left: auto;
+}
+
+/* Visual feedback for drag operations */
+.route-stop-row[draggable="true"]:hover {
+    border-left: 3px solid #357abd;
+}
+
+.leaflet-popup-content {
+    text-align: center;
+}

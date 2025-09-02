@@ -75,6 +75,19 @@ document.addEventListener('DOMContentLoaded', () => {
             padding: padding,
             maxZoom: isMobile ? 1 : 2 // Limit max zoom on initial fit
         });
+
+        // Add right-click context menu for waypoint creation
+        map.on('contextmenu', (e) => {
+            if (!window.__nimea.state.isDmMode && window.__nimea.routingModule) {
+                const { lat, lng } = e.latlng;
+                if (confirm('Create waypoint here?')) {
+                    const waypoint = window.__nimea.routingModule.createWaypoint(lat, lng);
+                    if (waypoint && confirm(`Add ${waypoint.name} to route?`)) {
+                        window.__nimea.routingModule.addToRoute(waypoint);
+                    }
+                }
+            }
+        });
         
         // Add window resize handler to adjust zoom for orientation changes on mobile
         let resizeTimeout;
