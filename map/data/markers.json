@@ -3,8 +3,8 @@
     {
       "id": "varkas",
       "name": "Varkas",
-      "x": 1234,
-      "y": 987,
+      "x": 1251,
+      "y": 1110,
       "type": "city",
       "faction": "Kuruntar",
       "summary": "Başkent, yıkık bir kutsal şehrin üzerine inşa edildi.",
@@ -28,8 +28,8 @@
     {
       "id": "nortreen",
       "name": "Nortreen",
-      "x": 1484,
-      "y": 996,
+      "x": 1531,
+      "y": 890,
       "type": "city",
       "faction": "fref",
       "summary": "free",
@@ -37,13 +37,13 @@
       "public": true
     },
     {
-      "id": "Camkale",
-      "name": "Çamkale",
+      "id": "custodiskapi",
+      "name": "Custodis Kapısı",
       "x": 1156,
       "y": 1420,
-      "type": "city",
-      "faction": "Çamkale Krallığı",
-      "summary": "Çamkale Krallığı",
+      "type": "fortress",
+      "faction": "Custodis Senatosu",
+      "summary": "Custodislerin yüzyıllardır savundukları kapı.",
       "images": [],
       "public": true
     },
