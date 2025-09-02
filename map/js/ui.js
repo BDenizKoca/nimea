@@ -24,9 +24,7 @@
 
         // Initial setup
         setupSidebars();
-        if (bridge.state.isDmMode) {
-            setupOverlayControls();
-        }
+        setupOverlayControls(); // Always set up overlay controls, not just in DM mode
         setupMobileUI();
     }
 

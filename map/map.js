@@ -67,12 +67,10 @@ document.addEventListener('DOMContentLoaded', () => {
         originalMapBounds = bounds; // Store the original bounds
         L.imageOverlay(mapImageUrl, bounds).addTo(map);
         
-        // Set a specific zoom level instead of fitBounds to avoid making it too small
+        // Use setView with a higher zoom level to fill the screen better
         const centerY = height / 2;
         const centerX = width / 2;
-        map.fitBounds(bounds, { 
-            padding: [0, 0]  // No padding - fill the entire screen
-        });
+        map.setView([centerY, centerX], 0.5); // Higher zoom level to fill screen
         
         loadInitialData();
     };
@@ -250,11 +248,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (config.overlays && originalMapBounds) {
             if (config.overlays.regions) {
                 console.log('Adding regions overlay:', config.overlays.regions);
-                state.overlays.regions = L.imageOverlay(`../${config.overlays.regions}`, originalMapBounds, { opacity: 0.7 });
+                const regionsPath = `../${config.overlays.regions}`;
+                console.log('Regions overlay path:', regionsPath);
+                state.overlays.regions = L.imageOverlay(regionsPath, originalMapBounds, { opacity: 0.7 });
             }
             if (config.overlays.borders) {
                 console.log('Adding borders overlay:', config.overlays.borders);
-                state.overlays.borders = L.imageOverlay(`../${config.overlays.borders}`, originalMapBounds, { opacity: 0.8 });
+                const bordersPath = `../${config.overlays.borders}`;
+                console.log('Borders overlay path:', bordersPath);
+                state.overlays.borders = L.imageOverlay(bordersPath, originalMapBounds, { opacity: 0.8 });
             }
         }
         // Apply current mode (default none) after overlays are created
