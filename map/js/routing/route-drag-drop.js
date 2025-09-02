@@ -142,32 +142,32 @@
             }
             
             // Clean up drop indicators
-            stopsDiv.querySelectorAll('.drop-indicator').forEach(indicator => {
+            container.querySelectorAll('.drop-indicator').forEach(indicator => {
                 indicator.remove();
             });
         }
 
         // Add event listeners with capture to ensure they fire
-        stopsDiv.addEventListener('dragstart', handleDragStart, true);
-        stopsDiv.addEventListener('dragend', handleDragEnd, true);
-        stopsDiv.addEventListener('dragover', handleDragOver, true);
-        stopsDiv.addEventListener('dragenter', handleDragEnter, true);
-        stopsDiv.addEventListener('drop', handleDrop, true);
+        container.addEventListener('dragstart', handleDragStart, true);
+        container.addEventListener('dragend', handleDragEnd, true);
+        container.addEventListener('dragover', handleDragOver, true);
+        container.addEventListener('dragenter', handleDragEnter, true);
+        container.addEventListener('drop', handleDrop, true);
         
-        console.log('🔧 Drag and drop initialized for', stopsDiv.querySelectorAll('.route-stop-row[draggable="true"]').length, 'items');
+        console.log('🔧 Drag and drop initialized for', container.querySelectorAll('.route-stop-row[draggable="true"]').length, 'items');
 
         // --- Mobile touch fallback (long press + move) ---
         // Activate only if no native drag events (basic heuristic: touch events present)
         if ('ontouchstart' in window) {
             ensureMobileDnDStyles();
-            setupMobileTouchDragDrop(stopsDiv, reorderCallback);
+            setupMobileTouchDragDrop(container, reorderCallback);
         }
     }
 
     /**
      * Setup mobile touch drag and drop functionality
      */
-    function setupMobileTouchDragDrop(stopsDiv, reorderCallback) {
+    function setupMobileTouchDragDrop(container, reorderCallback) {
         let dragOriginIndex = null;
         let targetIndex = null;
         let targetHighlightRow = null;
@@ -175,7 +175,7 @@
         let touchStartY = 0;
         let touchCurrentRow = null;
 
-        const rows = () => Array.from(stopsDiv.querySelectorAll('.route-stop-row'));
+        const rows = () => Array.from(container.querySelectorAll('.route-stop-row'));
 
         function clearHighlight() {
             if (targetHighlightRow) {
@@ -186,7 +186,7 @@
         }
 
         // Use event delegation instead of attaching to individual rows
-        stopsDiv.addEventListener('touchstart', (e) => {
+        container.addEventListener('touchstart', (e) => {
             if (e.touches.length !== 1) return;
             const row = e.target.closest('.route-stop-row');
             if (!row) return;
@@ -203,7 +203,7 @@
             }, 280); // slightly longer to reduce accidental drags
         }, { passive: true });
 
-        stopsDiv.addEventListener('touchmove', (e) => {
+        container.addEventListener('touchmove', (e) => {
             if (!touchCurrentRow) return;
             const y = e.touches[0].clientY;
             if (!touchDragging) {
@@ -263,8 +263,8 @@
             targetIndex = null;
         }
 
-        stopsDiv.addEventListener('touchend', () => finalizeTouchDrag(false));
-        stopsDiv.addEventListener('touchcancel', () => finalizeTouchDrag(true));
+        container.addEventListener('touchend', () => finalizeTouchDrag(false));
+        container.addEventListener('touchcancel', () => finalizeTouchDrag(true));
     }
 
     /**
