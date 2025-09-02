@@ -44,8 +44,18 @@ document.addEventListener('DOMContentLoaded', () => {
         maxZoom: 4,          // Allow more zoom levels
         zoomControl: false,
         attributionControl: false,
+        tap: false           // Disable Leaflet's built-in tap handler which can be problematic
     });
     window.__nimea.map = map; // Make map instance available on the bridge
+    
+    // Add meta viewport check to force iOS to work properly
+    if (!document.querySelector('meta[name="viewport"]')) {
+        console.warn("No viewport meta tag found, adding one for proper mobile touch handling");
+        const meta = document.createElement('meta');
+        meta.name = 'viewport';
+        meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+        document.head.appendChild(meta);
+    }
 
     // Create a dedicated pane for route so it stays above overlays & terrain
     if (!map.getPane('routePane')) {
@@ -177,6 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (window.__nimea_routing_init) window.__nimea_routing_init(window.__nimea);
             if (window.__nimea_dm_init) window.__nimea_dm_init(window.__nimea);
             if (window.__nimea_ui_init) window.__nimea_ui_init(window.__nimea);
+            if (window.__nimea_direct_touch_init) window.__nimea_direct_touch_init(window.__nimea);
             if (window.__nimea_markers_init) window.__nimea_markers_init(window.__nimea);
             if (window.__nimea_terrain_init) window.__nimea_terrain_init(window.__nimea);
 

@@ -184,6 +184,21 @@ body, html {
     height: calc(100% - 60px); /* Subtract header height */
     margin-top: 60px; /* Account for fixed header */
     background-color: #ffffff;
+    
+    /* Ensure iOS Safari doesn't apply its own touch behaviors */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none; /* Standard property for compatibility */
+    -webkit-tap-highlight-color: rgba(0,0,0,0);
+    touch-action: manipulation;
+}
+
+/* Make marker icons more tappable */
+.leaflet-marker-icon {
+    touch-action: none !important; /* Disable browser gestures on markers */
+    cursor: pointer;
+    padding: 5px; /* Increase the hit area */
+    margin: -5px; /* Offset the padding to keep the marker in the same position */
 }
 
 .sidebar {
@@ -956,7 +971,8 @@ button:focus, .leaflet-control-button:focus {
     /* Improve sidebar touch interaction */
     .sidebar {
         overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
+        /* Using modern standard property for smooth scrolling */
+        overscroll-behavior: contain; 
     }
     
     /* Better touch targets for buttons */

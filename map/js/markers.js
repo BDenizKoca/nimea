@@ -35,55 +35,54 @@
             
             if (markerData.public || bridge.state.isDmMode) {
                 const marker = L.marker([markerData.y, markerData.x], {
-                    draggable: bridge.state.isDmMode // Make draggable only in DM mode
+                    draggable: bridge.state.isDmMode, // Make draggable only in DM mode
+                    riseOnHover: true  // Ensures marker appears above others on hover
                 }).addTo(bridge.map);
                 
+                // Store marker data directly on the marker object for direct-touch.js to use
+                marker.markerData = markerData;
+                
+                // Standard click handler - works primarily for desktop
                 marker.on('click', () => {
-                    // Single click: Just open info sidebar
+                    console.log("Click detected on marker:", markerData.name);
                     bridge.uiModule.openInfoSidebar(markerData);
                 });
 
-                // Add touch event support for mobile devices
-                marker.on('touchstart', (e) => {
-                    // Prevent default to avoid conflicts
-                    e.originalEvent.preventDefault();
-                    
-                    // Track touch start time for tap detection
-                    marker._touchStartTime = Date.now();
-                    marker._touchStartPos = e.originalEvent.touches[0];
-                });
-
-                marker.on('touchend', (e) => {
-                    e.originalEvent.preventDefault();
-                    if (!marker._touchStartTime || !marker._touchStartPos) return;
-                    const touchDuration = Date.now() - marker._touchStartTime;
-                    const touchEnd = e.originalEvent.changedTouches[0];
-                    const deltaX = Math.abs(touchEnd.clientX - marker._touchStartPos.clientX);
-                    const deltaY = Math.abs(touchEnd.clientY - marker._touchStartPos.clientY);
-                    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-
-                    if (touchDuration < 500 && distance < 10) {
-                        const now = Date.now();
-                        const isDouble = marker._lastTapTime && (now - marker._lastTapTime) < 320;
-                        // Always open info immediately on first tap
-                        bridge.uiModule.openInfoSidebar(markerData);
-                        if (isDouble) {
-                            // Perform focus WITHOUT closing sidebar so user still sees info
-                            mapFocusWithoutClosing(markerData);
-                            marker._lastTapTime = null; // reset chain
-                        } else {
-                            marker._lastTapTime = now;
-                        }
-                    }
-
-                    marker._touchStartTime = null;
-                    marker._touchStartPos = null;
-                });
-
+                // Standard double-click handler for desktop
                 marker.on('dblclick', () => {
-                    // Double click: Focus mode with zoom and center
+                    console.log("Double click detected on marker:", markerData.name);
                     focusOnMarker(markerData);
                 });
+                
+                // Make sure the marker's icon exists before we try to modify it
+                if (marker._icon) {
+                    // Add a data attribute to make marker identification easier
+                    marker._icon.setAttribute('data-marker-id', markerData.id);
+                    
+                    // For iOS Safari, add explicit touch handling on the icon itself
+                    if (L.Browser.touch) {
+                        marker._icon.addEventListener('touchend', (e) => {
+                            e.preventDefault(); // Prevent default behavior
+                            console.log("Direct touchend on marker icon:", markerData.name);
+                            bridge.uiModule.openInfoSidebar(markerData);
+                        }, false);
+                    }
+                } else {
+                    // Leaflet might create the icon later, so we listen for when it's added to DOM
+                    marker.on('add', () => {
+                        if (marker._icon) {
+                            marker._icon.setAttribute('data-marker-id', markerData.id);
+                            
+                            if (L.Browser.touch) {
+                                marker._icon.addEventListener('touchend', (e) => {
+                                    e.preventDefault();
+                                    console.log("Delayed touchend on marker icon:", markerData.name);
+                                    bridge.uiModule.openInfoSidebar(markerData);
+                                }, false);
+                            }
+                        }
+                    });
+                }
 
                 // Helper function for focus behavior
                 function focusOnMarker(markerData) {
