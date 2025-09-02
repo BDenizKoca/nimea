@@ -59,6 +59,9 @@
         pathNaturalizer.initPathNaturalizer(bridge, terrainUtils);
         visualizer.initVisualizer(bridge);
         
+        // Set up permanent event delegation for route buttons
+        setupRouteEventDelegation();
+        
         // Expose public functions on the bridge
         bridge.routingModule = {
             addToRoute,
@@ -70,6 +73,44 @@
         };
         
         console.log("Routing module initialized with modular architecture.");
+    }
+
+    /**
+     * Set up permanent event delegation for route control buttons
+     * This only needs to be called once during module initialization
+     */
+    function setupRouteEventDelegation() {
+        const stopsDiv = document.getElementById('route-stops');
+        if (!stopsDiv) {
+            console.error("Route stops container not found");
+            return;
+        }
+        
+        // Use permanent event delegation - this listener will handle all future button clicks
+        stopsDiv.addEventListener('click', handleRouteStopClick);
+        
+        // Set up delegation for the clear button too (it's outside the stops div)
+        const routeSidebar = document.getElementById('route-sidebar');
+        if (routeSidebar) {
+            routeSidebar.addEventListener('click', handleClearButtonClick);
+        }
+        
+        console.log("Route event delegation set up permanently");
+    }
+
+    /**
+    }
+
+    /**
+     * Handle clicks on clear route button specifically
+     */
+    function handleClearButtonClick(e) {
+        if (e.target.id === 'clear-route-btn') {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log("Clear route button clicked via delegation");
+            clearRoute();
+        }
     }
 
     /**
@@ -226,22 +267,9 @@
                         <button id="clear-route-btn" class="clear-route-btn">Clear Route</button>
                     </div>` : '');
         
-        // Use event delegation for better reliability when DOM changes frequently
-        // Remove any existing delegated listeners to avoid duplicates
-        stopsDiv.removeEventListener('click', handleRouteStopClick);
-        stopsDiv.addEventListener('click', handleRouteStopClick);
+        // Event delegation handles all button clicks automatically
+        // No need to manually attach event listeners here anymore
         
-        // Add event listener for clear button (direct since it's unique)
-        const clearBtn = document.getElementById('clear-route-btn');
-        if (clearBtn) {
-            console.log("Clear route button found, attaching event listener");
-            // Remove any existing listener to avoid duplicates
-            clearBtn.removeEventListener('click', clearRouteHandler);
-            clearBtn.addEventListener('click', clearRouteHandler);
-        } else {
-            console.log("Clear route button not found in DOM");
-        }
-
         // Setup drag and drop functionality (re-initialize after DOM update)
         if (bridge.state.route.length > 1) {
             setupDragAndDrop(stopsDiv);
@@ -268,13 +296,6 @@
     /**
      * Clear route button handler
      */
-    function clearRouteHandler(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        console.log("Clear route button clicked");
-        clearRoute();
-    }
-
     /**
      * Setup drag and drop functionality for route reordering
      */
