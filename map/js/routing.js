@@ -157,8 +157,22 @@
         const mapWidth = bounds.getEast();
         const mapHeight = bounds.getSouth();
 
+        // Safeguard against invalid map dimensions during initialization
+        if (mapWidth <= 0 || mapHeight <= 0) {
+            console.warn(`Invalid map dimensions (${mapWidth}x${mapHeight}). Retrying grid build shortly...`);
+            setTimeout(buildPathfindingGrid, 200); // Try again after a short delay
+            return;
+        }
+
         const cols = Math.floor(mapWidth / bridge.config.gridCellSize);
         const rows = Math.floor(mapHeight / bridge.config.gridCellSize);
+
+        // Final safeguard for cols/rows
+        if (cols <= 0 || rows <= 0) {
+            console.error(`Cannot build grid with non-positive dimensions: ${cols}x${rows}.`);
+            isCalculatingRoute = false; // Release the lock
+            return;
+        }
 
         console.log(`Building ${cols}x${rows} grid for map size ${mapWidth}x${mapHeight}...`);
         console.log('Terrain features available:', bridge.state.terrain.features.length);
