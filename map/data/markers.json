@@ -99,6 +99,28 @@
       "summary": "uçurumlarla kaplı",
       "images": [],
       "public": true
+    },
+    {
+      "id": "dogu-karakolu",
+      "name": "Doğu Karakolu",
+      "x": 1649.999887229678,
+      "y": 823.9844420248907,
+      "type": "fortress",
+      "faction": "Çamkale Krallığı",
+      "summary": "Çamkale Krallığı Doğu Karakolu",
+      "images": [],
+      "public": true
+    },
+    {
+      "id": "tasyurt",
+      "name": "Taşyurt",
+      "x": 1061.999987,
+      "y": 1001.74611,
+      "type": "city",
+      "faction": "Taşyurt Krallığı",
+      "summary": "Taşyurt Krallığı Başkenti",
+      "images": [],
+      "public": true
     }
   ]
 }
