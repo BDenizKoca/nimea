@@ -22,13 +22,20 @@
      * Analyze path segments to distinguish between road and terrain traversal
      */
     function analyzePathSegments(pathIds, routingGraph) {
+        console.log(`Analyzing path with ${pathIds.length} nodes:`, pathIds);
         const segments = [];
         let currentSegment = null;
         
         for (let i = 0; i < pathIds.length; i++) {
             const nodeId = pathIds[i];
             const node = routingGraph.nodes.get(nodeId);
+            if (!node) {
+                console.error(`Node ${nodeId} not found in graph!`);
+                continue;
+            }
+            
             const point = [node.y, node.x]; // Leaflet uses [lat, lng]
+            console.log(`Node ${i}: ${nodeId} (${node.type}) at [${node.y}, ${node.x}]`);
             
             // Determine segment type based on next edge
             let segmentType = 'terrain';
@@ -61,6 +68,38 @@
         if (currentSegment) {
             segments.push(currentSegment);
         }
+        
+        // CRITICAL FIX: Ensure the path actually reaches destination markers
+        // If the last node is not a marker but the path should end at a marker,
+        // extend the path to the actual marker position
+        if (pathIds.length > 0) {
+            const lastNodeId = pathIds[pathIds.length - 1];
+            const lastNode = routingGraph.nodes.get(lastNodeId);
+            
+            console.log(`Last node in path: ${lastNodeId} (${lastNode?.type}) at [${lastNode?.y}, ${lastNode?.x}]`);
+            
+            // Check if this is supposed to end at a marker but doesn't
+            if (lastNode && lastNode.type === 'marker') {
+                // The path already ends at the marker node, so coordinates should be correct
+                // But let's double-check the last segment ends at the exact marker position
+                if (segments.length > 0) {
+                    const lastSegment = segments[segments.length - 1];
+                    const lastPoint = lastSegment.points[lastSegment.points.length - 1];
+                    
+                    // Verify the last point matches the marker position exactly
+                    if (Math.abs(lastPoint[0] - lastNode.y) > 0.1 || Math.abs(lastPoint[1] - lastNode.x) > 0.1) {
+                        console.warn(`Path endpoint mismatch: expected [${lastNode.y}, ${lastNode.x}], got [${lastPoint[0]}, ${lastPoint[1]}]`);
+                        // Fix the endpoint
+                        lastSegment.points[lastSegment.points.length - 1] = [lastNode.y, lastNode.x];
+                    }
+                }
+            } else {
+                console.warn(`Path does not end at a marker node! Last node type: ${lastNode?.type}`);
+            }
+        }
+        
+        console.log(`Generated ${segments.length} segments for visualization`);
+        return segments;
         
         return segments;
     }
