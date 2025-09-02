@@ -8,6 +8,7 @@
 
     let pathfindingGrid = null;
     let easystar = null;
+    let isCalculatingRoute = false; // Mutex to prevent concurrent calculations
 
     function initRouting(map) {
         bridge = window.__nimea;
@@ -66,6 +67,9 @@
     }
 
     function clearRoute() {
+        if (isCalculatingRoute) {
+            isCalculatingRoute = false; // Signal to stop the calculation chain
+        }
         bridge.state.route = [];
         bridge.state.routeLegs = [];
         bridge.state.routePolylines.forEach(pl => bridge.map.removeLayer(pl));
@@ -76,6 +80,11 @@
     }
 
     function recomputeRoute() {
+        if (isCalculatingRoute) {
+            console.warn("Route calculation already in progress. Ignoring new request.");
+            return;
+        }
+
         console.log('recomputeRoute called, current state:', {
             routeLength: bridge.state.route.length,
             isDmMode: bridge.state.isDmMode,
@@ -95,26 +104,39 @@
             return; 
         }
 
-        // Show calculating message immediately
+        isCalculatingRoute = true;
         updateRouteSummaryCalculating();
+        buildPathfindingGrid(); // This is fast after the first run
 
-        // Build the grid before calculating paths (now this will be fast after the first time)
-        buildPathfindingGrid();
+        // Process legs sequentially to avoid overwhelming easystar
+        const processLeg = (legIndex) => {
+            // If calculation was cancelled, stop.
+            if (!isCalculatingRoute) {
+                console.log("Route calculation was cancelled.");
+                // We should probably clear the summary here too
+                updateRouteSummaryEmpty();
+                return;
+            }
 
-        let legsToCalculate = bridge.state.route.length - 1;
-        for (let i = 1; i < bridge.state.route.length; i++) {
-            const start = bridge.state.route[i - 1];
-            const end = bridge.state.route[i];
+            if (legIndex >= bridge.state.route.length - 1) {
+                // All legs are calculated
+                updateRouteSummaryFromLegs();
+                isCalculatingRoute = false;
+                console.info('Route summary updated (A* mode).');
+                return;
+            }
+
+            const start = bridge.state.route[legIndex];
+            const end = bridge.state.route[legIndex + 1];
             
             calculateLegPath(start, end, () => {
-                legsToCalculate--;
-                if (legsToCalculate === 0) {
-                    // This is the last leg, now update the summary
-                    updateRouteSummaryFromLegs();
-                    console.info('Route summary updated (A* mode).');
-                }
+                // When this leg is done, process the next one
+                processLeg(legIndex + 1);
             });
-        }
+        };
+
+        // Start processing from the first leg (index 0)
+        processLeg(0);
     }
 
     function computeDirectKm(a, b) {
