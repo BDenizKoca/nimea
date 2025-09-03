@@ -24,21 +24,35 @@
     function setupMarkerScaling() {
         if (!bridge.map) return;
         
-        bridge.map.on('zoomend', function() {
-            updateAllMarkerSizes();
-        });
+        // Update marker sizes continuously during zoom and after zoom ends
+        bridge.map.on('zoom', updateAllMarkerSizes);
+        bridge.map.on('zoomend', updateAllMarkerSizes);
+        
+        // Ensure a correct initial size in case render happens before first zoom event
+        setTimeout(updateAllMarkerSizes, 0);
         
         console.log("Marker scaling setup complete.");
     }
 
     function calculateIconSize(zoom) {
-    const baseSize = 64; // A large, clear size for high zoom levels
-    // Scale down as zoom decreases. The exponent controls how quickly it shrinks.
-    const scaleFactor = Math.pow(0.6, 5 - zoom); 
-    const size = baseSize * scaleFactor;
-    // Clamp the size to prevent it from becoming too small or too large
-    return Math.max(16, Math.min(80, size));
-}
+        // Map the current zoom onto a 0..1 range using the map's min/max zoom
+        const map = bridge.map;
+        const minZ = (map && typeof map.getMinZoom === 'function') ? map.getMinZoom() : -3;
+        const maxZ = (map && typeof map.getMaxZoom === 'function') ? map.getMaxZoom() : 4;
+        // Guard against division by zero
+        const span = Math.max(1, (maxZ - minZ));
+        const t = (zoom - minZ) / span; // 0 at min zoom, 1 at max zoom
+        
+        // Apply a slight ease to bias sizes larger at common zooms
+        const eased = Math.pow(t, 1.15); // tweak exponent for feel
+        
+        // Choose generous bounds so icons are big when zoomed in, smaller when zoomed out
+        const minSize = 20; // at far zoom-out
+        const maxSize = 84; // at max zoom-in
+        const size = minSize + eased * (maxSize - minSize);
+        
+        return Math.round(size);
+    }
 
 function updateAllMarkerSizes() {
     const zoom = bridge.map.getZoom();
@@ -71,10 +85,10 @@ function updateAllMarkerSizes() {
         let iconClass = 'custom-marker';
 
         if (markerData.iconUrl) {
-            iconHtml = `<img src="${markerData.iconUrl}" class="custom-marker-image" style="width:100%; height:100%;">`;
+            iconHtml = `<img src="${markerData.iconUrl}" class="custom-marker-image" style="display:block; width:100%; height:100%; object-fit:contain;">`;
             iconClass += ' custom-image-marker';
         } else if (markerData.customIcon) {
-            iconHtml = `<div class="custom-marker-icon" style="font-size: ${initialSize * 0.6}px">${markerData.customIcon}</div>`;
+            iconHtml = `<div class="custom-marker-icon" style="font-size:${Math.round(initialSize * 0.7)}px; width:100%; height:100%; display:flex; align-items:center; justify-content:center;">${markerData.customIcon}</div>`;
         } else {
             return null; // Use Leaflet's default icon
         }
@@ -180,8 +194,8 @@ function updateAllMarkerSizes() {
             });
         }
         
-        // Initial size update after rendering
-        updateAllMarkerSizes();
+    // Initial size update after rendering
+    updateAllMarkerSizes();
     }
 
     window.__nimea_markers_init = initMarkersModule;
