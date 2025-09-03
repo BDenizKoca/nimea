@@ -28,13 +28,39 @@
             existing.cleanup();
         }
 
-        // Store drag state
+    // Ensure rows aren't draggable by default; we'll enable only when using the handle
+    Array.from(container.querySelectorAll('.route-stop-row')).forEach(r => r.setAttribute('draggable', 'false'));
+
+    // Store drag state
         let draggedElement = null;
         let draggedIndex = null;
         let touchDragging = false;
         let touchStartY = 0;
         let touchCurrentRow = null;
         let isActive = true; // guard to ignore events after cleanup
+    let allowDrag = false; // only allow when handle initiated
+        // Gate drag start to only when pressing on the handle (desktop)
+        function handleMouseDown(e) {
+            if (!isActive) return;
+            const handle = e.target.closest('.drag-handle');
+            const row = e.target.closest('.route-stop-row');
+            // Enable draggable ONLY when pressed on handle for the corresponding row
+            if (handle && row) {
+                allowDrag = true;
+                // Disable draggability for all rows, then enable just this one
+                Array.from(container.querySelectorAll('.route-stop-row')).forEach(r => r.setAttribute('draggable', 'false'));
+                row.setAttribute('draggable', 'true');
+            } else {
+                allowDrag = false;
+                Array.from(container.querySelectorAll('.route-stop-row')).forEach(r => r.setAttribute('draggable', 'false'));
+            }
+        }
+
+        function handleMouseUpOrLeave() {
+            allowDrag = false;
+            // Disable draggability after interaction ends
+            Array.from(container.querySelectorAll('.route-stop-row')).forEach(r => r.setAttribute('draggable', 'false'));
+        }
 
         // Mark as initialized to prevent duplicate setup (debug flag)
         container._dragInitialized = true;
@@ -44,8 +70,12 @@
             if (!isActive) return;
             // Don't start drag when clicking remove button
             if (e.target.closest('.mini-btn')) return;
-            // Require drag-handle to start for stability
-            if (!e.target.closest('.drag-handle')) return;
+            // Enforce gating: only allow if handle initiated made the row draggable
+            if (!allowDrag) {
+                // Safety: disable draggability to avoid ghost drags
+                try { e.preventDefault(); } catch (_) {}
+                return;
+            }
             // Only handle draggable route rows
             if (!e.target.matches('.route-stop-row[draggable="true"]') && 
                 !e.target.closest('.route-stop-row[draggable="true"]')) {
@@ -76,13 +106,12 @@
             }
             
             // Clean up drop indicators
-            try {
-                container.querySelectorAll('.drop-indicator').forEach(indicator => indicator.remove());
-            } catch (_) {}
+            try { container.querySelectorAll('.drop-indicator').forEach(indicator => indicator.remove()); } catch (_) {}
             
             console.log('🔴 Drag ended');
             draggedElement = null;
             draggedIndex = null;
+            handleMouseUpOrLeave();
         }
 
         // Drag over handler
@@ -159,7 +188,10 @@
             container.querySelectorAll('.drop-indicator').forEach(indicator => indicator.remove());
         }
 
-        // Add event listeners with capture to ensure they fire
+    // Add event listeners with capture to ensure they fire
+    container.addEventListener('mousedown', handleMouseDown, true);
+    container.addEventListener('mouseup', handleMouseUpOrLeave, true);
+    container.addEventListener('mouseleave', handleMouseUpOrLeave, true);
         container.addEventListener('dragstart', handleDragStart, true);
         container.addEventListener('dragend', handleDragEnd, true);
         container.addEventListener('dragover', handleDragOver, true);
@@ -179,6 +211,10 @@
         function cleanup() {
             try {
                 isActive = false;
+                allowDrag = false;
+                container.removeEventListener('mousedown', handleMouseDown, true);
+                container.removeEventListener('mouseup', handleMouseUpOrLeave, true);
+                container.removeEventListener('mouseleave', handleMouseUpOrLeave, true);
                 container.removeEventListener('dragstart', handleDragStart, true);
                 container.removeEventListener('dragend', handleDragEnd, true);
                 container.removeEventListener('dragover', handleDragOver, true);
@@ -228,14 +264,14 @@
                 row.classList.add('dragging');
                 // Fix height to avoid layout shift
                 row.style.height = row.getBoundingClientRect().height + 'px';
-            }, 280); // slightly longer to reduce accidental drags
+            }, 180); // faster long press for responsiveness
         }, { passive: true });
 
         container.addEventListener('touchmove', (e) => {
             if (!touchCurrentRow) return;
             const y = e.touches[0].clientY;
             if (!touchDragging) {
-                if (Math.abs(y - touchStartY) > 14) { // tolerance
+                if (Math.abs(y - touchStartY) > 12) { // tolerance
                     clearTimeout(touchCurrentRow._longPressTimer);
                     touchCurrentRow.classList.remove('touch-press');
                     touchCurrentRow = null;
@@ -291,8 +327,8 @@
             targetIndex = null;
         }
 
-        container.addEventListener('touchend', () => finalizeTouchDrag(false));
-        container.addEventListener('touchcancel', () => finalizeTouchDrag(true));
+    container.addEventListener('touchend', () => finalizeTouchDrag(false));
+    container.addEventListener('touchcancel', () => finalizeTouchDrag(true));
     }
 
     /**
