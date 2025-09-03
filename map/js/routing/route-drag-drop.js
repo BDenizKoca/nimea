@@ -88,6 +88,8 @@
             draggedElement = draggableRow;
             draggedIndex = parseInt(draggableRow.dataset.routeIndex, 10);
             draggableRow.classList.add('dragging');
+            // Let drag-over events hit rows underneath so upward moves work reliably
+            try { draggableRow.style.pointerEvents = 'none'; } catch (_) {}
             
             if (e.dataTransfer) {
                 e.dataTransfer.effectAllowed = 'move';
@@ -103,6 +105,7 @@
             if (!isActive) return;
             if (draggedElement) {
                 draggedElement.classList.remove('dragging');
+                try { draggedElement.style.pointerEvents = ''; } catch (_) {}
             }
             
             // Clean up drop indicators
@@ -117,28 +120,38 @@
         // Drag over handler
         function handleDragOver(e) {
             if (!isActive || !draggedElement) return;
-            
             e.preventDefault();
             if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
-            
-            const targetRow = e.target.closest('.route-stop-row');
-            if (targetRow && targetRow !== draggedElement && !targetRow.classList.contains('dragging')) {
-                // Remove existing indicators
-                container.querySelectorAll('.drop-indicator').forEach(indicator => indicator.remove());
-                
-                // Add drop indicator
-                const rect = targetRow.getBoundingClientRect();
+
+            // Compute insertion index based on pointer Y relative to row midpoints
+            const rowList = Array.from(container.querySelectorAll('.route-stop-row'));
+            if (!rowList.length) return;
+
+            // Remove existing indicators
+            container.querySelectorAll('.drop-indicator').forEach(indicator => indicator.remove());
+
+            const y = e.clientY;
+            let insertionIndex = rowList.length; // default to end
+            for (let i = 0; i < rowList.length; i++) {
+                const r = rowList[i];
+                if (r === draggedElement) continue; // skip dragged row
+                const rect = r.getBoundingClientRect();
                 const midpoint = rect.top + rect.height / 2;
-                
-                const indicator = document.createElement('div');
-                indicator.className = 'drop-indicator';
-                indicator.style.cssText = 'height: 2px; background: #357abd; margin: 2px 0; pointer-events: none;';
-                
-                if (e.clientY < midpoint) {
-                    targetRow.parentNode.insertBefore(indicator, targetRow);
-                } else {
-                    targetRow.parentNode.insertBefore(indicator, targetRow.nextSibling);
-                }
+                if (y < midpoint) { insertionIndex = i; break; }
+            }
+
+            // Visual indicator
+            const indicator = document.createElement('div');
+            indicator.className = 'drop-indicator';
+            indicator.style.cssText = 'height: 2px; background: #357abd; margin: 2px 0; pointer-events: none;';
+
+            if (insertionIndex >= rowList.length) {
+                // Insert at end, before any actions block if present
+                const actions = container.querySelector('.route-actions');
+                if (actions) container.insertBefore(indicator, actions);
+                else container.appendChild(indicator);
+            } else {
+                container.insertBefore(indicator, rowList[insertionIndex]);
             }
         }
 
@@ -152,38 +165,37 @@
         function handleDrop(e) {
             if (!isActive) return;
             e.preventDefault();
-            
+
             if (!draggedElement || draggedIndex === null) {
                 console.warn('⚠️ Drop event but no dragged element');
                 return;
             }
-            
-            const targetRow = e.target.closest('.route-stop-row');
-            if (!targetRow || targetRow === draggedElement || targetRow.classList.contains('dragging')) {
-                console.warn('⚠️ Invalid drop target');
-                return;
+
+            const rowList = Array.from(container.querySelectorAll('.route-stop-row'));
+            if (!rowList.length) return;
+
+            // Compute insertion index as in dragover
+            const y = e.clientY;
+            let insertionIndex = rowList.length; // default to end
+            for (let i = 0; i < rowList.length; i++) {
+                const r = rowList[i];
+                if (r === draggedElement) continue;
+                const rect = r.getBoundingClientRect();
+                const midpoint = rect.top + rect.height / 2;
+                if (y < midpoint) { insertionIndex = i; break; }
             }
-            
-            const targetIndex = parseInt(targetRow.dataset.routeIndex, 10);
-            const rect = targetRow.getBoundingClientRect();
-            const midpoint = rect.top + rect.height / 2;
-            
-            let newIndex = targetIndex;
-            if (e.clientY > midpoint) {
-                newIndex = targetIndex + 1;
-            }
-            
+
             // Adjust for removal of dragged item
-            if (draggedIndex < newIndex) {
-                newIndex--;
+            let newIndex = insertionIndex;
+            const original = draggedIndex;
+            if (original < newIndex) newIndex -= 1;
+
+            console.log(`🟡 Drop: from ${original} to ${newIndex}`);
+
+            if (original !== newIndex && newIndex >= 0) {
+                reorderCallback(original, newIndex);
             }
-            
-            console.log(`🟡 Drop: from ${draggedIndex} to ${newIndex}`);
-            
-            if (draggedIndex !== newIndex && newIndex >= 0) {
-                reorderCallback(draggedIndex, newIndex);
-            }
-            
+
             // Clean up drop indicators
             container.querySelectorAll('.drop-indicator').forEach(indicator => indicator.remove());
         }
