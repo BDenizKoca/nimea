@@ -326,7 +326,7 @@
         console.log(`Found path with ${graphPath.length} nodes`);
         
         // Convert path to segments and render
-        const pathSegments = visualizer.analyzePathSegments(graphPath, routingGraph);
+    const pathSegments = visualizer.analyzePathSegments(graphPath, routingGraph, start, end);
         const totalCostKm = pathfinding.computeGraphPathCost(graphPath, routingGraph.edgeMap, bridge.config.kmPerPixel);
         
         // Add leg to route

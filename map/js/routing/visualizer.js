@@ -21,7 +21,7 @@
     /**
      * Analyze path segments to distinguish between road and terrain traversal
      */
-    function analyzePathSegments(pathIds, routingGraph) {
+    function analyzePathSegments(pathIds, routingGraph, startMarker = null, endMarker = null) {
         console.log(`Analyzing path with ${pathIds.length} nodes:`, pathIds);
         const segments = [];
         let currentSegment = null;
@@ -78,13 +78,10 @@
                 const firstSegment = segments[0];
                 firstSegment.points[0] = [firstNode.y, firstNode.x];
                 console.log(`Fixed path start to marker position: [${firstNode.y}, ${firstNode.x}]`);
-            } else if (bridge.state.route.length > 0) {
-                const firstRouteStop = bridge.state.route[0];
-                if (firstRouteStop) {
-                    const firstSegment = segments[0];
-                    firstSegment.points.unshift([firstRouteStop.y, firstRouteStop.x]);
-                    console.log(`Extended path from start marker: [${firstRouteStop.y}, ${firstRouteStop.x}]`);
-                }
+            } else if (startMarker) {
+                const firstSegment = segments[0];
+                firstSegment.points.unshift([startMarker.y, startMarker.x]);
+                console.log(`Extended path from provided start marker: [${startMarker.y}, ${startMarker.x}]`);
             }
         }
         
@@ -112,15 +109,11 @@
             } else {
                 console.warn(`Path does not end at a marker node! Last node type: ${lastNode?.type}`);
                 
-                // If the path doesn't end at a marker, try to find the destination marker and extend to it
-                if (bridge.state.route.length > 0) {
-                    const lastRouteStop = bridge.state.route[bridge.state.route.length - 1];
-                    if (lastRouteStop && segments.length > 0) {
-                        const lastSegment = segments[segments.length - 1];
-                        // Extend the path to the actual destination marker
-                        lastSegment.points.push([lastRouteStop.y, lastRouteStop.x]);
-                        console.log(`Extended path to destination marker: [${lastRouteStop.y}, ${lastRouteStop.x}]`);
-                    }
+                // If the path doesn't end at a marker, use provided endMarker if available
+                if (endMarker && segments.length > 0) {
+                    const lastSegment = segments[segments.length - 1];
+                    lastSegment.points.push([endMarker.y, endMarker.x]);
+                    console.log(`Extended path to provided destination marker: [${endMarker.y}, ${endMarker.x}]`);
                 }
             }
         }
@@ -240,6 +233,18 @@
                 finalPoints = allPoints;
             }
         }
+
+        // HARD SNAP: Ensure the unified route starts/ends exactly at the current route's markers
+        if (bridge && bridge.state && Array.isArray(bridge.state.route) && bridge.state.route.length >= 2) {
+            const startStop = bridge.state.route[0];
+            const endStop = bridge.state.route[bridge.state.route.length - 1];
+            if (startStop && endStop) {
+                // Replace first and last points with exact marker positions [lat, lng]
+                finalPoints[0] = [startStop.y, startStop.x];
+                finalPoints[finalPoints.length - 1] = [endStop.y, endStop.x];
+                console.log('Snapped unified route endpoints to markers:', finalPoints[0], finalPoints[finalPoints.length - 1]);
+            }
+        }
         
         // Create a unified blue route line with natural curves
         const unifiedStyle = {
@@ -308,6 +313,17 @@
         // Apply gentle sine-wave waviness along the path for aesthetic (does not alter endpoints much)
         const wavy = applyWaviness(processed, 6, 3); // wavelength px, amplitude px
         const leafletPts = pathNaturalizer ? pathNaturalizer.coordinatesToLeafletFormat(wavy) : wavy.map(c => [c[1], c[0]]);
+
+        // HARD SNAP: Ensure the full unified route starts/ends exactly at the current route's first/last markers
+        if (bridge && bridge.state && Array.isArray(bridge.state.route) && bridge.state.route.length >= 2) {
+            const startStop = bridge.state.route[0];
+            const endStop = bridge.state.route[bridge.state.route.length - 1];
+            if (startStop && endStop) {
+                leafletPts[0] = [startStop.y, startStop.x];
+                leafletPts[leafletPts.length - 1] = [endStop.y, endStop.x];
+                console.log('Snapped full unified route endpoints to markers:', leafletPts[0], leafletPts[leafletPts.length - 1]);
+            }
+        }
 
         // Render using same unified style (reuse function but here direct to map)
         if (bridge.state.routeUnifiedPolyline) {

@@ -25,6 +25,72 @@
     }
 
     /**
+     * Perpendicular distance from point to segment (for simplification)
+     */
+    function perpendicularDistance(p, a, b) {
+        const x = p[0], y = p[1];
+        const x1 = a[0], y1 = a[1];
+        const x2 = b[0], y2 = b[1];
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        if (dx === 0 && dy === 0) return distance(p, a);
+        const t = ((x - x1) * dx + (y - y1) * dy) / (dx * dx + dy * dy);
+        const tClamped = Math.max(0, Math.min(1, t));
+        const projX = x1 + tClamped * dx;
+        const projY = y1 + tClamped * dy;
+        return Math.sqrt((x - projX) * (x - projX) + (y - projY) * (y - projY));
+    }
+
+    /**
+     * Simplify a polyline with Ramer–Douglas–Peucker (epsilon in map units/pixels)
+     */
+    function simplifyPathRDP(points, epsilon = 22) {
+        if (!points || points.length < 3) return points;
+        const stack = [[0, points.length - 1]];
+        const keep = new Array(points.length).fill(false);
+        keep[0] = keep[points.length - 1] = true;
+        while (stack.length) {
+            const [start, end] = stack.pop();
+            let maxDist = -1;
+            let index = -1;
+            for (let i = start + 1; i < end; i++) {
+                const d = perpendicularDistance(points[i], points[start], points[end]);
+                if (d > maxDist) { maxDist = d; index = i; }
+            }
+            if (maxDist > epsilon && index !== -1) {
+                keep[index] = true;
+                stack.push([start, index], [index, end]);
+            }
+        }
+        const result = [];
+        for (let i = 0; i < points.length; i++) if (keep[i]) result.push(points[i]);
+        return result;
+    }
+
+    /**
+     * Resample a polyline to approximately equal segment length (in pixels)
+     */
+    function resampleEquidistant(points, segmentLen = 80) {
+        if (!points || points.length < 2) return points;
+        const resampled = [points[0]];
+        for (let i = 0; i < points.length - 1; i++) {
+            const p0 = points[i], p1 = points[i + 1];
+            let segLen = distance(p0, p1);
+            if (segLen === 0) continue;
+            const dirX = (p1[0] - p0[0]) / segLen;
+            const dirY = (p1[1] - p0[1]) / segLen;
+            let distAlong = segmentLen;
+            while (distAlong < segLen) {
+                resampled.push([p0[0] + dirX * distAlong, p0[1] + dirY * distAlong]);
+                distAlong += segmentLen;
+            }
+            // Always keep original joints to preserve shape
+            resampled.push(p1);
+        }
+        return resampled;
+    }
+
+    /**
      * Get terrain cost at a specific coordinate using the terrain utilities
      */
     function terrainCost(point, terrainGrid) {
@@ -41,7 +107,7 @@
      * @param {number} offset - How far to check left/right of path (default: 0.1)
      * @param {number} nudgeStrength - How much to nudge (default: 0.005)
      */
-    function nudgePath(points, terrainGrid, step = 200, offset = 0.1, nudgeStrength = 0.005) {
+    function nudgePath(points, terrainGrid, step = 100, offset = 30, nudgeStrength = 2) {
         if (!points || points.length < 2) return points;
 
         let nudged = [];
@@ -79,18 +145,19 @@
                     let costLeft = terrainCost(leftPoint, terrainGrid);
                     let costRight = terrainCost(rightPoint, terrainGrid);
                     
-                    // Nudge toward lower cost terrain, but only if significantly better
+                    // Nudge toward lower cost side proportional to advantage
                     let nudgeX = 0;
                     let nudgeY = 0;
-                    
-                    if (costLeft < costCenter && costLeft < costRight) {
-                        // Nudge left if left is clearly better
-                        nudgeX = perpX * nudgeStrength;
-                        nudgeY = perpY * nudgeStrength;
+                    const best = Math.min(costLeft, costRight, costCenter);
+                    const worst = Math.max(costLeft, costRight, costCenter);
+                    const fraction = worst > 0 ? (costCenter - best) / worst : 0; // 0..1
+                    const strength = Math.max(0, Math.min(1, fraction)) * nudgeStrength;
+                    if (costLeft < costCenter && costLeft <= costRight) {
+                        nudgeX = perpX * strength;
+                        nudgeY = perpY * strength;
                     } else if (costRight < costCenter && costRight < costLeft) {
-                        // Nudge right if right is clearly better
-                        nudgeX = -perpX * nudgeStrength;
-                        nudgeY = -perpY * nudgeStrength;
+                        nudgeX = -perpX * strength;
+                        nudgeY = -perpY * strength;
                     }
                     // If costs are similar, stay centered (no nudge)
                     
@@ -120,7 +187,7 @@
      * @param {number} iterations - Number of smoothing iterations (default: 1)
      * @param {number} ratio - Corner cutting ratio (default: 0.01, microscopic curves)
      */
-    function smoothPath(points, iterations = 1, ratio = 0.01) {
+    function smoothPath(points, iterations = 2, ratio = 0.2) {
         if (!points || points.length < 3) return points;
         
         let currentPoints = [...points];
@@ -207,33 +274,43 @@
         const originalEnd = [points[points.length - 1][0], points[points.length - 1][1]];
         
         const settings = {
-            // Nudging parameters - microscopic for almost-invisible human walking variation
-            nudgeStep: options.nudgeStep || 200,          // Resample every 200 map units (very sparse)
-            nudgeOffset: options.nudgeOffset || 0.1,      // Check terrain 0.1 units left/right (tiny)
-            nudgeStrength: options.nudgeStrength || 0.005, // Microscopic nudging
-            
-            // Smoothing parameters - minimal for almost-straight human paths
-            smoothIterations: options.smoothIterations || 1,  // Single pass only
-            smoothRatio: options.smoothRatio || 0.01,         // Microscopic corner cutting
-            
-            // Style preferences
-            useEnhancedSmoothing: options.useEnhancedSmoothing || false,  // Keep it simple
-            bezierTension: options.bezierTension || 0.01,     // Microscopic tension
-            
-            // Terrain sensitivity - barely reactive for natural human walking
-            terrainSensitivity: options.terrainSensitivity || 0.1  // Minimal terrain reaction
+            // Preprocess
+            simplifyEpsilon: options.simplifyEpsilon || 22,
+            resampleSpacing: options.resampleSpacing || 80,
+
+            // Nudging parameters (map units/pixels)
+            nudgeStep: options.nudgeStep || 100,
+            nudgeOffset: options.nudgeOffset || 30,
+            nudgeStrength: options.nudgeStrength || 2,
+
+            // Smoothing
+            smoothIterations: options.smoothIterations || 2,
+            smoothRatio: options.smoothRatio || 0.2,
+
+            // Optional Bézier finish
+            useEnhancedSmoothing: options.useEnhancedSmoothing || false,
+            bezierTension: options.bezierTension || 0.15,
+
+            // Terrain sensitivity (multiplier)
+            terrainSensitivity: options.terrainSensitivity || 0.6
         };
-        
-        // Step 1: Terrain-aware nudging
+
+        // Step 0: Simplify to remove grid-like jitter
+        let simplified = simplifyPathRDP(points, settings.simplifyEpsilon);
+
+        // Step 1: Resample to even spacing for consistent smoothing/nudging
+        let resampled = resampleEquidistant(simplified, settings.resampleSpacing);
+
+        // Step 2: Terrain-aware subtle nudging
         let nudgedPath = nudgePath(
-            points, 
-            terrainGrid, 
-            settings.nudgeStep, 
-            settings.nudgeOffset, 
+            resampled,
+            terrainGrid,
+            settings.nudgeStep,
+            settings.nudgeOffset,
             settings.nudgeStrength * settings.terrainSensitivity
         );
-        
-        // Step 2: Path smoothing
+
+        // Step 3: Smoothing
         let smoothedPath;
         if (settings.useEnhancedSmoothing) {
             smoothedPath = smoothPathBezier(nudgedPath, settings.bezierTension);
@@ -285,6 +362,8 @@
         nudgePath,
         smoothPath,
         smoothPathBezier,
+        simplifyPathRDP,
+        resampleEquidistant,
         naturalizePath,
         pathIdsToCoordinates,
         coordinatesToLeafletFormat,
