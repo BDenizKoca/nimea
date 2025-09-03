@@ -47,8 +47,8 @@
         const eased = Math.pow(t, 1.15); // tweak exponent for feel
         
         // Choose generous bounds so icons are big when zoomed in, smaller when zoomed out
-        const minSize = 20; // at far zoom-out
-        const maxSize = 84; // at max zoom-in
+    const minSize = 20; // at far zoom-out
+    const maxSize = 110; // at max zoom-in
         const size = minSize + eased * (maxSize - minSize);
         
         return Math.round(size);
