@@ -110,6 +110,7 @@
         // Expose public functions on the bridge
         bridge.routingModule = {
             addToRoute: routeCore.addToRoute,
+            reorderRoute: routeCore.reorderRoute,
             recomputeRoute: routeCore.recomputeRoute,
             invalidateGraph: routeCore.invalidateGraph,
             createWaypoint: waypointManager.createWaypoint,

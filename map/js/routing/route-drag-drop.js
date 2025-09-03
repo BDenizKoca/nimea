@@ -5,6 +5,8 @@
 
     let bridge = {};
     let domCache = {};
+    // Track per-container state so we can cleanly reinitialize without stacking listeners
+    const containerStates = new WeakMap();
 
     /**
      * Initialize the drag-drop module
@@ -20,21 +22,30 @@
      * Setup drag and drop functionality for route reordering
      */
     function setupDragAndDrop(container, reorderCallback) {
-        // Clear any existing handlers by removing all child event listeners
-        // We'll re-add them fresh to the existing DOM structure
-        
+        // If already initialized, remove previous listeners to avoid duplicates
+        const existing = containerStates.get(container);
+        if (existing && existing.cleanup) {
+            existing.cleanup();
+        }
+
         // Store drag state
         let draggedElement = null;
         let draggedIndex = null;
         let touchDragging = false;
         let touchStartY = 0;
         let touchCurrentRow = null;
+        let isActive = true; // guard to ignore events after cleanup
 
-        // Mark as initialized to prevent duplicate setup
+        // Mark as initialized to prevent duplicate setup (debug flag)
         container._dragInitialized = true;
         
         // Drag start handler
         function handleDragStart(e) {
+            if (!isActive) return;
+            // Don't start drag when clicking remove button
+            if (e.target.closest('.mini-btn')) return;
+            // Require drag-handle to start for stability
+            if (!e.target.closest('.drag-handle')) return;
             // Only handle draggable route rows
             if (!e.target.matches('.route-stop-row[draggable="true"]') && 
                 !e.target.closest('.route-stop-row[draggable="true"]')) {
@@ -48,22 +59,26 @@
             draggedIndex = parseInt(draggableRow.dataset.routeIndex, 10);
             draggableRow.classList.add('dragging');
             
-            e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('text/plain', draggedIndex.toString());
+            if (e.dataTransfer) {
+                e.dataTransfer.effectAllowed = 'move';
+                // Some browsers require setData for DnD to initiate
+                try { e.dataTransfer.setData('text/plain', draggedIndex.toString()); } catch (_) {}
+            }
             
             console.log(`🟢 Drag started: index ${draggedIndex}, element:`, draggableRow);
         }
 
         // Drag end handler
         function handleDragEnd(e) {
+            if (!isActive) return;
             if (draggedElement) {
                 draggedElement.classList.remove('dragging');
             }
             
             // Clean up drop indicators
-            stopsDiv.querySelectorAll('.drop-indicator').forEach(indicator => {
-                indicator.remove();
-            });
+            try {
+                container.querySelectorAll('.drop-indicator').forEach(indicator => indicator.remove());
+            } catch (_) {}
             
             console.log('🔴 Drag ended');
             draggedElement = null;
@@ -72,17 +87,15 @@
 
         // Drag over handler
         function handleDragOver(e) {
-            if (!draggedElement) return;
+            if (!isActive || !draggedElement) return;
             
             e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
+            if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
             
             const targetRow = e.target.closest('.route-stop-row');
             if (targetRow && targetRow !== draggedElement && !targetRow.classList.contains('dragging')) {
                 // Remove existing indicators
-                stopsDiv.querySelectorAll('.drop-indicator').forEach(indicator => {
-                    indicator.remove();
-                });
+                container.querySelectorAll('.drop-indicator').forEach(indicator => indicator.remove());
                 
                 // Add drop indicator
                 const rect = targetRow.getBoundingClientRect();
@@ -102,12 +115,13 @@
 
         // Drag enter handler
         function handleDragEnter(e) {
-            if (!draggedElement) return;
+            if (!isActive || !draggedElement) return;
             e.preventDefault();
         }
 
         // Drop handler
         function handleDrop(e) {
+            if (!isActive) return;
             e.preventDefault();
             
             if (!draggedElement || draggedIndex === null) {
@@ -142,9 +156,7 @@
             }
             
             // Clean up drop indicators
-            container.querySelectorAll('.drop-indicator').forEach(indicator => {
-                indicator.remove();
-            });
+            container.querySelectorAll('.drop-indicator').forEach(indicator => indicator.remove());
         }
 
         // Add event listeners with capture to ensure they fire
@@ -162,6 +174,20 @@
             ensureMobileDnDStyles();
             setupMobileTouchDragDrop(container, reorderCallback);
         }
+
+        // Register cleanup so next initialization can remove old listeners
+        function cleanup() {
+            try {
+                isActive = false;
+                container.removeEventListener('dragstart', handleDragStart, true);
+                container.removeEventListener('dragend', handleDragEnd, true);
+                container.removeEventListener('dragover', handleDragOver, true);
+                container.removeEventListener('dragenter', handleDragEnter, true);
+                container.removeEventListener('drop', handleDrop, true);
+                container.querySelectorAll('.drop-indicator').forEach(indicator => indicator.remove());
+            } catch (_) {}
+        }
+        containerStates.set(container, { cleanup });
     }
 
     /**
@@ -190,6 +216,8 @@
             if (e.touches.length !== 1) return;
             const row = e.target.closest('.route-stop-row');
             if (!row) return;
+            // Require touching the drag-handle for stability and to avoid scroll conflicts
+            if (!e.target.closest('.drag-handle')) return;
             
             touchStartY = e.touches[0].clientY;
             touchCurrentRow = row;
