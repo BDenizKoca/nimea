@@ -32,39 +32,39 @@
     }
 
     function calculateIconSize(zoom) {
-        // Exponential scaling for a more natural feel
-        // Adjust the base (1.3) and multiplier (10) to fine-tune
-        const size = Math.pow(1.3, zoom) * 10;
-        // Clamp the size to reasonable limits
-        return Math.max(16, Math.min(80, size));
-    }
+    const baseSize = 64; // A large, clear size for high zoom levels
+    // Scale down as zoom decreases. The exponent controls how quickly it shrinks.
+    const scaleFactor = Math.pow(0.6, 5 - zoom); 
+    const size = baseSize * scaleFactor;
+    // Clamp the size to prevent it from becoming too small or too large
+    return Math.max(16, Math.min(80, size));
+}
 
-    function updateAllMarkerSizes() {
-        const zoom = bridge.map.getZoom();
-        const newSize = calculateIconSize(zoom);
+function updateAllMarkerSizes() {
+    const zoom = bridge.map.getZoom();
+    const newSize = calculateIconSize(zoom);
 
-        allMarkers.forEach(marker => {
-            // Only scale custom icons, not default Leaflet ones
-            if (marker.markerData && (marker.markerData.iconUrl || marker.markerData.customIcon)) {
-                const icon = marker.getIcon();
-                if (icon) {
-                    // Update icon options directly
-                    icon.options.iconSize = [newSize, newSize];
-                    icon.options.iconAnchor = [newSize / 2, newSize];
-                    icon.options.popupAnchor = [0, -newSize];
-                    
-                    // Crucially, update the font size for text/emoji icons
-                    if (icon.options.html && icon.options.html.includes('custom-marker-icon')) {
-                        // Re-create the HTML with the new font size
-                        icon.options.html = `<div class="custom-marker-icon" style="font-size: ${newSize * 0.6}px">${marker.markerData.customIcon}</div>`;
-                    }
-
-                    // Re-apply the icon to force a re-render
-                    marker.setIcon(icon);
+    allMarkers.forEach(marker => {
+        // Only scale custom icons
+        if (marker.markerData && (marker.markerData.iconUrl || marker.markerData.customIcon)) {
+            const icon = marker.getIcon();
+            if (icon) {
+                // Update the icon's size and anchor options
+                icon.options.iconSize = [newSize, newSize];
+                icon.options.iconAnchor = [newSize / 2, newSize];
+                icon.options.popupAnchor = [0, -newSize];
+                
+                // CRITICAL FIX: For emoji/text icons, the font-size within the HTML must be updated.
+                if (marker.markerData.customIcon) {
+                    icon.options.html = `<div class="custom-marker-icon" style="font-size: ${newSize * 0.7}px">${marker.markerData.customIcon}</div>`;
                 }
+
+                // Re-apply the icon to the marker to force a re-render with the new options
+                marker.setIcon(icon);
             }
-        });
-    }
+        }
+    });
+}
 
     function createMarkerIcon(markerData, initialSize) {
         let iconHtml = '';
