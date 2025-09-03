@@ -4,49 +4,7 @@
     'use strict';
 
     let bridge = {};
-
-    // Define a reusable, zoom-responsive DivIcon class
-    const ZoomIcon = L.DivIcon.extend({
-        createIcon: function(oldIcon) {
-            const div = L.DivIcon.prototype.createIcon.call(this, oldIcon);
-            this._setIconStyles(div, 'icon');
-            this._updateIconSize(div); // Set initial size
-            return div;
-        },
-
-        _updateIconSize: function(icon) {
-            if (!icon) return;
-            const zoom = bridge.map ? bridge.map.getZoom() : 1; // Default zoom if map not ready
-            const newSize = this.options.calculateSize(zoom);
-            
-            icon.style.width = `${newSize}px`;
-            icon.style.height = `${newSize}px`;
-
-            // Adjust font size for text/emoji icons
-            if (this.options.html.includes('custom-marker-icon')) {
-                const fontElement = icon.querySelector('.custom-marker-icon');
-                if (fontElement) {
-                    fontElement.style.fontSize = `${newSize * 0.6}px`;
-                }
-            }
-        },
-        
-        _updateAllIcons: function() {
-            if (!this._map) return;
-            this._map.eachLayer(layer => {
-                if (layer.options.icon instanceof ZoomIcon) {
-                    layer.options.icon._updateIconSize(layer._icon);
-                    // Also update anchor and popup anchor
-                    const newSize = parseFloat(layer._icon.style.width);
-                    layer.options.icon.options.iconAnchor = [newSize / 2, newSize];
-                    layer.options.icon.options.popupAnchor = [0, -newSize];
-                    if (layer.getPopup()) {
-                        layer.getPopup().options.offset = [0, -newSize];
-                    }
-                }
-            });
-        }
-    });
+    let allMarkers = []; // Keep a reference to all markers
 
     function initMarkersModule(nimeaBridge) {
         bridge = nimeaBridge;
@@ -66,30 +24,51 @@
     function setupMarkerScaling() {
         if (!bridge.map) return;
         
-        // Create a single instance of our icon class to manage all icons
-        const zoomIconManager = new ZoomIcon({ calculateSize: calculateIconSize });
-        
-        // Listen to zoom events and update all icons
-        bridge.map.on('zoomend', () => {
-            zoomIconManager._updateAllIcons();
+        bridge.map.on('zoomend', function() {
+            updateAllMarkerSizes();
         });
         
         console.log("Marker scaling setup complete.");
     }
 
-    function calculateIconSize(zoom, baseSize = 48, minSize = 16, maxSize = 64) {
-        // Formula: size = baseSize / ( (20 - zoom) * 1.5 )
-        const rawSize = baseSize / ((20 - zoom) * 1.5);
-        // Clamp size between reasonable bounds
-        return Math.max(minSize, Math.min(maxSize, rawSize));
+    function calculateIconSize(zoom) {
+        // Exponential scaling for a more natural feel
+        // Adjust the base (1.3) and multiplier (10) to fine-tune
+        const size = Math.pow(1.3, zoom) * 10;
+        // Clamp the size to reasonable limits
+        return Math.max(16, Math.min(80, size));
     }
 
-    function createMarkerIcon(markerData) {
-        const initialZoom = bridge.map ? bridge.map.getZoom() : 1;
-        const initialSize = calculateIconSize(initialZoom);
+    function updateAllMarkerSizes() {
+        const zoom = bridge.map.getZoom();
+        const newSize = calculateIconSize(zoom);
 
+        allMarkers.forEach(marker => {
+            // Only scale custom icons, not default Leaflet ones
+            if (marker.markerData && (marker.markerData.iconUrl || marker.markerData.customIcon)) {
+                const icon = marker.getIcon();
+                if (icon) {
+                    // Update icon options directly
+                    icon.options.iconSize = [newSize, newSize];
+                    icon.options.iconAnchor = [newSize / 2, newSize];
+                    icon.options.popupAnchor = [0, -newSize];
+                    
+                    // Crucially, update the font size for text/emoji icons
+                    if (icon.options.html && icon.options.html.includes('custom-marker-icon')) {
+                        // Re-create the HTML with the new font size
+                        icon.options.html = `<div class="custom-marker-icon" style="font-size: ${newSize * 0.6}px">${marker.markerData.customIcon}</div>`;
+                    }
+
+                    // Re-apply the icon to force a re-render
+                    marker.setIcon(icon);
+                }
+            }
+        });
+    }
+
+    function createMarkerIcon(markerData, initialSize) {
         let iconHtml = '';
-        let iconClass = 'custom-marker zoom-responsive-marker';
+        let iconClass = 'custom-marker';
 
         if (markerData.iconUrl) {
             iconHtml = `<img src="${markerData.iconUrl}" class="custom-marker-image" style="width:100%; height:100%;">`;
@@ -100,23 +79,19 @@
             return null; // Use Leaflet's default icon
         }
 
-        return new ZoomIcon({
+        return L.divIcon({
             html: iconHtml,
             className: iconClass,
-            calculateSize: calculateIconSize,
-            iconSize: [initialSize, initialSize], // Initial size
+            iconSize: [initialSize, initialSize],
             iconAnchor: [initialSize / 2, initialSize],
             popupAnchor: [0, -initialSize]
         });
     }
 
     function renderMarkers() {
-        // Clean up existing markers to prevent memory leaks
-        bridge.map.eachLayer(layer => {
-            if (layer instanceof L.Marker && !layer.options.isPending) {
-                bridge.map.removeLayer(layer);
-            }
-        });
+        // Clear existing markers from the map and our reference array
+        allMarkers.forEach(marker => bridge.map.removeLayer(marker));
+        allMarkers = [];
         
         let focusMarkerInstance = null;
         
@@ -124,7 +99,9 @@
             if (markerData.isWaypoint) return;
             
             if (markerData.public || bridge.state.isDmMode) {
-                const icon = createMarkerIcon(markerData);
+                const initialZoom = bridge.map.getZoom();
+                const initialSize = calculateIconSize(initialZoom);
+                const icon = createMarkerIcon(markerData, initialSize);
                 
                 let markerOptions = {
                     draggable: bridge.state.isDmMode,
@@ -137,24 +114,18 @@
 
                 const marker = L.marker([markerData.y, markerData.x], markerOptions).addTo(bridge.map);
                 marker.markerData = markerData;
+                allMarkers.push(marker); // Add to our list for scaling
                 
-                // Unified tap detection for both desktop and mobile
+                // Unified tap detection
                 let lastTapTime = 0;
                 let tapTimeout = null;
                 
-                const handleSingleTap = () => {
-                    bridge.uiModule.openInfoSidebar(markerData);
-                };
+                const handleSingleTap = () => bridge.uiModule.openInfoSidebar(markerData);
+                const handleDoubleTap = () => focusOnMarker(markerData);
                 
-                const handleDoubleTap = () => {
-                    focusOnMarker(markerData);
-                };
-                
-                const handleTapEvent = (e) => {
+                const handleTapEvent = () => {
                     const now = Date.now();
-                    const timeSince = now - lastTapTime;
-                    
-                    if (timeSince < 300 && timeSince > 0) {
+                    if (now - lastTapTime < 300) {
                         clearTimeout(tapTimeout);
                         lastTapTime = 0;
                         handleDoubleTap();
@@ -167,7 +138,7 @@
                 };
                 
                 marker.on('click', handleTapEvent);
-                marker.off('dblclick'); // Disable default double-click
+                marker.off('dblclick');
                 
                 marker.on('add', () => {
                     if (marker._icon) {
@@ -208,6 +179,9 @@
                 easeLinearity: 0.25
             });
         }
+        
+        // Initial size update after rendering
+        updateAllMarkerSizes();
     }
 
     window.__nimea_markers_init = initMarkersModule;
