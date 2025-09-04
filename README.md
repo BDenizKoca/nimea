@@ -4,6 +4,8 @@ A zero-backend wiki and interactive map for the fantasy realm of Nimea. Built wi
 
 Live Site: https://nimea-wiki.netlify.app/
 
+---
+
 ## Features
 
 - Wiki with categories for Characters, Locations, Nations & Factions, Gods & Religions, Magic & Powers
@@ -14,9 +16,13 @@ Live Site: https://nimea-wiki.netlify.app/
 - Terrain-aware A* pathfinding that respects road/difficult/unpassable costs
 - Automatic wiki integration: markers can link to relevant wiki pages (optional custom slug)
 
+---
+
 ## Why I Built It
 
 I wanted a light, self-hostable worldbuilding stack where both the wiki and the map are versioned, editable through a browser, and deployable as a static site. This avoids server costs while keeping collaboration simple.
+
+---
 
 ## Live Demo / Install
 
@@ -28,6 +34,8 @@ Local setup:
 3. Develop: `npm start` (serves Eleventy with live reload)
 4. Build: `npm run build` (outputs to `_site/`)
 
+---
+
 ## Usage
 
 Wiki editing (hosted):
@@ -37,12 +45,16 @@ Map usage:
 - Player mode (default): plan routes, inspect markers, view overlays.
 - DM mode: open `/map/?dm`, sign in, then draw markers or paint terrain. Use “İndir” to download data or “Yayınla” to commit changes to the repo (Netlify Identity + Git Gateway).
 
+---
+
 ## Tech Stack
 
 - Eleventy (11ty) for static-site generation
 - Decap CMS for content editing and Git-based publishing
 - Leaflet.js and Leaflet-Geoman for mapping and editing
 - Netlify for hosting, identity, and build pipelines
+
+---
 
 ## Future Plans
 
@@ -51,10 +63,13 @@ Map usage:
 - Import/export tools for bulk content
 - Optional multilingual wiki content
 
-## Connect
+---
 
-- GitHub: https://github.com/BDenizKoca
+## Connect With Me  
+Email: [b.denizkoca@gmail.com](mailto:b.denizkoca@gmail.com)  
+GitHub: [@BDenizKoca](https://github.com/BDenizKoca)  
 
-## License
+---
 
-MIT — see LICENSE for details.
+## License  
+MIT License – You can use, modify, and distribute freely with attribution.  
