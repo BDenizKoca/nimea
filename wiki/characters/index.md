@@ -1,18 +1,18 @@
 ---
 layout: base.njk
-title: Characters
-name: Characters
+title: Karakterler
+name: Karakterler
 slug: characters
-summary: This section contains information about the notable NPCs in the world of Nimea.
+summary: Nimea dünyasındaki öne çıkan kişiler ve anlatıda yer alan karakterler.
 cover_image: /images/chatgpt_image_11_may_2025_02_44_04.png
 public: true
 ---
 
-# Characters
+# Karakterler
 
-This section contains information about the notable NPCs in the world of Nimea.
+Bu bölüm Nimea’daki öne çıkan kişileri ve anlatıda yer alan karakterleri içerir.
 
-## Notable Characters
+## Öne Çıkanlar
 
 {% for character in collections.characters %}
 {%- if character.data.public %}

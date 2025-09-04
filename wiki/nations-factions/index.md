@@ -1,13 +1,13 @@
 ---
 layout: base.njk
-title: Nations & Factions
+title: Uluslar ve Cemiyetler
 ---
 
-# Nations & Factions
+# Uluslar ve Cemiyetler
 
-This section contains information about the various nations, empires, and organizations in Nimea.
+Bu bölüm Nimea’daki çeşitli devletleri, imparatorlukları ve teşkilatları içerir.
 
-## Major Nations
+## Başlıca Uluslar
 
 {% for nation in collections.nations %}
 - [{{ nation.data.name }}]({{ nation.url }}) - {{ nation.data.summary }}

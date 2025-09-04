@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nimea Interactive Map</title>
+    <title>Nimea Etkileşimli Harita</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;700&family=EB+Garamond:wght@400;500;700&display=swap&subset=latin-ext">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.css" />
@@ -12,135 +12,120 @@
 <body>
     <header class="map-header">
         <nav class="map-nav">
-            <a href="../" class="nav-link">Home</a>
-            <a href="../wiki/" class="nav-link">Wiki</a>
-            <h1 class="map-title">Nimea Interactive Map</h1>
+            <a href="../" class="nav-link">Ana Sayfa</a>
+            <a href="../wiki/" class="nav-link">Külliyat</a>
+            <h1 class="map-title">Nimea Etkileşimli Harita</h1>
         </nav>
     </header>
     
     <div id="map"></div>
 
     <!-- Route sidebar reopen button -->
-    <button id="reopen-route-sidebar" class="reopen-route-btn hidden" title="Open Route Planner">
-        🗺️
-    </button>
+    <button id="reopen-route-sidebar" class="reopen-route-btn hidden" title="Rota Planlayıcısını Aç">Rota</button>
 
-    <div class="map-legend hidden" id="map-legend" role="region" aria-label="Map Legend">
-        <h4>Legend</h4>
+    <div class="map-legend hidden" id="map-legend" role="region" aria-label="Harita Açıklamaları">
+        <h4>Açıklamalar</h4>
         <ul>
-            <li><span class="legend-swatch legend-road"></span> Road</li>
-            <li><span class="legend-swatch legend-difficult"></span> Difficult Terrain</li>
-            <li><span class="legend-swatch legend-unpassable"></span> Unpassable Terrain</li>
-            <li><span class="legend-swatch legend-route"></span> Route Path</li>
+            <li><span class="legend-swatch legend-road"></span> Yol</li>
+            <li><span class="legend-swatch legend-difficult"></span> Zorlu Arazi</li>
+            <li><span class="legend-swatch legend-unpassable"></span> Geçilmez Arazi</li>
+            <li><span class="legend-swatch legend-route"></span> Rota</li>
         </ul>
-        <div class="legend-note">Scale: 115 px = 100 km</div>
+        <div class="legend-note">Ölçek: 115 px = 100 km</div>
     </div>
 
     <!-- Overlay segmented control will appear through existing container -->
 
     <div class="sidebar left-sidebar" id="route-sidebar">
         <button id="close-route-sidebar" class="sidebar-close-btn">&times;</button>
-        <h2>Route Planner</h2>
+    <h2>Rota Planlayıcı</h2>
         <div id="route-stops"></div>
         <div id="route-summary"></div>
     </div>
 
     <div class="sidebar right-sidebar" id="info-sidebar">
-        <button id="close-info-sidebar">&times;</button>
+        <button id="close-info-sidebar" aria-label="Kapat">&times;</button>
         <div id="info-content"></div>
     </div>
 
     <!-- DM Mode Marker Creation Form -->
     <div class="modal hidden" id="marker-creation-modal">
         <div class="modal-content">
-            <h3>Create New Marker</h3>
+            <h3>Yeni İşaret Oluştur</h3>
             <form id="marker-form">
                 <input type="hidden" id="marker-lat">
                 <input type="hidden" id="marker-lng">
                 <div class="form-group">
-                    <label for="marker-name">Name *</label>
+                    <label for="marker-name">Ad *</label>
                     <input type="text" id="marker-name" name="marker-name" required>
                 </div>
                 
                 <div class="form-group">
-                    <label for="marker-id">ID *</label>
+                    <label for="marker-id">Kimlik (ID) *</label>
                     <input type="text" id="marker-id" name="marker-id" required>
-                    <small>Auto-generated from name, but you can edit</small>
+                    <small>İsimden otomatik üretilir; düzenleyebilirsin</small>
                 </div>
                 
                 <div class="form-group">
-                    <label for="marker-type">Type</label>
+                    <label for="marker-type">Tür</label>
                     <select id="marker-type" name="marker-type">
-                        <option value="city">City</option>
-                        <option value="town">Town</option>
-                        <option value="village">Village</option>
-                        <option value="fortress">Fortress</option>
-                        <option value="ruin">Ruin</option>
-                        <option value="landmark">Landmark</option>
-                        <option value="dungeon">Dungeon</option>
-                        <option value="other">Other</option>
+                        <option value="city">Şehir</option>
+                        <option value="town">Kasaba</option>
+                        <option value="village">Köy</option>
+                        <option value="fortress">Hisar</option>
+                        <option value="ruin">Harabe</option>
+                        <option value="landmark">Anıt</option>
+                        <option value="dungeon">Zindan</option>
+                        <option value="other">Diğer</option>
                     </select>
                 </div>
                 
                 <div class="form-group">
-                    <label for="marker-icon">Custom Icon</label>
+                    <label for="marker-icon">Özel Simge</label>
                     <div class="icon-input-container">
-                        <input type="text" id="marker-icon" name="marker-icon" placeholder="🏰 or ⚔️ or leave empty for default" maxlength="10">
-                        <div class="icon-suggestions">
-                            <span class="icon-option" data-icon="🏰">🏰</span>
-                            <span class="icon-option" data-icon="🏘️">🏘️</span>
-                            <span class="icon-option" data-icon="🏛️">🏛️</span>
-                            <span class="icon-option" data-icon="⚔️">⚔️</span>
-                            <span class="icon-option" data-icon="🗡️">🗡️</span>
-                            <span class="icon-option" data-icon="🛡️">🛡️</span>
-                            <span class="icon-option" data-icon="🏴‍☠️">🏴‍☠️</span>
-                            <span class="icon-option" data-icon="⭐">⭐</span>
-                            <span class="icon-option" data-icon="💎">💎</span>
-                            <span class="icon-option" data-icon="🗻">🗻</span>
-                            <span class="icon-option" data-icon="🌋">🌋</span>
-                            <span class="icon-option" data-icon="🏔️">🏔️</span>
-                        </div>
+                        <input type="text" id="marker-icon" name="marker-icon" placeholder="Varsayılan için boş bırak" maxlength="10">
+                        <!-- Emoji önerileri kaldırıldı -->
                     </div>
-                    <small>Click an icon above or type your own emoji/symbol</small>
+                    <small>İstersen özel bir simge karakteri yazabilirsin</small>
                 </div>
                 
                 <div class="form-group">
-                    <label for="marker-icon-url">Or Custom Image URL</label>
+                    <label for="marker-icon-url">Veya Özel Görsel URL</label>
                     <input type="url" id="marker-icon-url" name="marker-icon-url" placeholder="https://example.com/icon.png">
-                    <small>Use an image URL for custom PNG/JPG icons (overrides emoji if both provided)</small>
+                    <small>PNG/JPG bir simge URL’si kullanabilirsin (yukarıdaki değerin yerine geçer)</small>
                 </div>
                 
                 <div class="form-group">
-                    <label for="marker-faction">Faction</label>
+                    <label for="marker-faction">Cemiyet/Devlet</label>
                     <input type="text" id="marker-faction" name="marker-faction" placeholder="e.g., Empire of Aurelius">
                 </div>
                 
                 <div class="form-group">
-                    <label for="marker-summary">Summary *</label>
+                    <label for="marker-summary">Özet *</label>
                     <textarea id="marker-summary" name="marker-summary" rows="3" required></textarea>
                 </div>
 
                 <div class="form-group">
-                    <label for="marker-wiki-slug">Wiki Slug Override</label>
+                    <label for="marker-wiki-slug">Wiki Kısa Ad (Slug)</label>
                     <input type="text" id="marker-wiki-slug" name="marker-wiki-slug" placeholder="Optional: e.g., empire-of-aurelius">
-                    <small>If provided, links directly to /wiki/&lt;slug&gt;/ . Otherwise auto-generated.</small>
+                    <small>Verilirse doğrudan /wiki/&lt;slug&gt;/ adresine bağlanır; aksi hâlde otomatik üretilir.</small>
                 </div>
                 
                 <div class="form-group">
-                    <label for="marker-coordinates">Coordinates</label>
+                    <label for="marker-coordinates">Koordinatlar</label>
                     <input type="text" id="marker-coordinates" readonly>
                 </div>
                 
                 <div class="form-group">
                     <label>
                         <input type="checkbox" id="marker-public" name="marker-public" checked>
-                        Public (visible to players)
+                        Herkese açık (oyuncular görebilir)
                     </label>
                 </div>
                 
                 <div class="form-actions">
-                    <button type="button" id="cancel-marker">Cancel</button>
-                    <button type="submit" id="save-marker">Create Marker</button>
+                    <button type="button" id="cancel-marker">Vazgeç</button>
+                    <button type="submit" id="save-marker">İşareti Oluştur</button>
                 </div>
             </form>
         </div>
@@ -149,23 +134,23 @@
     <!-- Bulk Import Modal for DM Mode -->
     <div class="modal hidden" id="bulk-import-modal">
         <div class="modal-content">
-            <h3>Bulk Import Markers</h3>
+            <h3>Toplu İşaret İçe Aktarma</h3>
             <div class="form-group">
-                <label for="csv-input">CSV Data</label>
+                <label for="csv-input">CSV Verisi</label>
                 <textarea id="csv-input" rows="10" placeholder="name,x,y,type,faction,summary,public
-Varkas,1234,987,city,Kuruntar,Ancient capital city,true
-Thornhold,2000,1500,fortress,Empire,Mountain fortress,true"></textarea>
-                <small>Format: name,x,y,type,faction,summary,public (header row optional)</small>
+Varkas,1234,987,city,Kuruntar,Eski başkent,true
+Thornhold,2000,1500,fortress,Empire,Dağ kalesi,true"></textarea>
+                <small>Biçim: name,x,y,type,faction,summary,public (başlık satırı isteğe bağlı)</small>
             </div>
             
             <div class="form-group">
-                <label for="csv-file">Or upload CSV file:</label>
+                <label for="csv-file">Ya da CSV dosyası yükle:</label>
                 <input type="file" id="csv-file" accept=".csv" />
             </div>
             
             <div class="form-actions">
-                <button type="button" id="cancel-import">Cancel</button>
-                <button type="button" id="process-import">Import Markers</button>
+                <button type="button" id="cancel-import">Vazgeç</button>
+                <button type="button" id="process-import">İşaretleri İçe Aktar</button>
             </div>
         </div>
     </div>
@@ -173,38 +158,30 @@ Thornhold,2000,1500,fortress,Empire,Mountain fortress,true"></textarea>
     <!-- Terrain Type Selection Modal -->
     <div class="modal hidden" id="terrain-type-modal">
         <div class="modal-content">
-            <h3>Select Terrain Type</h3>
+            <h3>Arazi Türü Seç</h3>
             <div class="terrain-options">
-                <button type="button" class="terrain-btn road-btn" data-type="road">
-                    🛤️ Road<br>
-                    <small>Faster travel</small>
-                </button>
-                <button type="button" class="terrain-btn difficult-btn" data-type="difficult">
-                    🏔️ Difficult<br>
-                    <small>Slower travel</small>
-                </button>
-                <button type="button" class="terrain-btn forest-btn" data-type="forest">
-                    🌲 Forest<br>
-                    <small>Moderate difficulty</small>
-                </button>
-                <button type="button" class="terrain-btn unpassable-btn" data-type="unpassable">
-                    🚫 Unpassable<br>
-                    <small>Impassable terrain</small>
-                </button>
+                <button type="button" class="terrain-btn road-btn" data-type="road">Yol<br>
+                    <small>Daha hızlı</small></button>
+                <button type="button" class="terrain-btn difficult-btn" data-type="difficult">Zorlu<br>
+                    <small>Daha yavaş</small></button>
+                <button type="button" class="terrain-btn forest-btn" data-type="forest">Orman<br>
+                    <small>Orta zorluk</small></button>
+                <button type="button" class="terrain-btn unpassable-btn" data-type="unpassable">Geçilmez<br>
+                    <small>İmkânsız</small></button>
             </div>
             <div class="form-actions">
-                <button type="button" id="cancel-terrain">Cancel</button>
+                <button type="button" id="cancel-terrain">Vazgeç</button>
             </div>
         </div>
     </div>
 
     <div class="leaflet-top leaflet-right">
         <div class="leaflet-control-layers leaflet-control" id="overlay-toggles">
-            <div class="overlay-segmented" role="group" aria-label="Overlay visibility">
-                <button type="button" data-mode="both" class="active" aria-pressed="true"><span>Both</span></button>
-                <button type="button" data-mode="regions" aria-pressed="false"><span>Regions</span></button>
-                <button type="button" data-mode="borders" aria-pressed="false"><span>Borders</span></button>
-                <button type="button" data-mode="none" aria-pressed="false"><span>None</span></button>
+            <div class="overlay-segmented" role="group" aria-label="Kaplama görünürlüğü">
+                <button type="button" data-mode="both" class="active" aria-pressed="true"><span>İkisi</span></button>
+                <button type="button" data-mode="regions" aria-pressed="false"><span>Bölgeler</span></button>
+                <button type="button" data-mode="borders" aria-pressed="false"><span>Sınırlar</span></button>
+                <button type="button" data-mode="none" aria-pressed="false"><span>Kapalı</span></button>
             </div>
         </div>
     </div>

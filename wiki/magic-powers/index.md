@@ -1,14 +1,14 @@
 ---
 layout: base.njk
-title: Magic & Powers
+title: Büyü ve Kudretler
 ---
 
-# Magic & Powers
+# Büyü ve Kudretler
 
-This section contains information about the magical systems, artifacts, and supernatural powers present in Nimea.
+Bu bölüm Nimea’daki büyü düzenlerini, eserleri ve olağanüstü hâlleri içerir.
 
 {% if collections.magic %}
-## Magical Systems & Artifacts
+## Büyü Düzenleri ve Eserler
 
 {% for item in collections.magic %}
 - [{{ item.data.name }}]({{ item.url }}) - {{ item.data.summary }}

@@ -1,13 +1,13 @@
 ---
 layout: base.njk
-title: Locations & Regions
+title: Mekânlar ve Bölgeler
 ---
 
-# Locations & Regions
+# Mekânlar ve Bölgeler
 
-This section contains information about the various locations, cities, dungeons, and geographical regions of Nimea.
+Bu bölüm Nimea’daki şehirleri, zindanları, anıtları ve coğrafyaları içerir.
 
-## Notable Locations
+## Öne Çıkan Mekânlar
 
 {% for location in collections.locations %}
 - [{{ location.data.name }}]({{ location.url }}) - {{ location.data.summary }}

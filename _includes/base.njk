@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,27 +12,27 @@
     <div class="container">
         <header>
             <nav>
-                <a href="{{ '/' | url }}">Home</a> |
-                <a href="{{ '/wiki/' | url }}">Wiki</a> |
-                <a href="{{ '/map/' | url }}">Map</a>
+                <a href="{{ '/' | url }}">Ana Sayfa</a> |
+                <a href="{{ '/wiki/' | url }}">Külliyat</a> |
+                <a href="{{ '/map/' | url }}">Harita</a>
             </nav>
         </header>
         <main>
             {% if cover_image %}
             <div class="cover-image">
-                <img src="{{ cover_image | url }}" alt="Cover image for {{ title or name }}" />
+                <img src="{{ cover_image | url }}" alt="{{ title or name }} için kapak görseli" />
             </div>
             {% endif %}
             
             {% if portrait_image %}
             <div class="portrait-image">
-                <img src="{{ portrait_image | url }}" alt="Portrait of {{ title or name }}" />
+                <img src="{{ portrait_image | url }}" alt="{{ title or name }} portresi" />
             </div>
             {% endif %}
             
             {% if map_id %}
             <div class="map-actions">
-                <a href="{{ '/map/?focus=' + map_id | url }}" class="show-on-map-btn">🗺️ Show on Map</a>
+                <a href="{{ '/map/?focus=' + map_id | url }}" class="show-on-map-btn">Haritada Göster</a>
             </div>
             {% endif %}
             
@@ -53,9 +53,9 @@
       }
     </script>
 
-    <!-- Image Modal -->
+    <!-- Görsel Önizleme Modalı -->
     <div class="image-modal-overlay" id="image-modal-overlay">
-        <img src="" alt="Enlarged view" class="image-modal-content" id="image-modal-content">
+        <img src="" alt="Büyütülmüş görüntü" class="image-modal-content" id="image-modal-content">
     </div>
 
     <script>

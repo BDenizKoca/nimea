@@ -1,14 +1,14 @@
 ---
 layout: base.njk
-title: Player Characters
+title: Maceracılar
 ---
 
-# Player Characters
+# Maceracılar
 
-This section contains information about the player characters in the campaign.
+Bu bölüm maceradaki oyuncu karakterlerini içerir.
 
 {% if collections.playerCharacters %}
-## Current Player Characters
+## Şimdiki Kadro
 
 {% for character in collections.playerCharacters %}
 - [{{ character.data.name }}]({{ character.url }}) - {{ character.data.summary }}

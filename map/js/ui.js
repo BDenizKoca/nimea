@@ -133,24 +133,24 @@
         const infoContent = document.getElementById('info-content');
         if (!infoSidebar || !infoContent) return;
 
-        const wikiLink = bridge.generateWikiLink(data);
-        const addRouteBtn = bridge.state.isDmMode ? '' : `<button class="add-to-route" data-id="${data.id}">Add to Route</button>`;
+    const wikiLink = bridge.generateWikiLink(data);
+    const addRouteBtn = bridge.state.isDmMode ? '' : `<button class="add-to-route" data-id="${data.id}">Rotaya Ekle</button>`;
         
         // Add edit button for DM mode
         const dmButtons = bridge.state.isDmMode ? `
             <div class="dm-actions">
-                <button class="edit-marker-btn" data-id="${data.id}">✏️ Edit Marker</button>
-                <button class="delete-marker-btn" data-id="${data.id}">🗑️ Delete</button>
+                <button class="edit-marker-btn" data-id="${data.id}">Düzenle</button>
+                <button class="delete-marker-btn" data-id="${data.id}">Sil</button>
             </div>
         ` : '';
         
         const content = `
             <h2>${data.name}</h2>
             <p>${data.summary}</p>
-            ${data.type ? `<p><strong>Type:</strong> ${data.type}</p>` : ''}
-            ${data.faction ? `<p><strong>Faction:</strong> ${data.faction}</p>` : ''}
+            ${data.type ? `<p><strong>Tür:</strong> ${data.type}</p>` : ''}
+            ${data.faction ? `<p><strong>Cemiyet/Devlet:</strong> ${data.faction}</p>` : ''}
             ${data.images && data.images.length > 0 ? data.images.map(img => `<img src="../${img}" alt="${data.name}" style="width:100%;">`).join('') : ''}
-            ${wikiLink ? `<a href="${wikiLink}" class="wiki-link" target="_blank">📚 View in Wiki</a>` : ''}
+            ${wikiLink ? `<a href="${wikiLink}" class="wiki-link" target="_blank">Külliyatta Gör</a>` : ''}
             ${addRouteBtn}
             ${dmButtons}
         `;
@@ -187,7 +187,7 @@
             if (deleteBtn) {
                 deleteBtn.addEventListener('click', (e) => {
                     const markerId = e.target.dataset.id;
-                    if (confirm(`Are you sure you want to delete the marker "${data.name}"? This cannot be undone.`)) {
+                    if (confirm(`"${data.name}" işaretini silmek istediğine emin misin? Bu işlem geri alınamaz.`)) {
                         if (bridge.dmModule && bridge.dmModule.deleteMarker) {
                             bridge.dmModule.deleteMarker(markerId);
                             // Close the info sidebar after deletion

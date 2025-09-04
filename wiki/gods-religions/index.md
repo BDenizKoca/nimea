@@ -1,14 +1,14 @@
 ---
 layout: base.njk
-title: Gods & Religions
+title: Tanrılar ve İnançlar
 ---
 
-# Gods & Religions
+# Tanrılar ve İnançlar
 
-This section contains information about the deities, religions, and belief systems of Nimea.
+Bu bölüm Nimea’daki inanç topluluklarını ve öğretileri içerir.
 
 {% if collections.gods %}
-## Deities & Belief Systems
+## İnanç Toplulukları ve Öğretiler
 
 {% for item in collections.gods %}
 - [{{ item.data.name }}]({{ item.url }}) - {{ item.data.summary }}

@@ -1,13 +1,13 @@
 ---
 layout: base.njk
-title: Home
+title: Ana Sayfa
 ---
 
-# Welcome to the World of Nimea
+# Nimea Evreni Külliyatına hoş geldiniz
 
-This is your portal to the lands, legends, and characters of the Nimea campaign.
+Bu site Nimea dünyasına açılan kapıdır. Ülkeler, kişiler, yerler ve kayıtlı olaylar burada tutulur.
 
-Choose your path:
+Seçenekler:
 
-*   [Explore the Interactive Map](map/)
-*   [Delve into the Wiki](wiki/)
+* [Etkileşimli Harita](map/)
+* [Külliyat (Wiki)](wiki/)
