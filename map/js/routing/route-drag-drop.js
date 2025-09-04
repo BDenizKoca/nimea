@@ -71,7 +71,7 @@
             return list.length;
         }
 
-        function onPointerDown(e) {
+    function onPointerDown(e) {
             if (!isActive) return;
             // Only block non-primary for mouse; allow touch/pen which may not set button=0
             if (e.pointerType === 'mouse' && e.button !== 0) return;
@@ -132,9 +132,10 @@
             dragging = true;
             e.preventDefault();
 
-            window.addEventListener('pointermove', onPointerMove, { passive: false });
-            window.addEventListener('pointerup', onPointerUp, { passive: true });
-            window.addEventListener('pointercancel', onPointerCancel, { passive: true });
+            // Listen on the dragged element; with pointer capture it will receive the events
+            draggedEl.addEventListener('pointermove', onPointerMove, { passive: false });
+            draggedEl.addEventListener('pointerup', onPointerUp, { passive: true });
+            draggedEl.addEventListener('pointercancel', onPointerCancel, { passive: true });
         }
 
         function onPointerMove(e) {
@@ -155,9 +156,11 @@
             dragging = false;
             try { draggedEl.releasePointerCapture(pointerId); } catch(_) {}
             try { document.body.style.userSelect = ''; } catch(_) {}
-            window.removeEventListener('pointermove', onPointerMove);
-            window.removeEventListener('pointerup', onPointerUp);
-            window.removeEventListener('pointercancel', onPointerCancel);
+            if (draggedEl) {
+                try { draggedEl.removeEventListener('pointermove', onPointerMove); } catch(_) {}
+                try { draggedEl.removeEventListener('pointerup', onPointerUp); } catch(_) {}
+                try { draggedEl.removeEventListener('pointercancel', onPointerCancel); } catch(_) {}
+            }
 
             // Determine new index from placeholder position
             const finalIndex = cancelled ? startIndex : indexFromPlaceholder();
@@ -199,6 +202,10 @@
         function onPointerUp(e) { if (e.pointerId === pointerId) endDrag(false); }
         function onPointerCancel(e) { if (e.pointerId === pointerId) endDrag(true); }
 
+        // Ensure the drag handle doesn't trigger native scrolling on touch
+        try {
+            container.querySelectorAll('.drag-handle').forEach(h => { h.style.touchAction = 'none'; });
+        } catch(_) {}
         container.addEventListener('pointerdown', onPointerDown, true);
 
         function cleanup() {
