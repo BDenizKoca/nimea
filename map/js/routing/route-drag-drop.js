@@ -26,7 +26,7 @@
         const existing = containerStates.get(container);
         if (existing && existing.cleanup) existing.cleanup();
 
-        // State
+    // State
         let isActive = true;
         let dragging = false;
         let draggedEl = null;
@@ -36,6 +36,8 @@
         let startY = 0;
         let offsetY = 0; // pointer to element top
         let containerRect = null;
+    let prevContainerTouchAction = '';
+    let prevContainerPosition = '';
 
         // Helpers
         const rows = () => Array.from(container.querySelectorAll('.route-stop-row'));
@@ -71,10 +73,14 @@
 
         function onPointerDown(e) {
             if (!isActive) return;
-            if (e.button !== 0) return; // primary
+            // Only block non-primary for mouse; allow touch/pen which may not set button=0
+            if (e.pointerType === 'mouse' && e.button !== 0) return;
             const handle = e.target.closest('.drag-handle');
             const row = e.target.closest('.route-stop-row');
             if (!handle || !row || e.target.closest('.mini-btn')) return;
+
+            // Prevent multiple drags
+            if (dragging) return;
 
             // Start drag
             draggedEl = row;
@@ -109,6 +115,16 @@
             // Disable transitions to avoid stutter
             row.style.transition = 'none';
             rows().forEach(r => r.style.transition = 'none');
+
+            // Prepare container for drag (better mobile behavior)
+            try {
+                prevContainerTouchAction = container.style.touchAction;
+                prevContainerPosition = container.style.position;
+                container.style.touchAction = 'none';
+                if (getComputedStyle(container).position === 'static') {
+                    container.style.position = 'relative';
+                }
+            } catch(_) {}
 
             // Capture pointer and prevent text selection/scrolling
             try { row.setPointerCapture(pointerId); } catch(_) {}
@@ -168,6 +184,12 @@
             placeholder = null;
             startIndex = null;
             pointerId = null;
+
+            // Restore container styles
+            try {
+                container.style.touchAction = prevContainerTouchAction || '';
+                container.style.position = prevContainerPosition || '';
+            } catch(_) {}
 
             if (!cancelled && from !== to && to >= 0) {
                 reorderCallback(from, to);
