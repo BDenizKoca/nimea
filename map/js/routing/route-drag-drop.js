@@ -24,216 +24,167 @@
     function setupDragAndDrop(container, reorderCallback) {
         // If already initialized, remove previous listeners to avoid duplicates
         const existing = containerStates.get(container);
-        if (existing && existing.cleanup) {
-            existing.cleanup();
+        if (existing && existing.cleanup) existing.cleanup();
+
+        // State
+        let isActive = true;
+        let dragging = false;
+        let draggedEl = null;
+        let placeholder = null;
+        let startIndex = null;
+        let pointerId = null;
+        let startY = 0;
+        let offsetY = 0; // pointer to element top
+        let containerRect = null;
+
+        // Helpers
+        const rows = () => Array.from(container.querySelectorAll('.route-stop-row'));
+
+        function indexFromPlaceholder() {
+            const all = rows().filter(r => r !== draggedEl);
+            return all.indexOf(placeholder);
         }
 
-    // Ensure rows aren't draggable by default; we'll enable only when using the handle
-    Array.from(container.querySelectorAll('.route-stop-row')).forEach(r => r.setAttribute('draggable', 'false'));
+        function placePlaceholderAtIndex(idx) {
+            const all = rows().filter(r => r !== draggedEl);
+            const actions = container.querySelector('.route-actions');
+            if (idx <= 0) {
+                container.insertBefore(placeholder, all[0] || actions || null);
+            } else if (idx >= all.length) {
+                if (actions) container.insertBefore(placeholder, actions);
+                else container.appendChild(placeholder);
+            } else {
+                container.insertBefore(placeholder, all[idx]);
+            }
+        }
 
-    // Store drag state
-        let draggedElement = null;
-        let draggedIndex = null;
-        let touchDragging = false;
-        let touchStartY = 0;
-        let touchCurrentRow = null;
-        let isActive = true; // guard to ignore events after cleanup
-    let allowDrag = false; // only allow when handle initiated
-        // Gate drag start to only when pressing on the handle (desktop)
-        function handleMouseDown(e) {
+        function computeInsertionIndex(y) {
+            const list = rows().filter(r => r !== draggedEl);
+            if (!list.length) return 0;
+            for (let i = 0; i < list.length; i++) {
+                const rect = list[i].getBoundingClientRect();
+                const mid = rect.top + rect.height / 2;
+                if (y < mid) return i;
+            }
+            return list.length;
+        }
+
+        function onPointerDown(e) {
             if (!isActive) return;
+            if (e.button !== 0) return; // primary
             const handle = e.target.closest('.drag-handle');
             const row = e.target.closest('.route-stop-row');
-            // Enable draggable ONLY when pressed on handle for the corresponding row
-            if (handle && row) {
-                allowDrag = true;
-                // Disable draggability for all rows, then enable just this one
-                Array.from(container.querySelectorAll('.route-stop-row')).forEach(r => r.setAttribute('draggable', 'false'));
-                row.setAttribute('draggable', 'true');
-            } else {
-                allowDrag = false;
-                Array.from(container.querySelectorAll('.route-stop-row')).forEach(r => r.setAttribute('draggable', 'false'));
-            }
-        }
+            if (!handle || !row || e.target.closest('.mini-btn')) return;
 
-        function handleMouseUpOrLeave() {
-            allowDrag = false;
-            // Disable draggability after interaction ends
-            Array.from(container.querySelectorAll('.route-stop-row')).forEach(r => r.setAttribute('draggable', 'false'));
-        }
+            // Start drag
+            draggedEl = row;
+            startIndex = rows().indexOf(row);
+            pointerId = e.pointerId;
+            containerRect = container.getBoundingClientRect();
+            const rect = row.getBoundingClientRect();
+            startY = e.clientY;
+            offsetY = startY - rect.top;
 
-        // Mark as initialized to prevent duplicate setup (debug flag)
-        container._dragInitialized = true;
-        
-        // Drag start handler
-        function handleDragStart(e) {
-            if (!isActive) return;
-            // Don't start drag when clicking remove button
-            if (e.target.closest('.mini-btn')) return;
-            // Enforce gating: only allow if handle initiated made the row draggable
-            if (!allowDrag) {
-                // Safety: disable draggability to avoid ghost drags
-                try { e.preventDefault(); } catch (_) {}
-                return;
-            }
-            // Only handle draggable route rows
-            if (!e.target.matches('.route-stop-row[draggable="true"]') && 
-                !e.target.closest('.route-stop-row[draggable="true"]')) {
-                return;
-            }
-            
-            const draggableRow = e.target.closest('.route-stop-row[draggable="true"]');
-            if (!draggableRow) return;
-            
-            draggedElement = draggableRow;
-            draggedIndex = parseInt(draggableRow.dataset.routeIndex, 10);
-            draggableRow.classList.add('dragging');
-            // Let drag-over events hit rows underneath so upward moves work reliably
-            try { draggableRow.style.pointerEvents = 'none'; } catch (_) {}
-            
-            if (e.dataTransfer) {
-                e.dataTransfer.effectAllowed = 'move';
-                // Some browsers require setData for DnD to initiate
-                try { e.dataTransfer.setData('text/plain', draggedIndex.toString()); } catch (_) {}
-            }
-            
-            console.log(`🟢 Drag started: index ${draggedIndex}, element:`, draggableRow);
-        }
+            // Create placeholder occupying original space
+            placeholder = document.createElement('div');
+            placeholder.className = 'route-stop-row drag-placeholder';
+            placeholder.style.height = rect.height + 'px';
+            placeholder.style.margin = window.getComputedStyle(row).margin;
+            placeholder.style.border = '2px dashed #357abd';
+            placeholder.style.borderRadius = '4px';
+            placeholder.style.background = 'rgba(53,122,189,0.06)';
 
-        // Drag end handler
-        function handleDragEnd(e) {
-            if (!isActive) return;
-            if (draggedElement) {
-                draggedElement.classList.remove('dragging');
-                try { draggedElement.style.pointerEvents = ''; } catch (_) {}
-            }
-            
-            // Clean up drop indicators
-            try { container.querySelectorAll('.drop-indicator').forEach(indicator => indicator.remove()); } catch (_) {}
-            
-            console.log('🔴 Drag ended');
-            draggedElement = null;
-            draggedIndex = null;
-            handleMouseUpOrLeave();
-        }
+            row.parentNode.insertBefore(placeholder, row.nextSibling);
 
-        // Drag over handler
-        function handleDragOver(e) {
-            if (!isActive || !draggedElement) return;
+            // Elevate dragged element
+            row.classList.add('dragging');
+            row.style.position = 'absolute';
+            row.style.width = rect.width + 'px';
+            row.style.left = (rect.left - containerRect.left + container.scrollLeft) + 'px';
+            row.style.top = (rect.top - containerRect.top + container.scrollTop) + 'px';
+            row.style.zIndex = '1000';
+            row.style.pointerEvents = 'none';
+            row.style.boxShadow = '0 8px 16px rgba(0,0,0,0.25)';
+            row.style.transform = 'rotate(0.5deg)';
+            // Disable transitions to avoid stutter
+            row.style.transition = 'none';
+            rows().forEach(r => r.style.transition = 'none');
+
+            // Capture pointer and prevent text selection/scrolling
+            try { row.setPointerCapture(pointerId); } catch(_) {}
+            try { document.body.style.userSelect = 'none'; } catch(_) {}
+            dragging = true;
             e.preventDefault();
-            if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
 
-            // Compute insertion index based on pointer Y relative to row midpoints
-            const rowList = Array.from(container.querySelectorAll('.route-stop-row'));
-            if (!rowList.length) return;
+            window.addEventListener('pointermove', onPointerMove, { passive: false });
+            window.addEventListener('pointerup', onPointerUp, { passive: true });
+            window.addEventListener('pointercancel', onPointerCancel, { passive: true });
+        }
 
-            // Remove existing indicators
-            container.querySelectorAll('.drop-indicator').forEach(indicator => indicator.remove());
+        function onPointerMove(e) {
+            if (!dragging || e.pointerId !== pointerId) return;
+            e.preventDefault();
 
             const y = e.clientY;
-            let insertionIndex = rowList.length; // default to end
-            for (let i = 0; i < rowList.length; i++) {
-                const r = rowList[i];
-                if (r === draggedElement) continue; // skip dragged row
-                const rect = r.getBoundingClientRect();
-                const midpoint = rect.top + rect.height / 2;
-                if (y < midpoint) { insertionIndex = i; break; }
-            }
+            const top = (y - offsetY) - containerRect.top + container.scrollTop;
+            draggedEl.style.top = top + 'px';
 
-            // Visual indicator
-            const indicator = document.createElement('div');
-            indicator.className = 'drop-indicator';
-            indicator.style.cssText = 'height: 2px; background: #357abd; margin: 2px 0; pointer-events: none;';
+            // Placement
+            const insertion = computeInsertionIndex(y);
+            placePlaceholderAtIndex(insertion);
+        }
 
-            if (insertionIndex >= rowList.length) {
-                // Insert at end, before any actions block if present
-                const actions = container.querySelector('.route-actions');
-                if (actions) container.insertBefore(indicator, actions);
-                else container.appendChild(indicator);
-            } else {
-                container.insertBefore(indicator, rowList[insertionIndex]);
+        function endDrag(cancelled) {
+            if (!dragging) return;
+            dragging = false;
+            try { draggedEl.releasePointerCapture(pointerId); } catch(_) {}
+            try { document.body.style.userSelect = ''; } catch(_) {}
+            window.removeEventListener('pointermove', onPointerMove);
+            window.removeEventListener('pointerup', onPointerUp);
+            window.removeEventListener('pointercancel', onPointerCancel);
+
+            // Determine new index from placeholder position
+            const finalIndex = cancelled ? startIndex : indexFromPlaceholder();
+
+            // Reset dragged element styles
+            draggedEl.classList.remove('dragging');
+            draggedEl.style.position = '';
+            draggedEl.style.width = '';
+            draggedEl.style.left = '';
+            draggedEl.style.top = '';
+            draggedEl.style.zIndex = '';
+            draggedEl.style.pointerEvents = '';
+            draggedEl.style.boxShadow = '';
+            draggedEl.style.transform = '';
+            draggedEl.style.transition = '';
+            rows().forEach(r => r.style.transition = '');
+
+            // Remove placeholder
+            if (placeholder && placeholder.parentNode) placeholder.parentNode.removeChild(placeholder);
+
+            const from = startIndex;
+            const to = finalIndex;
+            draggedEl = null;
+            placeholder = null;
+            startIndex = null;
+            pointerId = null;
+
+            if (!cancelled && from !== to && to >= 0) {
+                reorderCallback(from, to);
             }
         }
 
-        // Drag enter handler
-        function handleDragEnter(e) {
-            if (!isActive || !draggedElement) return;
-            e.preventDefault();
-        }
+        function onPointerUp(e) { if (e.pointerId === pointerId) endDrag(false); }
+        function onPointerCancel(e) { if (e.pointerId === pointerId) endDrag(true); }
 
-        // Drop handler
-        function handleDrop(e) {
-            if (!isActive) return;
-            e.preventDefault();
+        container.addEventListener('pointerdown', onPointerDown, true);
 
-            if (!draggedElement || draggedIndex === null) {
-                console.warn('⚠️ Drop event but no dragged element');
-                return;
-            }
-
-            const rowList = Array.from(container.querySelectorAll('.route-stop-row'));
-            if (!rowList.length) return;
-
-            // Compute insertion index as in dragover
-            const y = e.clientY;
-            let insertionIndex = rowList.length; // default to end
-            for (let i = 0; i < rowList.length; i++) {
-                const r = rowList[i];
-                if (r === draggedElement) continue;
-                const rect = r.getBoundingClientRect();
-                const midpoint = rect.top + rect.height / 2;
-                if (y < midpoint) { insertionIndex = i; break; }
-            }
-
-            // Adjust for removal of dragged item
-            let newIndex = insertionIndex;
-            const original = draggedIndex;
-            if (original < newIndex) newIndex -= 1;
-
-            console.log(`🟡 Drop: from ${original} to ${newIndex}`);
-
-            if (original !== newIndex && newIndex >= 0) {
-                reorderCallback(original, newIndex);
-            }
-
-            // Clean up drop indicators
-            container.querySelectorAll('.drop-indicator').forEach(indicator => indicator.remove());
-        }
-
-    // Add event listeners with capture to ensure they fire
-    container.addEventListener('mousedown', handleMouseDown, true);
-    container.addEventListener('mouseup', handleMouseUpOrLeave, true);
-    container.addEventListener('mouseleave', handleMouseUpOrLeave, true);
-        container.addEventListener('dragstart', handleDragStart, true);
-        container.addEventListener('dragend', handleDragEnd, true);
-        container.addEventListener('dragover', handleDragOver, true);
-        container.addEventListener('dragenter', handleDragEnter, true);
-        container.addEventListener('drop', handleDrop, true);
-        
-        console.log('🔧 Drag and drop initialized for', container.querySelectorAll('.route-stop-row[draggable="true"]').length, 'items');
-
-        // --- Mobile touch fallback (long press + move) ---
-        // Activate only if no native drag events (basic heuristic: touch events present)
-        if ('ontouchstart' in window) {
-            ensureMobileDnDStyles();
-            setupMobileTouchDragDrop(container, reorderCallback);
-        }
-
-        // Register cleanup so next initialization can remove old listeners
         function cleanup() {
             try {
                 isActive = false;
-                allowDrag = false;
-                container.removeEventListener('mousedown', handleMouseDown, true);
-                container.removeEventListener('mouseup', handleMouseUpOrLeave, true);
-                container.removeEventListener('mouseleave', handleMouseUpOrLeave, true);
-                container.removeEventListener('dragstart', handleDragStart, true);
-                container.removeEventListener('dragend', handleDragEnd, true);
-                container.removeEventListener('dragover', handleDragOver, true);
-                container.removeEventListener('dragenter', handleDragEnter, true);
-                container.removeEventListener('drop', handleDrop, true);
-                container.querySelectorAll('.drop-indicator').forEach(indicator => indicator.remove());
-            } catch (_) {}
+                endDrag(true);
+                container.removeEventListener('pointerdown', onPointerDown, true);
+            } catch(_) {}
         }
         containerStates.set(container, { cleanup });
     }
@@ -241,123 +192,7 @@
     /**
      * Setup mobile touch drag and drop functionality
      */
-    function setupMobileTouchDragDrop(container, reorderCallback) {
-        let dragOriginIndex = null;
-        let targetIndex = null;
-        let targetHighlightRow = null;
-        let touchDragging = false;
-        let touchStartY = 0;
-        let touchCurrentRow = null;
-
-        const rows = () => Array.from(container.querySelectorAll('.route-stop-row'));
-
-        function clearHighlight() {
-            if (targetHighlightRow) {
-                targetHighlightRow.classList.remove('touch-drop-before');
-                targetHighlightRow.classList.remove('touch-drop-after');
-                targetHighlightRow = null;
-            }
-        }
-
-        // Use event delegation instead of attaching to individual rows
-        container.addEventListener('touchstart', (e) => {
-            if (e.touches.length !== 1) return;
-            const row = e.target.closest('.route-stop-row');
-            if (!row) return;
-            // Require touching the drag-handle for stability and to avoid scroll conflicts
-            if (!e.target.closest('.drag-handle')) return;
-            
-            touchStartY = e.touches[0].clientY;
-            touchCurrentRow = row;
-            dragOriginIndex = parseInt(row.dataset.routeIndex, 10);
-            row.classList.add('touch-press');
-            row._longPressTimer = setTimeout(() => {
-                touchDragging = true;
-                row.classList.add('dragging');
-                // Fix height to avoid layout shift
-                row.style.height = row.getBoundingClientRect().height + 'px';
-            }, 180); // faster long press for responsiveness
-        }, { passive: true });
-
-        container.addEventListener('touchmove', (e) => {
-            if (!touchCurrentRow) return;
-            const y = e.touches[0].clientY;
-            if (!touchDragging) {
-                if (Math.abs(y - touchStartY) > 12) { // tolerance
-                    clearTimeout(touchCurrentRow._longPressTimer);
-                    touchCurrentRow.classList.remove('touch-press');
-                    touchCurrentRow = null;
-                }
-                return;
-            }
-            e.preventDefault();
-            // Identify potential target index by comparing to row midpoints
-            const rowList = rows();
-            let provisionalIndex = dragOriginIndex;
-            for (let i = 0; i < rowList.length; i++) {
-                const r = rowList[i];
-                if (r === touchCurrentRow) continue; // skip dragged
-                const rect = r.getBoundingClientRect();
-                const midpoint = rect.top + rect.height / 2;
-                if (y < midpoint) { // would insert before r
-                    provisionalIndex = parseInt(r.dataset.routeIndex, 10);
-                    clearHighlight();
-                    r.classList.add('touch-drop-before');
-                    targetHighlightRow = r;
-                    break;
-                }
-                // if we reach end, place after last
-                if (i === rowList.length - 1) {
-                    provisionalIndex = parseInt(r.dataset.routeIndex, 10) + 1;
-                    clearHighlight();
-                    r.classList.add('touch-drop-after');
-                    targetHighlightRow = r;
-                }
-            }
-            targetIndex = provisionalIndex;
-        }, { passive: false });
-
-        function finalizeTouchDrag(cancelled) {
-            if (touchCurrentRow) {
-                clearTimeout(touchCurrentRow._longPressTimer);
-                touchCurrentRow.classList.remove('touch-press');
-                touchCurrentRow.classList.remove('dragging');
-                touchCurrentRow.style.height = '';
-            }
-            clearHighlight();
-            if (!cancelled && touchDragging && targetIndex !== null && dragOriginIndex !== null) {
-                let finalTarget = targetIndex;
-                // Adjust if moving downward past original position
-                if (finalTarget > dragOriginIndex) finalTarget -= 1;
-                if (finalTarget !== dragOriginIndex && finalTarget >= 0) {
-                    reorderCallback(dragOriginIndex, finalTarget);
-                }
-            }
-            touchDragging = false;
-            touchCurrentRow = null;
-            dragOriginIndex = null;
-            targetIndex = null;
-        }
-
-    container.addEventListener('touchend', () => finalizeTouchDrag(false));
-    container.addEventListener('touchcancel', () => finalizeTouchDrag(true));
-    }
-
-    /**
-     * Inject minimal styles for mobile drag indicators once
-     */
-    function ensureMobileDnDStyles() {
-        if (document.getElementById('route-mobile-dnd-styles')) return;
-        const style = document.createElement('style');
-        style.id = 'route-mobile-dnd-styles';
-        style.textContent = `
-            .route-stop-row.touch-press { opacity: 0.85; }
-            .route-stop-row.dragging { background: #1e3a8a10; }
-            .route-stop-row.touch-drop-before { box-shadow: inset 0 3px 0 #1e40af; }
-            .route-stop-row.touch-drop-after { box-shadow: inset 0 -3px 0 #1e40af; }
-        `;
-        document.head.appendChild(style);
-    }
+    // Pointer-based DnD handles both desktop and mobile; no separate touch styles needed
 
     // Expose public functions
     window.__nimea_route_drag_drop = {
