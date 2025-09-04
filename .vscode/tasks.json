@@ -10,6 +10,21 @@
 				"$eslint-stylish"
 			],
 			"group": "build"
+		},
+		{
+			"label": "Build Eleventy site",
+			"type": "shell",
+			"command": "npx eleventy",
+			"problemMatcher": [
+				"$eslint-stylish"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build Eleventy site",
+			"type": "shell",
+			"command": "npx eleventy",
+			"group": "build"
 		}
 	]
 }

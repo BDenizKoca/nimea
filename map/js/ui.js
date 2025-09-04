@@ -134,7 +134,7 @@
         if (!infoSidebar || !infoContent) return;
 
     const wikiLink = bridge.generateWikiLink(data);
-    const addRouteBtn = bridge.state.isDmMode ? '' : `<button class="add-to-route" data-id="${data.id}">Rotaya Ekle</button>`;
+    const addRouteBtn = bridge.state.isDmMode ? '' : `<button class="wiki-link add-to-route" data-id="${data.id}">Rotaya Ekle</button>`;
         
         // Add edit button for DM mode
         const dmButtons = bridge.state.isDmMode ? `

@@ -118,8 +118,8 @@
                             <span class="stop-info">${idx+1}. ${stop.name}</span>
                             <button class="mini-btn" data-ridx="${idx}" title="Remove stop">✖</button>
                         </div>`;
-            }).join('') + (bridge.state.route.length ? `<div class="route-actions">
-                            <button id="clear-route-btn" class="clear-route-btn">Clear Route</button>
+        }).join('') + (bridge.state.route.length ? `<div class="route-actions">
+                <button id="clear-route-btn" class="wiki-link clear-route-btn">Rotayı Temizle</button>
                     </div>` : '');
         
             // Event delegation handles all button clicks automatically
