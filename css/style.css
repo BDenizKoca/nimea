@@ -1,8 +1,8 @@
-@import url('https://fonts.googleapis.com/css2?family=MedievalSharp&family=IM+Fell+English+SC&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;700&family=EB+Garamond:wght@400;500;700&display=swap&subset=latin-ext');
 
 body {
-    font-family: 'IM Fell English SC', serif;
-    background-color: #f4f0e6; /* Darker parchment color */
+    font-family: 'EB Garamond', Georgia, serif;
+    background-color: #eae0cf; /* Slightly darker parchment */
     color: #3a2410;
     margin: 0;
     padding: 2rem;
@@ -12,7 +12,7 @@ body {
 }
 
 h1, h2, h3, h4, h5, h6 {
-    font-family: 'MedievalSharp', cursive;
+    font-family: 'Cormorant Garamond', Georgia, serif;
     font-weight: normal;
     border-bottom: 1px solid #d3c0a5;
     padding-bottom: 0.5rem;
@@ -30,7 +30,7 @@ a:hover {
 .container {
     max-width: 800px;
     margin: 0 auto;
-    background: rgba(244, 240, 230, 0.9); /* Darker parchment with opacity */
+    background: rgba(234, 224, 207, 0.92); /* Match darker parchment with slight opacity */
     padding: 2rem;
     border: 1px solid #d3c0a5;
     box-shadow: 0 0 15px rgba(0,0,0,0.2);
