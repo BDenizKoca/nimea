@@ -22,7 +22,19 @@
   function fetchIndex(){
     if(STATE.loaded || STATE.pendingFetch) return;
     STATE.pendingFetch = true;
-    fetch('/search-index.json').then(r=>r.json()).then(data=>{ STATE.index=data; STATE.loaded=true; STATE.pendingFetch=false; }).catch(()=>{STATE.pendingFetch=false;});
+    fetch('/search-index.json')
+      .then(r=>r.json())
+      .then(data=>{
+        STATE.index = data;
+        STATE.loaded = true;
+        STATE.pendingFetch = false;
+        // Re-run current query if user has already typed
+        if(STATE.input){
+          const q = (STATE.input.value||'').trim();
+          if(q.length>=2){ render(search(q)); }
+        }
+      })
+      .catch(()=>{STATE.pendingFetch=false;});
   }
   function scoreRecord(rec, qTokens){
     let score=0;
@@ -44,7 +56,12 @@
     for(const rec of STATE.index){
       const pageLang = document.documentElement.lang || 'tr';
       if(rec.lang!=='neutral' && rec.lang!==pageLang) continue;
-      const s = scoreRecord(rec, qTokens);
+      let s = scoreRecord(rec, qTokens);
+      // Strong bonus for exact title match; slight extra for markers
+      if(rec.title && rec.title.toLowerCase() === q){
+        s += 10;
+        if(rec.type === 'marker') s += 2;
+      }
       if(s>0) scored.push({rec, score:s});
     }
     scored.sort((a,b)=> b.score - a.score || a.rec.title.localeCompare(b.rec.title));
@@ -89,5 +106,9 @@
     if(STATE.input) STATE.input.value='';
     if(STATE.resultsEl){ STATE.resultsEl.innerHTML=''; STATE.resultsEl.classList.remove('visible'); }
   }
-  document.addEventListener('DOMContentLoaded', ()=>{ createUI(); });
+  document.addEventListener('DOMContentLoaded', ()=>{ 
+    createUI();
+    // Light prefetch shortly after mount to reduce perceived latency
+    setTimeout(fetchIndex, 300);
+  });
 })();

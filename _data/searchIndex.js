@@ -87,7 +87,7 @@ function buildMarkerRecords(rootDir) {
   return json.markers.filter(m => m.public !== false).map(m => {
     const title = m.name || m.id;
     const summary = m.summary || '';
-    const tokens = tokenize(title + ' ' + summary + ' ' + (m.faction||'') + ' ' + (m.type||''));
+    const tokens = tokenize(title + ' ' + m.id + ' ' + summary + ' ' + (m.faction||'') + ' ' + (m.type||''));
     return {
       id: `marker:${m.id}`,
       type: 'marker',
