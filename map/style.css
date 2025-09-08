@@ -378,6 +378,12 @@ button.wiki-link {
     font-family: inherit;
 }
 
+/* Equal-size action buttons in info sidebar */
+.info-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: stretch; justify-content: center; margin: 12px 0; }
+.info-actions .wiki-link, .info-actions .add-to-route { width: 100%; text-align: center; padding: 10px 16px; }
+.info-actions .add-to-route { background: #2c5e2e; }
+.info-actions .add-to-route:hover { background: #3a7a3d; }
+
 /* DM Action buttons */
 .dm-actions {
     margin-top: 20px;
