@@ -47,8 +47,8 @@
         const eased = Math.pow(t, 1.15); // tweak exponent for feel
         
         // Choose generous bounds so icons are big when zoomed in, smaller when zoomed out
-    const minSize = 20; // at far zoom-out
-    const maxSize = 110; // at max zoom-in
+        const minSize = 22; // slightly larger at far zoom-out
+        const maxSize = 140; // bigger at max zoom-in
         const size = minSize + eased * (maxSize - minSize);
         
         return Math.round(size);
@@ -70,7 +70,7 @@ function updateAllMarkerSizes() {
                 
                 // CRITICAL FIX: For emoji/text icons, the font-size within the HTML must be updated.
                 if (marker.markerData.customIcon) {
-                    icon.options.html = `<div class="custom-marker-icon" style="font-size: ${newSize * 0.7}px">${marker.markerData.customIcon}</div>`;
+                    icon.options.html = `<div class=\"custom-marker-icon\" style=\"font-size: ${Math.round(newSize * 0.78)}px\">${marker.markerData.customIcon}</div>`;
                 }
 
                 // Re-apply the icon to the marker to force a re-render with the new options
@@ -88,7 +88,7 @@ function updateAllMarkerSizes() {
             iconHtml = `<img src="${markerData.iconUrl}" class="custom-marker-image" style="display:block; width:100%; height:100%; object-fit:contain;">`;
             iconClass += ' custom-image-marker';
         } else if (markerData.customIcon) {
-            iconHtml = `<div class="custom-marker-icon" style="font-size:${Math.round(initialSize * 0.7)}px; width:100%; height:100%; display:flex; align-items:center; justify-content:center;">${markerData.customIcon}</div>`;
+            iconHtml = `<div class=\"custom-marker-icon\" style=\"font-size:${Math.round(initialSize * 0.78)}px; width:100%; height:100%; display:flex; align-items:center; justify-content:center;\">${markerData.customIcon}</div>`;
         } else {
             return null; // Use Leaflet's default icon
         }

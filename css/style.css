@@ -240,6 +240,7 @@ main img:not(.cover-image img):not(.portrait-image img) {
 .nav-left { display:flex; gap:14px; align-items:center; }
 .nav-left a { text-decoration:none; padding:4px 6px; border-radius:4px; }
 .nav-left a:hover { background: rgba(184, 134, 11, 0.12); }
+.nav-left a.active { font-weight: 700; background: rgba(184, 134, 11, 0.18); }
 
 .lang-switch {
     font-size: 0.9rem;
