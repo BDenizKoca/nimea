@@ -115,6 +115,13 @@
 				"$eslint-stylish"
 			],
 			"group": "build"
+		},
+		{
+			"label": "Build Eleventy after recent entries changes",
+			"type": "shell",
+			"command": "npm run build",
+			"args": [],
+			"group": "build"
 		}
 	]
 }
