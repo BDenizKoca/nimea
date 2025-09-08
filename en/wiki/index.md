@@ -9,6 +9,23 @@ permalink: /en/wiki/
 
 This wiki contains records of people, places, nations, beliefs and events in the world of Nimea. You can navigate to any section from the links below.
 
+## Recent Entries
+
+{% assign enAll = collections.charactersEn | concat: collections.playerCharactersEn | concat: collections.locationsEn | concat: collections.nationsEn | concat: collections.godsEn | concat: collections.magicEn %}
+{% assign trAll = collections.characters | concat: collections.playerCharacters | concat: collections.locations | concat: collections.nations | concat: collections.gods | concat: collections.magic %}
+{% assign recentEn = enAll | sort: 'date' | reverse | slice: 0, 5 %}
+{% if recentEn.size == 0 %}
+	{% assign recentEn = trAll | sort: 'date' | reverse | slice: 0, 5 %}
+{% endif %}
+
+{% for entry in recentEn %}
+* [{{ entry.data.name }}]({{ entry.url }}) - {{ entry.data.summary }}
+{% endfor %}
+
+{% if recentEn.size == 0 %}
+*No entries yet.*
+{% endif %}
+
 ## Categories
 
 ### People & Characters

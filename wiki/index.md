@@ -9,7 +9,7 @@ Bu külliyat Nimea dünyasına dair kişi, yer, devlet, inanç ve olay kayıtlar
 
 ## Son Kayıtlar
 
-{% assign allEntries = collections.characters | concat: collections.player_characters | concat: collections.locations_regions | concat: collections.nations_factions | concat: collections.gods_religions | concat: collections.magic_powers %}
+{% assign allEntries = collections.characters | concat: collections.playerCharacters | concat: collections.locations | concat: collections.nations | concat: collections.gods | concat: collections.magic %}
 {% assign recentEntries = allEntries | sort: 'date' | reverse | slice: 0, 5 %}
 
 {% for entry in recentEntries %}
