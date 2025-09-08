@@ -12,6 +12,7 @@ Live Site: https://nimea-wiki.netlify.app/
 - Visual CMS (Decap) for editing content through the browser
 - Full-screen Leaflet map with pan/zoom, overlays, and info-rich markers
 - Route planning (player mode) with distance and travel-time estimates
+- Shareable route links (copy a URL that reconstructs the same markers & waypoints)
 - DM Mode (`?dm`) for batch edits to markers and terrain, with export/publish controls
 - Terrain-aware A* pathfinding that respects road/difficult/unpassable costs
 - Automatic wiki integration: markers can link to relevant wiki pages (optional custom slug)
@@ -44,6 +45,29 @@ Wiki editing (hosted):
 Map usage:
 - Player mode (default): plan routes, inspect markers, view overlays.
 - DM mode: open `/map/?dm`, sign in, then draw markers or paint terrain. Use “İndir” to download data or “Yayınla” to commit changes to the repo (Netlify Identity + Git Gateway).
+
+### Route Sharing
+
+After building a route (at least 2 stops) a button appears in the route summary:
+
+- TR: `Rota Bağlantısını Kopyala`
+- EN: `Copy Route Link`
+
+Clicking it copies a URL like:
+```
+https://example.com/map/?r=v1|m:aurelium;m:camkale;w:1834,992;m:thornhold
+```
+
+Format (versioned for future changes):
+`v1|` then a `;`-separated list of items.
+
+Items:
+- `m:<markerId>` – a map marker by its id
+- `w:<x>,<y>` – an ad‑hoc waypoint (internal pixel coords rounded)
+
+Unknown / removed markers are skipped with a small toast warning. Waypoints are recreated in place. If markers have the same IDs across languages the same link works on `/map/` and `/en/map/`.
+
+No compression yet (links stay readable); can migrate to a `v2` format later if needed.
 
 ---
 
