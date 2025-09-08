@@ -47,13 +47,13 @@
             {% endif %}
             
             {% if name %}
-            <div class="entry-actions">
+            <div class="entry-actions btn-row">
                 {% if map_id %}
-                <a href="{% if lang == 'en' %}{{ '/en/map/?focus=' + map_id | url }}{% else %}{{ '/map/?focus=' + map_id | url }}{% endif %}" class="show-on-map-btn">
+                <a href="{% if lang == 'en' %}{{ '/en/map/?focus=' + map_id | url }}{% else %}{{ '/map/?focus=' + map_id | url }}{% endif %}" class="btn btn--accent show-on-map-btn">
                     {% if lang == 'en' %}Show on Map{% else %}Haritada Göster{% endif %}
                 </a>
                 {% endif %}
-                <button type="button" class="share-btn" data-title="{{ name }}" data-summary="{{ summary }}">
+                <button type="button" class="btn btn--accent share-btn" data-title="{{ name }}" data-summary="{{ summary }}">
                     {% if lang == 'en' %}Share{% else %}Paylaş{% endif %}
                 </button>
             </div>

@@ -141,7 +141,7 @@
         const faction = (loc && loc.faction) || data.faction;
 
         const wikiLink = bridge.generateWikiLink(data);
-    const addRouteBtn = bridge.state.isDmMode ? '' : `<button class="wiki-link add-to-route" data-id="${data.id}">${window.nimeaI18n ? window.nimeaI18n.t('addToRoute') : 'Rotaya Ekle'}</button>`;
+    const addRouteBtn = bridge.state.isDmMode ? '' : `<button class="btn btn--accent add-to-route" data-id="${data.id}">${window.nimeaI18n ? window.nimeaI18n.t('addToRoute') : 'Rotaya Ekle'}</button>`;
         
         // Add edit button for DM mode
         const dmButtons = bridge.state.isDmMode ? `
@@ -157,7 +157,7 @@
             ${data.type ? `<p><strong>Tür:</strong> ${data.type}</p>` : ''}
             ${faction ? `<p><strong>Cemiyet/Devlet:</strong> ${faction}</p>` : ''}
             ${data.images && data.images.length > 0 ? data.images.map(img => `<img src="../${img}" alt="${data.name}" style="width:100%;">`).join('') : ''}
-            ${wikiLink ? `<a href="${wikiLink}" class="wiki-link" target="_blank">${window.nimeaI18n ? window.nimeaI18n.t('showOnWiki') : 'Külliyatta Gör'}</a>` : ''}
+            ${wikiLink ? `<a href="${wikiLink}" class="btn btn--accent" target="_blank">${window.nimeaI18n ? window.nimeaI18n.t('showOnWiki') : 'Külliyatta Gör'}</a>` : ''}
             ${addRouteBtn}
             ${dmButtons}
         `;
