@@ -7,6 +7,15 @@
       .normalize('NFKD')
       .replace(/[\u0300-\u036f]/g,'');
   }
+  function uniq(arr){ return Array.from(new Set(arr)); }
+  function tokenize(str){
+    return uniq(
+      norm(str)
+        .replace(/[^a-z0-9ğüşöçı\s]/gi,' ')
+        .split(/\s+/)
+        .filter(t=>t.length>1 && t.length<40)
+    );
+  }
   function createUI(){
     if (STATE.container) return;
     const mount = document.querySelector('.search-mount') || document.querySelector('header nav');
@@ -34,6 +43,8 @@
         STATE.index = data;
         STATE.loaded = true;
         STATE.pendingFetch = false;
+        // Merge in latest markers at runtime (fresh from deployed JSON)
+        fetchAndMergeMarkers();
         // Re-run current query if user has already typed
         if(STATE.input){
           const q = (STATE.input.value||'').trim();
@@ -41,6 +52,45 @@
         }
       })
       .catch(()=>{STATE.pendingFetch=false;});
+  }
+
+  async function fetchAndMergeMarkers(){
+    try {
+      const sources = ['/map/data/markers.json','/data/markers.json'];
+      const results = await Promise.allSettled(sources.map(u=>fetch(u)));
+      const jsons = await Promise.all(results.map(async (res)=>{
+        if(res.status==='fulfilled' && res.value.ok){
+          try { return await res.value.json(); } catch { return null; }
+        }
+        return null;
+      }));
+      const merged = new Map();
+      for(const obj of jsons){
+        if(obj && Array.isArray(obj.markers)){
+          for(const m of obj.markers){ if(!merged.has(m.id)) merged.set(m.id, m); }
+        }
+      }
+      if(merged.size===0) return;
+      const markerRecords = Array.from(merged.values()).filter(m=>m && m.public!==false).map(m=>({
+        id: `marker:${m.id}`,
+        type: 'marker',
+        category: m.type || 'marker',
+        lang: 'neutral',
+        title: m.name || m.id,
+        summary: m.summary || '',
+        url: `/map/?focus=${encodeURIComponent(m.id)}`,
+        tokens: tokenize(`${m.name||m.id} ${m.id} ${m.summary||''} ${m.faction||''} ${m.type||''}`)
+      }));
+      if(!Array.isArray(STATE.index)) STATE.index = [];
+      const byId = new Map(STATE.index.map(r=>[r.id, r]));
+      for(const rec of markerRecords){ byId.set(rec.id, rec); }
+      STATE.index = Array.from(byId.values());
+      // Update results if a query is present
+      if(STATE.input){
+        const q = (STATE.input.value||'').trim();
+        if(q.length>=2){ render(search(q)); }
+      }
+    } catch {}
   }
   function scoreRecord(rec, qTokens){
     let score=0;
@@ -118,5 +168,7 @@
     createUI();
     // Light prefetch shortly after mount to reduce perceived latency
     setTimeout(fetchIndex, 300);
+    // Also prefetch markers so they are up-to-date even if index was built earlier
+    setTimeout(fetchAndMergeMarkers, 500);
   });
 })();

@@ -10,25 +10,28 @@
 </head>
 <body>
     <div class="container">
-        <header>
-            <nav>
-                {% if lang == 'en' %}
-                <a href="{{ '/en/' | url }}">Home</a> |
-                <a href="{{ '/en/wiki/' | url }}">Wiki</a> |
-                <a href="{{ '/en/map/' | url }}">Map</a>
-                <div class="lang-switch">
-                    <a href="{{ page.url | replace('/en', '') }}">TR</a>
+        <header class="site-header">
+            <div class="header-bar">
+                <div class="nav-left">
+                    {% if lang == 'en' %}
+                    <a href="{{ '/en/' | url }}">Home</a>
+                    <a href="{{ '/en/wiki/' | url }}">Wiki</a>
+                    <a href="{{ '/en/map/' | url }}">Map</a>
+                    {% else %}
+                    <a href="{{ '/' | url }}">Ana Sayfa</a>
+                    <a href="{{ '/wiki/' | url }}">Külliyat</a>
+                    <a href="{{ '/map/' | url }}">Harita</a>
+                    {% endif %}
                 </div>
-                {% else %}
-                <a href="{{ '/' | url }}">Ana Sayfa</a> |
-                <a href="{{ '/wiki/' | url }}">Külliyat</a> |
-                <a href="{{ '/map/' | url }}">Harita</a>
+                <div class="search-mount"></div>
                 <div class="lang-switch">
-                    <a href="{{ '/en' + page.url }}">EN</a>
+                    {% if lang == 'en' %}
+                      <a href="{{ page.url | replace('/en', '') }}">TR</a>
+                    {% else %}
+                      <a href="{{ '/en' + page.url }}">EN</a>
+                    {% endif %}
                 </div>
-                {% endif %}
-            </nav>
-            <div class="search-mount"></div>
+            </div>
         </header>
         <main>
             {% if cover_image %}
