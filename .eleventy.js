@@ -3,6 +3,7 @@ module.exports = function(eleventyConfig) {
   eleventyConfig.addPassthroughCopy("admin");
   eleventyConfig.addPassthroughCopy("overlays");
   eleventyConfig.addPassthroughCopy("images");
+  eleventyConfig.addPassthroughCopy("js");
   eleventyConfig.addPassthroughCopy("data");
   eleventyConfig.addPassthroughCopy("map");
   eleventyConfig.addPassthroughCopy("en/map");

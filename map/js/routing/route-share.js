@@ -1,6 +1,8 @@
 // map/js/routing/route-share.js - Minimal lean route sharing (TR/EN agnostic)
 (function(window){
   'use strict';
+  // Expose a global marker object so other contexts can detect that route-share is present
+  window.__nimea_route_share = true;
 
   let bridge = null;
 
