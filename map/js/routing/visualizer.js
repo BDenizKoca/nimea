@@ -7,6 +7,13 @@
     let bridge = {};
     let pathNaturalizer = null;
 
+    // Simple i18n helpers for TR/EN
+    function isEnglishPage() {
+        const lang = (document.documentElement.lang || '').toLowerCase();
+        return lang.startsWith('en') || location.pathname.startsWith('/en');
+    }
+    function t(tr, en) { return isEnglishPage() ? en : tr; }
+
     /**
      * Initialize the visualizer with dependencies
      */
@@ -411,7 +418,7 @@
             return; 
         }
         
-        const totalKm = bridge.state.routeLegs.reduce((a, l) => a + l.distanceKm, 0);
+    const totalKm = bridge.state.routeLegs.reduce((a, l) => a + l.distanceKm, 0);
         const hasUnreachable = bridge.state.routeLegs.some(l => l.unreachable);
         
         // Analyze Rota Bileşimi
@@ -465,30 +472,30 @@
         }
         
         const legsHtml = bridge.state.routeLegs.map((l, i) => {
-            let legInfo = `Ayak ${i + 1}: ${l.from.name} → ${l.to.name}: ${l.distanceKm.toFixed(2)} km`;
-            
+            let legInfo = `${t('Ayak', 'Leg')} ${i + 1}: ${l.from.name} → ${l.to.name}: ${l.distanceKm.toFixed(2)} km`;
+
             if (l.unreachable) {
-                legInfo += ' <span class="route-status blocked">BLOCKED!</span>';
+                legInfo += ` <span class="route-status blocked">${t('ENGELLENDİ!', 'BLOCKED!')}</span>`;
                 if (l.error) {
-                    legInfo += `<br><small class="route-error">Hata: ${l.error}</small>`;
+                    legInfo += `<br><small class="route-error">${t('Hata', 'Error')}: ${l.error}</small>`;
                 }
             } else if (l.hybrid) {
-                legInfo += ' <span class="route-status hybrid">hybrid route</span>';
+                legInfo += ` <span class="route-status hybrid">${t('hibrit rota', 'hybrid route')}</span>`;
             } else if (l.fallback) {
-                legInfo += ' <span class="route-status terrain">direct terrain</span>';
+                legInfo += ` <span class="route-status terrain">${t('doğrudan arazi', 'direct terrain')}</span>`;
             }
-            
+
             return `<li>${legInfo}</li>`;
         }).join('');
         
         // Generate warnings and info
         let alertsHtml = '';
         if (hasUnreachable) {
-            alertsHtml += '<div class="route-alert warning">⚠️ Bazı hedefler arazi engelleri nedeniyle ulaşılamaz!</div>';
+            alertsHtml += `<div class="route-alert warning">⚠️ ${t('Bazı hedefler arazi engelleri nedeniyle ulaşılamaz!', 'Some destinations are unreachable due to terrain obstacles!')}</div>`;
         } else if (terrainKm > roadKm) {
-            alertsHtml += '<div class="route-alert info">ℹ️ Rota ağırlıklı olarak arazi dışı yolları kullanır (daha yavaş seyahat)</div>';
+            alertsHtml += `<div class="route-alert info">ℹ️ ${t('Rota ağırlıklı olarak arazi dışı yolları kullanır (daha yavaş seyahat)', 'The route is mostly off-road (slower travel)')}</div>`;
         } else if (terrainKm > 0) {
-            alertsHtml += '<div class="route-alert info">ℹ️ Rota bazı arazi dışı bölümler içerir</div>';
+            alertsHtml += `<div class="route-alert info">ℹ️ ${t('Rota bazı arazi dışı bölümler içerir', 'The route includes some off-road sections')}</div>`;
         }
         
         // Rota Bileşimi breakdown with proper percentage calculation
@@ -514,36 +521,34 @@
         
         const compositionHtml = `
             <div class="route-composition">
-                <h4>Rota Bileşimi</h4>
+                <h4>${t('Rota Bileşimi', 'Route Composition')}</h4>
                 <div class="composition-item road">
                     <span class="composition-color" style="background-color: #2563eb;"></span>
-                    Yollar: ${roadKm.toFixed(1)} km (${roadPercent}%)
+                    ${t('Yollar', 'Roads')}: ${roadKm.toFixed(1)} km (${roadPercent}%)
                 </div>
                 <div class="composition-item terrain">
                     <span class="composition-color" style="background-color: #dc2626;"></span>
-                    Arazi: ${terrainKm.toFixed(1)} km (${terrainPercent}%)
+                    ${t('Arazi', 'Terrain')}: ${terrainKm.toFixed(1)} km (${terrainPercent}%)
                 </div>
                 ${bridgeKm > 0 ? `
                 <div class="composition-item bridge">
                     <span class="composition-color" style="background-color: #7c3aed;"></span>
-                    Köprüler: ${bridgeKm.toFixed(1)} km (${bridgePercent}%)
+                    ${t('Köprüler', 'Bridges')}: ${bridgeKm.toFixed(1)} km (${bridgePercent}%)
                 </div>` : ''}
             </div>
         `;
         
     // Prepare profile for advanced section
-    const isEnglish = location.pathname.startsWith('/en');
-    const t = (tr, en) => (isEnglish ? en : tr);
     const profileKey = bridge.state.travelProfile || 'walk';
     const profile = bridge.config.profiles[profileKey] || bridge.config.profiles.walk;
     const kmPerDay = profile.speed; // speed is km/day in our config
     const daily = computeDailyBreakdown(bridge.state.routeLegs, kmPerDay);
 
         summaryDiv.innerHTML = `
-            <h3>Hibrit Rota Özeti</h3>
+            <h3>${t('Hibrit Rota Özeti', 'Hybrid Route Summary')}</h3>
             ${alertsHtml}
             <div class="route-totals">
-                <p><strong>Toplam Mesafe:</strong> ${totalKm.toFixed(2)} km</p>
+                <p><strong>${t('Toplam Mesafe', 'Total Distance')}:</strong> ${totalKm.toFixed(2)} km</p>
                 ${compositionHtml}
             </div>
             <details id="advanced-travel" class="advanced-travel">
@@ -554,30 +559,29 @@
                         ${Object.keys(bridge.config.profiles).map(k => `<option value="${k}" ${k===profileKey?'selected':''}>${capitalize(k)}</option>`).join('')}
                     </select>
                     <span class="profile-meta">${kmPerDay} ${t('km/gün', 'km/day')}</span>
-                    <div class="profile-note">${t('Açınca günlük işaretler haritada görünür.', 'Open to show daily markers on the map.')}</div>
                 </div>
             </details>
             <div class="route-legs">
-                <h4>Rota Ayakları</h4>
+                <h4>${t('Rota Ayakları', 'Route Legs')}</h4>
                 <ul>${legsHtml}</ul>
             </div>
             <div class="travel-times">
-                <h4>Tahmini Seyahat Süreleri</h4>
+                <h4>${t('Tahmini Seyahat Süreleri', 'Estimated Travel Times')}</h4>
                 <div class="travel-time-item">
-                    <strong>Yürüyüş:</strong> ${(totalKm / bridge.config.profiles.walk.speed).toFixed(1)} gün
+                    <strong>${t('Yürüyüş', 'Walk')}:</strong> ${(totalKm / bridge.config.profiles.walk.speed).toFixed(1)} ${t('gün', 'days')}
                 </div>
                 <div class="travel-time-item">
-                    <strong>Vagon:</strong> ${(totalKm / bridge.config.profiles.wagon.speed).toFixed(1)} gün
-                    ${terrainKm > 0 ? '<small>(arazi dışı bölümler için +%25)</small>' : ''}
+                    <strong>${t('Vagon', 'Wagon')}:</strong> ${(totalKm / bridge.config.profiles.wagon.speed).toFixed(1)} ${t('gün', 'days')}
+                    ${terrainKm > 0 ? `<small>${t('(arazi dışı bölümler için +%25)', '(+25% for off-road sections)')}</small>` : ''}
                 </div>
                 <div class="travel-time-item">
-                    <strong>At:</strong> ${(totalKm / bridge.config.profiles.horse.speed).toFixed(1)} gün
-                    ${terrainKm > 0 ? '<small>(arazi dışı bölümler için +%15)</small>' : ''}
+                    <strong>${t('At', 'Horse')}:</strong> ${(totalKm / bridge.config.profiles.horse.speed).toFixed(1)} ${t('gün', 'days')}
+                    ${terrainKm > 0 ? `<small>${t('(arazi dışı bölümler için +%15)', '(+15% for off-road sections)')}</small>` : ''}
                 </div>
             </div>
             
             <div class="route-share">
-                <button id="copy-route-link" class="wiki-link">Rota Bağlantısını Kopyala</button>
+                <button id="copy-route-link" class="wiki-link">${t('Rota Bağlantısını Kopyala', 'Copy Route Link')}</button>
             </div>
         `;
 
@@ -608,17 +612,41 @@
                 }
             };
             adv.addEventListener('toggle', updateAdv);
+            // Prevent collapsing when interacting within the details content
+            adv.addEventListener('click', (ev) => {
+                // If the click is not on the summary itself, avoid toggling
+                const path = ev.composedPath ? ev.composedPath() : [];
+                const clickedSummary = path.find && path.find(el => el && el.tagName === 'SUMMARY');
+                if (!clickedSummary) {
+                    ev.stopPropagation();
+                }
+            });
             // Initialize state
             updateAdv();
         }
 
-        // Wire profile change
+        // Wire profile change (keep Advanced open and update markers/meta in place)
         const sel = document.getElementById('travel-profile-select');
         if (sel) {
-            sel.addEventListener('change', (e) => {
-                bridge.state.travelProfile = e.target.value;
-                // Re-render summary (will recalc daily and markers if advanced open)
-                updateRouteSummaryFromLegs();
+            const applyProfile = (value) => {
+                bridge.state.travelProfile = value;
+                // Update meta text (km/day)
+                const meta = document.querySelector('.profile-meta');
+                const prof = bridge.config.profiles[value] || bridge.config.profiles.walk;
+                if (meta && prof) meta.textContent = `${prof.speed} ${t('km/gün', 'km/day')}`;
+                // Recompute and re-render markers only if Advanced is open
+                const advEl = document.getElementById('advanced-travel');
+                if (advEl && advEl.open) {
+                    const d = computeDailyBreakdown(bridge.state.routeLegs, prof.speed);
+                    renderDayMarkers(d, t);
+                } else {
+                    clearDayMarkers();
+                }
+            };
+            sel.addEventListener('change', (e) => applyProfile(e.target.value));
+            // Prevent the select interactions from toggling/collapsing the details
+            ['click', 'mousedown', 'touchstart'].forEach(evt => {
+                sel.addEventListener(evt, (e) => e.stopPropagation());
             });
         }
     }
@@ -629,7 +657,7 @@
     function updateRouteSummaryCalculating() {
         const summaryDiv = document.getElementById('route-summary');
         if (!summaryDiv) return;
-        summaryDiv.innerHTML = '<p>Rota hesaplanıyor...</p>';
+        summaryDiv.innerHTML = `<p>${t('Rota hesaplanıyor...', 'Calculating route...')}</p>`;
     }
 
     /**
@@ -639,11 +667,11 @@
         const summaryDiv = document.getElementById('route-summary');
         if (!summaryDiv) return;
         if (!bridge.state.route.length) { 
-            summaryDiv.innerHTML = '<p>Henüz rota tanımlanmadı. Bir işaretçi ekleyin.</p>'; 
+            summaryDiv.innerHTML = `<p>${t('Henüz rota tanımlanmadı. Bir işaretçi ekleyin.', 'No route yet. Add a marker.')}</p>`; 
             return; 
         }
         if (bridge.state.route.length === 1) { 
-            summaryDiv.innerHTML = '<p>Rota hesaplamak için ikinci bir durak ekleyin.</p>'; 
+            summaryDiv.innerHTML = `<p>${t('Rota hesaplamak için ikinci bir durak ekleyin.', 'Add a second stop to calculate a route.')}</p>`; 
             return; 
         }
     }
