@@ -550,7 +550,15 @@
                     ${terrainKm > 0 ? '<small>(+15% for off-road sections)</small>' : ''}
                 </div>
             </div>
+                <div class="route-share">
+                    <button id="copy-route-link" class="wiki-link">Copy Route Link</button>
+                </div>
         `;
+
+            const copyBtn = document.getElementById('copy-route-link');
+            if(copyBtn && window.__nimea_route_share){
+                copyBtn.addEventListener('click', () => window.__nimea_route_share.copyShareLink());
+            }
         
         // Add styling if not already present
         ensureRoutingStyles();

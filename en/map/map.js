@@ -186,6 +186,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Initialize modules
             if (window.__nimea_routing_init) window.__nimea_routing_init(window.__nimea);
+            if (window.__nimea_route_share) {
+                window.__nimea_route_share.initRouteShare(window.__nimea);
+            }
             if (window.__nimea_dm_init) window.__nimea_dm_init(window.__nimea);
             if (window.__nimea_ui_init) window.__nimea_ui_init(window.__nimea);
             if (window.__nimea_direct_touch_init) window.__nimea_direct_touch_init(window.__nimea);
