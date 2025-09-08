@@ -13,7 +13,7 @@ Live Site: https://nimea-wiki.netlify.app/
 - Full-screen Leaflet map with pan/zoom, overlays, and info-rich markers
 - Route planning (player mode) with distance and travel-time estimates
 - Shareable route links (copy a URL that reconstructs the same markers & waypoints)
-- DM Mode (`?dm`) for batch edits to markers and terrain, with export/publish controls
+ - Route editing & data maintenance tools (internal-only)
 - Terrain-aware A* pathfinding that respects road/difficult/unpassable costs
 - Automatic wiki integration: markers can link to relevant wiki pages (optional custom slug)
 
@@ -39,12 +39,9 @@ Local setup:
 
 ## Usage
 
-Wiki editing (hosted):
-- Visit `/admin/` on the deployed site and log in to edit content via CMS.
-
-Map usage:
-- Player mode (default): plan routes, inspect markers, view overlays.
-- DM mode: open `/map/?dm`, sign in, then draw markers or paint terrain. Use “İndir” to download data or “Yayınla” to commit changes to the repo (Netlify Identity + Git Gateway).
+Public map usage:
+- Plan routes, inspect markers, view overlays.
+- Use the share button in a built route's summary to copy a link that reconstructs the same path.
 
 ### Route Sharing
 
