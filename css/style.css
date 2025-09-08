@@ -266,7 +266,7 @@ nav {
 .global-search { margin: .5rem 0 0; position: relative; max-width: 540px; }
 .global-search input { width:100%; padding:6px 8px; font-size:14px; border:1px solid #b89b6b; border-radius:4px; background: #f6efe2; }
 .global-search input:focus { outline:2px solid #c8aa76; }
-.search-results { position:absolute; top:100%; left:0; right:0; background:#fffbeedd; border:1px solid #c9b28c; box-shadow:0 4px 12px rgba(0,0,0,.12); max-height:360px; overflow:auto; z-index:200; display:none; backdrop-filter: blur(2px); }
+.search-results { position:absolute; top:100%; left:0; right:0; background:#fffbeedd; border:1px solid #c9b28c; box-shadow:0 4px 12px rgba(0,0,0,.12); max-height:360px; overflow:auto; z-index:200; display:none; -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px); }
 .search-results.visible { display:block; }
 .search-results .sr-item { padding:6px 8px; cursor:pointer; border-bottom:1px solid #e5d7c0; }
 .search-results .sr-item:last-child { border-bottom:none; }
