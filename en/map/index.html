@@ -8,6 +8,10 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.css" />
     <link rel="stylesheet" href="style.css">
+    <meta name="theme-color" content="#8b4513">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="icon" href="/images/regions.png">
+    <link rel="apple-touch-icon" href="/images/regions.png">
 </head>
 <body>
     <header class="map-header">
@@ -234,6 +238,13 @@ Thornhold,2000,1500,fortress,Empire,Mountain fortress,true"></textarea>
     <script src="/map/js/markers.js"></script>
     <script src="/map/js/terrain.js"></script>
     <script src="map.js"></script>
+        <script>
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('/service-worker.js').catch(console.error);
+                });
+            }
+        </script>
 </body>
 </html>
 

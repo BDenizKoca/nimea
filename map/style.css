@@ -7,6 +7,11 @@ body, html {
     font-family: 'EB Garamond', Georgia, serif;
 }
 
+/* Respect safe areas on iOS */
+@supports(padding:max(0px)){
+    body { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+}
+
 /* Ensure Netlify Identity modal is always above Leaflet map & custom modals */
 /* The identity widget injects elements with classes .netlify-identity-modal & .netlify-identity-overlay */
 /* We boost their stacking without touching other app layers */
@@ -921,6 +926,14 @@ button.wiki-link {
     .nav-link { font-size: 12px; margin-right: 10px; }
     #route-summary h3 { font-size: 1em; }
     #route-summary p { font-size: 0.85em; }
+}
+
+/* Hide overlay toggles when a sidebar is open on narrow screens to reduce clutter */
+@media (max-width: 700px) {
+    .left-sidebar.open ~ .leaflet-top.leaflet-right #overlay-toggles,
+    .right-sidebar.open ~ .leaflet-top.leaflet-right #overlay-toggles {
+        display: none !important;
+    }
 }
 
 @media (max-width: 480px) {

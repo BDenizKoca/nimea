@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nimea • Çevrimdışı</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <style>
+    body { display:flex; align-items:center; justify-content:center; min-height:100vh; background:#fdf6e3; }
+    .card { max-width:560px; background:#fff; border:1px solid #d3c0a5; padding:20px; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,.1); }
+    h1 { margin-top:0; }
+  </style>
+  <meta name="theme-color" content="#8b4513" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="icon" href="/images/regions.png" />
+  <link rel="apple-touch-icon" href="/images/regions.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Nimea" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="application-name" content="Nimea" />
+  <meta name="msapplication-TileColor" content="#8b4513" />
+  <meta name="msapplication-tap-highlight" content="no" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="handheldfriendly" content="true" />
+  <meta name="mobileoptimized" content="width" />
+  <meta name="theme-color" content="#8b4513" />
+  <style>
+    @supports(padding:max(0px)){
+      body { padding: max(env(safe-area-inset-top), 16px) max(env(safe-area-inset-right), 16px) max(env(safe-area-inset-bottom), 16px) max(env(safe-area-inset-left), 16px); }
+    }
+  </style>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js');
+    }
+  </script>
+  </head>
+  <body>
+    <div class="card">
+      <h1>Çevrimdışısınız</h1>
+      <p>İnternet bağlantınız yok. Nimea'nın önbelleğe alınmış sayfaları ve harita varlıkları çevrimdışı iken sınırlı şekilde kullanılabilir.</p>
+      <p>Bağlantı geri geldiğinde tekrar deneyin.</p>
+      <p><a class="wiki-link" href="/">Ana Sayfa</a></p>
+    </div>
+  </body>
+  </html>

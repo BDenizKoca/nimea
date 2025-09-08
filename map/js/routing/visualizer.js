@@ -531,12 +531,25 @@
             </div>
         `;
         
+        // Daily breakdown controls and list
+        const profileKey = bridge.state.travelProfile || 'walk';
+        const profile = bridge.config.profiles[profileKey] || bridge.config.profiles.walk;
+        const kmPerDay = profile.speed; // speed is km/day in our config
+        const daily = computeDailyBreakdown(bridge.state.routeLegs, kmPerDay);
+
         summaryDiv.innerHTML = `
             <h3>Hibrit Rota Özeti</h3>
             ${alertsHtml}
             <div class="route-totals">
                 <p><strong>Toplam Mesafe:</strong> ${totalKm.toFixed(2)} km</p>
                 ${compositionHtml}
+            </div>
+            <div class="travel-profile">
+                <label for="travel-profile-select"><strong>Profil:</strong></label>
+                <select id="travel-profile-select">
+                    ${Object.keys(bridge.config.profiles).map(k => `<option value="${k}" ${k===profileKey?'selected':''}>${capitalize(k)}</option>`).join('')}
+                </select>
+                <span class="profile-meta">${kmPerDay} km/gün</span>
             </div>
             <div class="route-legs">
                 <h4>Rota Ayakları</h4>
@@ -556,6 +569,12 @@
                     ${terrainKm > 0 ? '<small>(arazi dışı bölümler için +%15)</small>' : ''}
                 </div>
             </div>
+            <div class="day-breakdown">
+                <h4>Günlük Plan</h4>
+                <ol>
+                    ${daily.days.map(d => `<li>Gün ${d.day}: ${d.distance.toFixed(1)} km ${d.to ? `(${d.from.name} → ${d.to.name})` : ''}</li>`).join('')}
+                </ol>
+            </div>
             <div class="route-share">
                 <button id="copy-route-link" class="wiki-link">Rota Bağlantısını Kopyala</button>
             </div>
@@ -569,6 +588,19 @@
         
         // Add styling if not already present
         ensureRoutingStyles();
+
+        // Render day markers on map
+        try { renderDayMarkers(daily); } catch (e) { console.warn('Failed to render day markers:', e); }
+
+        // Wire profile change
+        const sel = document.getElementById('travel-profile-select');
+        if (sel) {
+            sel.addEventListener('change', (e) => {
+                bridge.state.travelProfile = e.target.value;
+                // Re-render summary only; legs already computed
+                updateRouteSummaryFromLegs();
+            });
+        }
     }
 
     /**
@@ -617,10 +649,103 @@
                 .route-totals, .route-legs, .travel-times { margin: 12px 0; }
                 .travel-time-item { margin: 4px 0; }
                 .travel-time-item small { color: #666; display: block; margin-left: 20px; }
+                .travel-profile { display:flex; align-items:center; gap:10px; margin:10px 0; }
+                #travel-profile-select { padding:4px 8px; border:1px solid #d3c0a5; border-radius:4px; background:#fff; }
+                .day-breakdown ol { margin: 8px 0 0 18px; }
             `;
             document.head.appendChild(style);
         }
     }
+
+    // Compute daily distances and waypoints along the unified route legs
+    function computeDailyBreakdown(routeLegs, kmPerDay) {
+        const days = [];
+        let remaining = kmPerDay;
+        let day = 1;
+        let cursor = 0; // km progressed along full route
+        const totalKm = routeLegs.reduce((a,l)=>a + (l.distanceKm||0), 0);
+        const dayMarkers = [];
+
+        for (let i = 0; i < routeLegs.length; i++) {
+            const leg = routeLegs[i];
+            let legKmLeft = leg.distanceKm || 0;
+            while (legKmLeft > 0) {
+                if (remaining >= legKmLeft) {
+                    // Finish this leg within the current day
+                    cursor += legKmLeft;
+                    const consumed = legKmLeft;
+                    days.push({ day, distance: consumed, from: leg.from, to: leg.to });
+                    remaining -= consumed;
+                    legKmLeft = 0;
+                    // If the day is exactly filled, reset remaining and increment day
+                    if (remaining <= 0.0001) { day++; remaining = kmPerDay; }
+                } else {
+                    // We stop in the middle of this leg today
+                    cursor += remaining;
+                    days.push({ day, distance: remaining, from: leg.from, to: null });
+                    dayMarkers.push({ day, legIndex: i, kmIntoLeg: (leg.distanceKm - legKmLeft) + remaining, leg });
+                    day++;
+                    legKmLeft -= remaining;
+                    remaining = kmPerDay;
+                }
+            }
+        }
+
+        // Create a polyline-based interpolation to place day markers
+        const polylines = (bridge.state.routeUnifiedPolyline && bridge.state.routeUnifiedPolyline.getLatLngs()) || [];
+        const points = Array.isArray(polylines[0]) ? polylines[0] : polylines; // Leaflet may nest
+        const cumulative = [];
+        let sum = 0;
+        for (let i = 1; i < points.length; i++) {
+            const dx = points[i].lng - points[i-1].lng;
+            const dy = points[i].lat - points[i-1].lat;
+            const seg = Math.sqrt(dx*dx + dy*dy) * bridge.config.kmPerPixel;
+            sum += seg;
+            cumulative.push(sum);
+        }
+
+        const markers = [];
+        let target = kmPerDay;
+        for (let d = 1; d <= Math.floor(totalKm / kmPerDay); d++) {
+            const idx = cumulative.findIndex(c => c >= target);
+            if (idx >= 0) {
+                const prevCum = cumulative[idx-1] || 0;
+                const segKm = (cumulative[idx] - prevCum) || 0.0001;
+                const t = (target - prevCum) / segKm;
+                const a = points[idx];
+                const b = points[idx+1] || a;
+                const lat = a.lat + (b.lat - a.lat) * t;
+                const lng = a.lng + (b.lng - a.lng) * t;
+                markers.push({ day: d, lat, lng });
+            }
+            target += kmPerDay;
+        }
+
+        // Store markers for rendering
+        bridge.state.dayMarkers = markers;
+        return { days, markers };
+    }
+
+    function renderDayMarkers(daily) {
+        // Clear previous
+        if (bridge.state.dayMarkerLayers) {
+            bridge.state.dayMarkerLayers.forEach(m => bridge.map.removeLayer(m));
+        }
+        bridge.state.dayMarkerLayers = [];
+        if (!daily || !daily.markers || !daily.markers.length) return;
+        daily.markers.forEach(d => {
+            const icon = L.divIcon({
+                className: 'waypoint-icon',
+                html: `<div class="waypoint-marker" title="Gün ${d.day}">${d.day}</div>`,
+                iconSize: [24, 24],
+                iconAnchor: [12, 12]
+            });
+            const marker = L.marker([d.lat, d.lng], { icon, pane: 'routePane' }).addTo(bridge.map);
+            bridge.state.dayMarkerLayers.push(marker);
+        });
+    }
+
+    function capitalize(s){ return (s||'').charAt(0).toUpperCase() + (s||'').slice(1); }
 
     // Expose module functions
     window.__nimea_visualizer = {
