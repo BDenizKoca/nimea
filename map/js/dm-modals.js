@@ -30,17 +30,18 @@
         setupMarkerCreationModal() {
             const modal = document.getElementById('marker-creation-modal');
             const form = document.getElementById('marker-form');
-            const nameInput = document.getElementById('marker-name');
+            const nameInputTR = document.getElementById('marker-name-tr');
+            const nameInputEN = document.getElementById('marker-name-en');
             const idInput = document.getElementById('marker-id');
             const iconInput = document.getElementById('marker-icon');
             const cancelBtn = document.getElementById('cancel-marker');
 
             // Update ID when name changes, but only for new markers (not when editing)
-            nameInput.addEventListener('input', () => {
+            nameInputTR.addEventListener('input', () => {
                 // Only auto-generate ID if we're creating a new marker (not editing)
                 // and the ID field hasn't been manually modified
                 if (!form.dataset.editMode && !idInput.dataset.manuallyEdited) {
-                    idInput.value = this.bridge.generateIdFromName(nameInput.value);
+                    idInput.value = this.bridge.generateIdFromName(nameInputTR.value);
                 }
             });
             
@@ -178,7 +179,7 @@
             
             document.getElementById('marker-public').checked = true;
             modal.classList.remove('hidden');
-            document.getElementById('marker-name').focus();
+            document.getElementById('marker-name-tr').focus();
         }
 
         /**
@@ -206,12 +207,18 @@
             saveBtn.textContent = 'Save Changes';
             
             // Fill in all existing values
-            document.getElementById('marker-name').value = markerData.name || '';
+            // Populate bilingual fields with fallbacks from i18n or top-level
+            const trLoc = markerData.i18n && markerData.i18n.tr ? markerData.i18n.tr : {};
+            const enLoc = markerData.i18n && markerData.i18n.en ? markerData.i18n.en : {};
+            document.getElementById('marker-name-tr').value = trLoc.name || markerData.name || '';
+            document.getElementById('marker-name-en').value = enLoc.name || '';
             document.getElementById('marker-id').value = markerData.id || '';
             document.getElementById('marker-id').dataset.manuallyEdited = 'true'; // Prevent auto-generation
             document.getElementById('marker-type').value = markerData.type || 'other';
-            document.getElementById('marker-faction').value = markerData.faction || '';
-            document.getElementById('marker-summary').value = markerData.summary || '';
+            document.getElementById('marker-faction-tr').value = trLoc.faction || markerData.faction || '';
+            document.getElementById('marker-faction-en').value = enLoc.faction || '';
+            document.getElementById('marker-summary-tr').value = trLoc.summary || markerData.summary || '';
+            document.getElementById('marker-summary-en').value = enLoc.summary || '';
             document.getElementById('marker-wiki-slug').value = markerData.wikiSlug || '';
             document.getElementById('marker-icon').value = markerData.customIcon || '';
             document.getElementById('marker-public').checked = markerData.public !== false;
@@ -235,7 +242,7 @@
             
             // Show the modal
             modal.classList.remove('hidden');
-            document.getElementById('marker-name').focus();
+            document.getElementById('marker-name-tr').focus();
         }
 
         /**
@@ -277,10 +284,13 @@
             const formData = new FormData(form);
             
             const id = formData.get('marker-id');
-            const name = formData.get('marker-name');
-            const summary = formData.get('marker-summary');
+            const nameTr = formData.get('marker-name-tr');
+            const nameEn = formData.get('marker-name-en');
+            const summaryTr = formData.get('marker-summary-tr');
+            const summaryEn = formData.get('marker-summary-en');
             const type = formData.get('marker-type');
-            const faction = formData.get('marker-faction');
+            const factionTr = formData.get('marker-faction-tr');
+            const factionEn = formData.get('marker-faction-en');
             const customIcon = formData.get('marker-icon');
             const iconUrl = formData.get('marker-icon-url');
             const isPublic = formData.get('marker-public') === 'on';
@@ -291,22 +301,33 @@
             const lng = parseFloat(document.getElementById('marker-lng').value);
 
             // Validation
-            if (!this.validateMarkerData(id, name, summary, lat, lng, isEditMode, originalId)) {
+            if (!this.validateMarkerData(id, nameTr, summaryTr, lat, lng, isEditMode, originalId)) {
                 return;
             }
 
             const markerData = {
-                id, name,
+                id,
+                name: nameTr, // keep top-level aligned to TR for compatibility
                 x: lng,
                 y: lat,
                 type,
-                faction: faction || undefined,
-                summary,
+                faction: factionTr || undefined,
+                summary: summaryTr,
                 customIcon: customIcon ? customIcon.trim() : undefined,
                 iconUrl: iconUrl ? iconUrl.trim() : undefined,
                 images: [], // Preserve existing images in edit mode
                 public: isPublic,
                 wikiSlug: wikiSlug ? wikiSlug.trim() || undefined : undefined,
+            };
+
+            // Attach i18n block
+            markerData.i18n = {
+                tr: { name: nameTr, summary: summaryTr, faction: factionTr || undefined },
+                en: {
+                    name: nameEn || nameTr,
+                    summary: summaryEn || summaryTr,
+                    faction: (factionEn || factionTr || '').trim() || undefined
+                }
             };
 
             if (isEditMode) {
@@ -332,7 +353,7 @@
          */
         validateMarkerData(id, name, summary, lat, lng, isEditMode, originalId) {
             if (!id || !name || !summary) {
-                this.bridge.showNotification('Lütfen tüm gerekli alanları doldurun', 'error');
+                this.bridge.showNotification('Lütfen zorunlu alanları doldurun: Ad (TR), Özet (TR) ve ID', 'error');
                 return false;
             }
             if (isNaN(lat) || isNaN(lng)) {
