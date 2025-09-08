@@ -79,12 +79,25 @@ function buildWikiRecords(rootDir) {
 }
 
 function buildMarkerRecords(rootDir) {
-  const markersPath = path.join(rootDir, 'data', 'markers.json');
-  if (!fs.existsSync(markersPath)) return [];
-  let json;
-  try { json = JSON.parse(fs.readFileSync(markersPath, 'utf8')); } catch { return []; }
-  if (!json || !Array.isArray(json.markers)) return [];
-  return json.markers.filter(m => m.public !== false).map(m => {
+  const sources = [
+    path.join(rootDir, 'data', 'markers.json'),
+    path.join(rootDir, 'map', 'data', 'markers.json')
+  ];
+  const byId = new Map();
+  for (const p of sources) {
+    if (!fs.existsSync(p)) continue;
+    try {
+      const obj = JSON.parse(fs.readFileSync(p, 'utf8'));
+      if (obj && Array.isArray(obj.markers)) {
+        for (const m of obj.markers) {
+          // Prefer earlier source (root/data) if duplicate id appears later
+          if (!byId.has(m.id)) byId.set(m.id, m);
+        }
+      }
+    } catch {}
+  }
+  if (byId.size === 0) return [];
+  return Array.from(byId.values()).filter(m => m.public !== false).map(m => {
     const title = m.name || m.id;
     const summary = m.summary || '';
     const tokens = tokenize(title + ' ' + m.id + ' ' + summary + ' ' + (m.faction||'') + ' ' + (m.type||''));

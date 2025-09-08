@@ -1,6 +1,12 @@
 (()=>{
   const STATE = { index:null, loaded:false, container:null, input:null, resultsEl:null, pendingFetch:false };
   function $(sel){ return document.querySelector(sel);}    
+  function norm(str){
+    return (str||'')
+      .toLowerCase()
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g,'');
+  }
   function createUI(){
     if (STATE.container) return;
     const mount = document.querySelector('.search-mount') || document.querySelector('header nav');
@@ -38,18 +44,20 @@
   }
   function scoreRecord(rec, qTokens){
     let score=0;
+    const titleNorm = norm(rec.title||'');
+    const summaryNorm = norm(rec.summary||'');
     for(const qt of qTokens){
       if(rec.tokens.includes(qt)) score += 5; else {
-        if(rec.title.toLowerCase().includes(qt)) score += 3; else if(rec.summary.toLowerCase().includes(qt)) score += 1;
+        if(titleNorm.includes(qt)) score += 3; else if(summaryNorm.includes(qt)) score += 1;
       }
-      if(rec.title.toLowerCase().startsWith(qt)) score += 2;
+      if(titleNorm.startsWith(qt)) score += 2;
     }
     if(rec.type==='marker') score -= 0.2;
     return score;
   }
   function search(query){
     if(!STATE.loaded || !STATE.index) return [];
-    const q = query.toLowerCase().trim();
+    const q = norm(query).trim();
     if(q.length<2) return [];
     const qTokens = q.split(/\s+/).filter(t=>t.length>0);
     const scored = [];
@@ -58,7 +66,7 @@
       if(rec.lang!=='neutral' && rec.lang!==pageLang) continue;
       let s = scoreRecord(rec, qTokens);
       // Strong bonus for exact title match; slight extra for markers
-      if(rec.title && rec.title.toLowerCase() === q){
+      if(rec.title && norm(rec.title) === q){
         s += 10;
         if(rec.type === 'marker') s += 2;
       }
