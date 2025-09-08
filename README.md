@@ -17,6 +17,11 @@ Live Site: https://nimea-wiki.netlify.app/
 - Terrain-aware A* pathfinding that respects road/difficult/unpassable costs
 - Automatic wiki integration: markers can link to relevant wiki pages (optional custom slug)
 
+Single source of truth (no drift):
+- Both TR (`/map`) and EN (`/en/map`) load the same data from `map/data`.
+- Both languages reuse the same map modules in `map/js/*`.
+- Only EN-specific files are localized strings (`en/map/js/i18n.js`) and DM UI text (`en/map/js/dm-*.js`).
+
 ---
 
 ## Why I Built It
@@ -34,6 +39,10 @@ Local setup:
 2. Install: `npm install`
 3. Develop: `npm start` (serves Eleventy with live reload)
 4. Build: `npm run build` (outputs to `_site/`)
+
+Notes:
+- The EN map page references shared scripts: `/map/js/*` and shared data `/map/data/*`.
+- DM editor supports bilingual fields (TR/EN) for marker name, summary, and faction. Top-level fields remain as fallback.
 
 ---
 
