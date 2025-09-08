@@ -33,16 +33,17 @@ function tokenize(str) {
 }
 
 function buildWikiRecords(rootDir) {
-  const wikiDir = path.join(rootDir, 'wiki');
-  if (!fs.existsSync(wikiDir)) return [];
+  const dirs = [path.join(rootDir, 'wiki'), path.join(rootDir, 'en', 'wiki')].filter(d => fs.existsSync(d));
   const records = [];
-  function walk(dir) {
+  function walk(dir, lang) {
     const entries = fs.readdirSync(dir, { withFileTypes: true });
     for (const e of entries) {
       const full = path.join(dir, e.name);
-      if (e.isDirectory()) walk(full); else if (e.isFile() && e.name.endsWith('.md')) {
+      if (e.isDirectory()) {
+        walk(full, lang);
+      } else if (e.isFile() && e.name.endsWith('.md')) {
+        if (e.name.toLowerCase() === 'index.md') continue; // skip hub index pages
         const rel = path.relative(rootDir, full).replace(/\\/g,'/');
-        const lang = rel.startsWith('en/') ? 'en' : 'tr';
         const content = fs.readFileSync(full, 'utf8');
         const { data, body } = parseFrontMatter(content);
         if (data.public === false) continue;
@@ -70,7 +71,10 @@ function buildWikiRecords(rootDir) {
       }
     }
   }
-  walk(wikiDir);
+  for (const d of dirs) {
+    const lang = d.includes(`${path.sep}en${path.sep}`) ? 'en' : 'tr';
+    walk(d, lang);
+  }
   return records;
 }
 
