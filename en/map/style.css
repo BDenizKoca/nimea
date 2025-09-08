@@ -1,0 +1,1195 @@
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: 'EB Garamond', Georgia, serif;
+}
+
+/* Ensure Netlify Identity modal is always above Leaflet map & custom modals */
+/* The identity widget injects elements with classes .netlify-identity-modal & .netlify-identity-overlay */
+/* We boost their stacking without touching other app layers */
+.netlify-identity-overlay {
+    z-index: 20000 !important; /* Above everything else */
+}
+.netlify-identity-modal {
+    z-index: 20001 !important;
+    position: fixed !important; /* Guard against any absolute default inside map container */
+}
+
+/* Provide a helper class to raise any future auth widget */
+.auth-modal-topmost { z-index: 10010 !important; }
+
+/* Design Tokens */
+:root {
+    --color-bg-parchment: #f4f0e6;
+    --color-bg-panel: #ffffff;
+    --color-border: #d3c0a5;
+    --color-accent: #8b4513;
+    --color-accent-alt: #5d3a1a;
+    --color-danger: #d0021b;
+    --color-success: #28a745;
+    --radius-sm: 3px;
+    --radius-md: 6px;
+    --radius-lg: 12px;
+    --shadow-elev: 0 2px 8px rgba(0,0,0,0.2);
+    --shadow-layer: 0 0 10px rgba(0,0,0,0.5);
+    --transition-fast: 0.2s ease;
+    --transition-med: 0.3s ease;
+}
+
+/* Legend */
+.map-legend {
+    position: fixed;
+    left: 10px;
+    bottom: 70px;
+    background: rgba(244,240,230,0.92);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 8px 10px;
+    font-size: 12px;
+    line-height: 1.3;
+    z-index: 1800;
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+}
+
+/* Segmented overlay control (bottom center) */
+#overlay-toggles {
+    position: fixed;
+    left: 50%;
+    bottom: 18px;
+    transform: translateX(-50%);
+    z-index: 800; /* Below sidebars (1000+) and header (2000) but above map */
+    background: rgba(244,240,230,0.9);
+    border: 2px solid var(--color-border);
+    padding: 6px 10px;
+    border-radius: 40px;
+    box-shadow: var(--shadow-elev);
+}
+.overlay-segmented {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+.overlay-segmented button {
+    background: #fff;
+    border: 1px solid var(--color-border);
+    border-radius: 20px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    color: var(--color-accent);
+    font-weight: 600;
+    transition: var(--transition-fast);
+}
+.overlay-segmented button.active {
+    background: var(--color-accent);
+    color: #fff;
+    box-shadow: 0 0 0 2px #fff inset, 0 0 0 1px var(--color-accent);
+}
+.overlay-segmented button:hover { background: #f7ede0; }
+/* Compact variant on very small screens */
+@media (max-width: 520px) {
+    #overlay-toggles { padding: 4px 8px; bottom: 12px; }
+    .overlay-segmented { gap: 2px; }
+    .overlay-segmented button {
+        padding: 4px 8px;
+        font-size: 11px;
+        min-width: auto;
+    }
+    /* Abbreviate labels using data-mode attribute */
+    .overlay-segmented button[data-mode="regions"]::after { content: "Reg"; }
+    .overlay-segmented button[data-mode="borders"]::after { content: "Bor"; }
+    .overlay-segmented button[data-mode="both"]::after { content: "Both"; }
+    .overlay-segmented button[data-mode="none"]::after { content: "None"; }
+    /* Hide original text (still accessible to screen readers) */
+    .overlay-segmented button { position: relative; }
+    .overlay-segmented button > span { display: none; }
+}
+.map-legend h4 { margin: 0 0 6px 0; font-size: 13px; color: var(--color-accent); text-align:center; }
+.map-legend ul { list-style: none; padding: 0; margin: 0 0 4px 0; }
+.map-legend li { display:flex; align-items:center; gap:6px; margin:2px 0; }
+.legend-swatch { width:18px; height:10px; border:1px solid #333; border-radius:2px; box-shadow:0 0 0 1px rgba(0,0,0,0.1) inset; }
+.legend-road { background:#4a90e2; }
+.legend-difficult { background:#f5a623; }
+.legend-unpassable { background:#d0021b; }
+.legend-route { background:linear-gradient(90deg,#b30000,#ff5e5e); }
+.legend-note { font-style:italic; opacity:0.8; }
+
+.legend-toggle-btn {
+    position: fixed;
+    left: 10px;
+    bottom: 70px;
+    z-index: 1850;
+    .overlay-segmented { font-size: 12px; }
+    border:2px solid var(--color-border);
+    border-radius: 30px;
+    width:38px; height:38px;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    font-size:18px;
+    box-shadow: var(--shadow-elev);
+    transition: var(--transition-fast);
+}
+.legend-toggle-btn:hover { background:#fff; }
+.map-legend.hidden { display:none; }
+
+/* Map Navigation Header */
+.map-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 2000;
+    background: rgba(253, 246, 227, 0.95);
+    border-bottom: 2px solid #d3c0a5;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.map-nav {
+    display: flex;
+    align-items: center;
+    padding: 10px 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Language Switcher (unified with wiki) */
+.lang-switch {
+    display: flex;
+    gap: 6px;
+    font-size: 0.9rem;
+    margin-left: 10px;
+}
+
+.lang-switch a {
+    background: rgba(184, 134, 11, 0.1);
+    padding: 4px 10px;
+    border-radius: 16px;
+    border: 1px solid rgba(184, 134, 11, 0.35);
+    text-decoration: none;
+    font-weight: 500;
+    color: #8b4513;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    position: relative;
+}
+
+.lang-switch a:hover,
+.lang-switch a:focus-visible {
+    background: rgba(184, 134, 11, 0.22);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(184,134,11,0.25);
+}
+
+.lang-switch a:active {
+    background: rgba(184,134,11,0.32);
+}
+
+@media (max-width: 520px) {
+    .lang-switch a {
+        padding: 4px 8px;
+        font-size: 0.75rem;
+        border-radius: 14px;
+    }
+}
+
+.nav-link {
+    color: #8b4513;
+    text-decoration: none;
+    margin-right: 20px;
+    font-weight: bold;
+    font-size: 14px;
+    transition: color 0.3s ease;
+}
+
+.nav-link:hover {
+    color: #a0522d;
+}
+
+.map-title {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    color: #3a2410;
+    margin: 0;
+    font-size: 20px;
+    flex-grow: 1;
+    text-align: center;
+}
+
+#map {
+    width: 100%;
+    height: calc(100% - 60px); /* Subtract header height */
+    margin-top: 60px; /* Account for fixed header */
+    background-color: #ffffff;
+    
+    /* Ensure iOS Safari doesn't apply its own touch behaviors */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none; /* Standard property for compatibility */
+    -webkit-tap-highlight-color: rgba(0,0,0,0);
+    touch-action: manipulation;
+}
+
+/* Make marker icons more tappable */
+.leaflet-marker-icon {
+    touch-action: none !important; /* Disable browser gestures on markers */
+    cursor: pointer;
+    padding: 5px; /* Increase the hit area */
+    margin: -5px; /* Offset the padding to keep the marker in the same position */
+}
+
+.sidebar {
+    position: fixed;
+    top: 60px; /* Account for header */
+    height: calc(100% - 60px); /* Subtract header height */
+    width: 300px;
+    background: white;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    z-index: 1000;
+    overflow-y: auto;
+    padding: 20px;
+    box-sizing: border-box;
+    transition: transform 0.3s ease-in-out;
+}
+
+.left-sidebar {
+    left: 0;
+    transform: translateX(-100%);
+}
+
+.left-sidebar.open {
+    transform: translateX(0);
+}
+
+.right-sidebar {
+    right: 0;
+    transform: translateX(100%);
+}
+
+.right-sidebar.open {
+    transform: translateX(0);
+}
+
+#close-info-sidebar {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+/* Sidebar close buttons */
+.sidebar-close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+    transition: color 0.2s ease;
+}
+
+.sidebar-close-btn:hover {
+    color: #333;
+}
+
+/* Route sidebar reopen button */
+.reopen-route-btn {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    width: 48px;
+    height: 48px;
+    background: #3a2410;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+.reopen-route-btn:hover {
+    background: #5d3a1a;
+    transform: scale(1.1);
+}
+
+.reopen-route-btn.hidden {
+    display: none;
+}
+
+/* Mobile adjustments for reopen button */
+@media (max-width: 700px) {
+    .reopen-route-btn {
+        top: 75px; /* Below the header on mobile */
+        left: 15px;
+        width: 44px;
+        height: 44px;
+        font-size: 18px;
+    }
+}
+
+/* Wiki link styling */
+.wiki-link {
+    display: inline-block;
+    margin: 10px 0;
+    padding: 8px 15px;
+    background: #3a2410;
+    color: #fff !important;
+    text-decoration: none;
+    border-radius: 4px;
+    font-weight: bold;
+    transition: background 0.3s ease;
+}
+
+.wiki-link:hover {
+    background: #5d3a1a;
+}
+
+/* Reset button-specific defaults when using wiki-link as a class */
+button.wiki-link {
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+/* DM Action buttons */
+.dm-actions {
+    margin-top: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.dm-actions button {
+    flex: 1;
+    min-width: 120px;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    font-family: inherit;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.edit-marker-btn {
+    background: #17a2b8;
+    color: white;
+}
+
+.edit-marker-btn:hover {
+    background: #138496;
+}
+
+.delete-marker-btn {
+    background: #dc3545;
+    color: white;
+}
+
+.delete-marker-btn:hover {
+    background: #c82333;
+}
+
+/* (Old overlay toggles box styling removed after segmented control redesign) */
+
+/* Modal styling for DM mode */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 3000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer; /* Indicates clickable background */
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    cursor: default; /* Reset cursor for content area */
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-content {
+    background: #fff;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.modal-content h3 {
+    margin-top: 0;
+    color: #3a2410;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #3a2410;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 2px solid #d3c0a5;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #8b4513;
+}
+
+.form-group small {
+    display: block;
+    margin-top: 5px;
+    color: #666;
+    font-size: 12px;
+}
+
+.form-group input[type="checkbox"] {
+    width: auto;
+    margin-right: 8px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 30px;
+}
+
+/* Icon selector styles */
+.icon-input-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.icon-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 8px;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+}
+
+.icon-option {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s ease;
+}
+
+.icon-option:hover {
+    background: #e9ecef;
+    border-color: #adb5bd;
+    transform: scale(1.1);
+}
+
+.icon-option:active {
+    transform: scale(0.95);
+}
+
+#marker-icon {
+    font-size: 16px;
+    text-align: center;
+    padding: 8px 12px;
+}
+
+/* Custom marker icon styles */
+.custom-marker {
+    background: none !important;
+    border: none !important;
+    transform-origin: center bottom;
+    transition: transform 0.1s ease-out;
+}
+
+.custom-marker-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px; 
+    background: rgba(255, 255, 255, 0.9);
+    border: 3px solid #333;
+    border-radius: 50%;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+    cursor: pointer;
+    background-clip: padding-box;
+    transform-origin: center bottom;
+    width: 100%;
+    height: 100%;
+}
+
+.custom-marker-icon:hover {
+    background: rgba(255, 255, 255, 1);
+}
+
+/* Custom image marker styles */
+.custom-image-marker {
+    transform-origin: center bottom;
+    transition: transform 0.1s ease-out;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 50% !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
+    cursor: pointer !important;
+}
+
+/* Remove any default styling from custom image markers */
+.custom-image-marker .leaflet-marker-icon {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.custom-image-marker .leaflet-marker-shadow {
+    display: none !important;
+}
+
+.custom-image-marker:hover {
+    opacity: 0.9 !important;
+}
+
+.form-actions button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    font-family: inherit;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+#cancel-marker {
+    background: #6c757d;
+    color: white;
+}
+
+#cancel-marker:hover {
+    background: #5a6268;
+}
+
+#save-marker {
+    background: #28a745;
+    color: white;
+}
+
+#save-marker:hover {
+    background: #218838;
+}
+
+/* Notification styling */
+.notification {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    padding: 15px 20px;
+    border-radius: 4px;
+    color: white;
+    font-weight: bold;
+    z-index: 4000;
+    animation: slideIn 0.3s ease;
+}
+
+.notification.success {
+    background: #28a745;
+}
+
+.notification.error {
+    background: #dc3545;
+}
+
+.notification.info {
+    background: #17a2b8;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Terrain selection styling */
+.terrain-options {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.terrain-btn {
+    padding: 20px;
+    border: 3px solid transparent;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.terrain-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.road-btn {
+    background: #4a90e2;
+    color: white;
+    border-color: #357abd;
+}
+
+.road-btn:hover {
+    background: #357abd;
+}
+
+.difficult-btn {
+    background: #f5a623;
+    color: white;
+    border-color: #e8930c;
+}
+
+.difficult-btn:hover {
+    background: #e8930c;
+}
+
+.forest-btn {
+    background: #228B22;
+    color: white;
+    border-color: #1e7a1e;
+}
+
+.forest-btn:hover {
+    background: #1e7a1e;
+}
+
+.unpassable-btn {
+    background: #d0021b;
+    color: white;
+    border-color: #b8001a;
+}
+
+.unpassable-btn:hover {
+    background: #b8001a;
+}
+
+.terrain-btn small {
+    display: block;
+    margin-top: 5px;
+    font-size: 12px;
+    opacity: 0.9;
+}
+
+/* Terrain controls styling */
+.terrain-controls .leaflet-control-button {
+    width: 32px;
+    height: 32px;
+    line-height: 30px;
+    text-align: center;
+    font-size: 16px;
+    text-decoration: none;
+    color: #333;
+    background: white;
+    border-bottom: 1px solid #ccc;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.terrain-controls .leaflet-control-button:hover {
+    background: #f4f4f4;
+}
+
+.terrain-controls .leaflet-control-button.active {
+    background: #007cba;
+    color: white;
+}
+
+.terrain-controls .leaflet-control-button:first-child {
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+}
+
+.terrain-controls .leaflet-control-button:last-child {
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 4px;
+    border-bottom: none;
+}
+
+/* Authentication controls styling */
+.auth-controls .leaflet-control-button {
+    width: 32px;
+    height: 32px;
+    line-height: 30px;
+    text-align: center;
+    font-size: 16px;
+    text-decoration: none;
+    color: #333;
+    background: white;
+    border-bottom: 1px solid #ccc;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.auth-controls .leaflet-control-button:hover {
+    background: #f4f4f4;
+}
+
+.auth-controls .leaflet-control-button:first-child {
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+}
+
+.auth-controls .leaflet-control-button:last-child {
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 4px;
+    border-bottom: 1px solid #ccc;
+}
+
+/* Route Summary Styling */
+.sidebar h2 {
+    margin: 0 0 15px 0;
+    color: #8b4513;
+    font-size: 1.2em;
+    text-align: center;
+    border-bottom: 2px solid #d3c0a5;
+    padding-bottom: 10px;
+}
+
+.sidebar h3 {
+    margin: 0 0 10px 0;
+    color: #8b4513;
+    font-size: 1.1em;
+    text-align: center;
+}
+
+#route-summary {
+    margin-top: 15px;
+    padding: 10px;
+    background: rgba(253, 246, 227, 0.3);
+    border: 1px solid #d3c0a5;
+    border-radius: 5px;
+}
+
+.travel-times {
+    margin-top: 10px;
+}
+
+.travel-times p {
+    margin: 5px 0;
+    padding: 3px 8px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 3px;
+    font-size: 0.9em;
+}
+
+#route-stops div {
+    padding: 5px 10px;
+    margin: 3px 0;
+    background: rgba(255, 255, 255, 0.3);
+    border: 1px solid #d3c0a5;
+    border-radius: 3px;
+    font-weight: bold;
+}
+/* Removed stray property & brace that caused CSS parsing error at end of file */
+
+
+/* Sidebar adaptation for narrow screens */
+@media (max-width: 900px) {
+    .sidebar {
+        width: 70%;
+        max-width: 380px;
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 700px) {
+    body, html { overflow: hidden; }
+    #map { height: 100%; margin-top: 60px; }
+    /* Route planner stays left slide-in */
+    .left-sidebar {
+        left: 0;
+        top: 60px;
+        bottom: 0;
+        height: calc(100% - 60px);
+        width: 55%;
+        max-width: 280px;
+        min-width: 220px;
+        transform: translateX(-100%);
+        border-radius: 0;
+        box-shadow: 4px 0 18px rgba(0,0,0,0.35);
+        padding: 14px 14px 18px;
+        font-size: 13px;
+    }
+    .left-sidebar.open { transform: translateX(0); }
+    /* Info sidebar overlays from right above route */
+    .right-sidebar {
+        right: 0;
+        top: 60px;
+        bottom: 0;
+        height: calc(100% - 60px);
+        width: 78%;
+        max-width: 360px;
+        transform: translateX(100%);
+        box-shadow: -4px 0 18px rgba(0,0,0,0.35);
+        z-index: 1300;
+    }
+    .right-sidebar.open { transform: translateX(0); }
+    #overlay-toggles { bottom: 14px; }
+    .map-header { font-size: 14px; }
+    .map-title { font-size: 16px; }
+    .nav-link { font-size: 12px; margin-right: 10px; }
+    #route-summary h3 { font-size: 1em; }
+    #route-summary p { font-size: 0.85em; }
+}
+
+@media (max-width: 480px) {
+    .terrain-btn { font-size: 14px; padding: 14px; }
+    .modal-content { padding: 20px; }
+}
+
+/* Improve focus visibility for accessibility */
+button:focus, .leaflet-control-button:focus {
+    outline: 3px solid #357abd;
+    outline-offset: 2px;
+}
+
+/* === UNIFIED ROUTE LINE STYLES === */
+.unified-route-line {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+/* === WAYPOINT STYLES === */
+.waypoint-icon {
+    background: none !important;
+    border: none !important;
+}
+
+.waypoint-marker {
+    width: 24px;
+    height: 24px;
+    background: #ff6b35;
+    border: 2px solid white;
+    border-radius: 50%;
+    color: white;
+    font-weight: bold;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.waypoint-marker:hover {
+    background: #e55a2e;
+    transform: scale(1.1);
+}
+
+/* === DRAG AND DROP ROUTE STYLES === */
+.route-stop-row {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    background: rgba(255,255,255,0.9);
+    margin: 2px 0;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    position: relative;
+    border: 1px solid transparent;
+}
+
+.route-stop-row:hover {
+    background: rgba(255,255,255,1);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-color: #ddd;
+}
+
+.drag-handle {
+    color: #666;
+    font-size: 16px;
+    margin-right: 8px;
+    cursor: grab;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    padding: 2px 4px;
+    border-radius: 3px;
+    transition: all 0.2s ease;
+}
+
+.drag-handle:hover {
+    background: rgba(53, 122, 189, 0.1);
+    color: #357abd;
+}
+
+.route-stop-row:active .drag-handle,
+.route-stop-row.dragging .drag-handle {
+    cursor: grabbing;
+    background: rgba(53, 122, 189, 0.2);
+    color: #357abd;
+}
+
+.stop-info {
+    flex: 1;
+    font-size: 14px;
+}
+
+.route-stop-row .mini-btn {
+    margin-left: auto;
+    padding: 4px 8px;
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+    min-width: 24px;
+    min-height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10; /* Ensure it's above other elements */
+    position: relative;
+}
+
+.route-stop-row .mini-btn:hover {
+    background: #c82333;
+    transform: scale(1.1);
+}
+
+/* Visual feedback for drag operations */
+.route-stop-row[draggable="true"]:hover {
+    border-left: 3px solid #357abd;
+}
+
+.drop-indicator {
+    height: 2px !important;
+    background: #357abd !important;
+    margin: 2px 0 !important;
+    border-radius: 1px;
+    opacity: 0.8;
+    pointer-events: none !important;
+}
+
+/* Route status and error styling */
+.route-status {
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: bold;
+    margin-left: 8px;
+}
+
+.route-status.blocked {
+    background: #ff4444;
+    color: white;
+}
+
+.route-status.hybrid {
+    background: #357abd;
+    color: white;
+}
+
+.route-status.terrain {
+    background: #ff9800;
+    color: white;
+}
+
+.route-error {
+    color: #d0021b;
+    font-style: italic;
+    margin-top: 4px;
+    display: block;
+}
+
+/* Improved drag and drop styling */
+.route-stop-row[draggable="true"] {
+    cursor: grab;
+    transition: all 0.2s ease;
+}
+
+.route-stop-row[draggable="true"]:active {
+    cursor: grabbing;
+}
+
+.route-stop-row.dragging {
+    opacity: 0.6;
+    transform: rotate(2deg) scale(1.05);
+    cursor: grabbing;
+    background: rgba(53, 122, 189, 0.1);
+    border: 2px dashed #357abd;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+/* Route Status and Error Messages */
+.route-status {
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-left: 8px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.route-status.blocked {
+    background: #ffebee;
+    color: #c62828;
+    border: 1px solid #e57373;
+}
+
+.route-status.hybrid {
+    background: #e8f5e8;
+    color: #2e7d32;
+    border: 1px solid #81c784;
+}
+
+.route-status.terrain {
+    background: #fff3e0;
+    color: #ef6c00;
+    border: 1px solid #ffb74d;
+}
+
+.route-error {
+    color: #d32f2f;
+    font-style: italic;
+    display: block;
+    margin-top: 4px;
+    font-size: 11px;
+}
+
+.leaflet-popup-content {
+    text-align: center;
+}
+
+/* Mobile Touch Enhancements */
+@media (max-width: 768px), (pointer: coarse) {
+    /* Increase touch targets for markers */
+    .leaflet-marker-icon {
+        transform-origin: center center;
+        transition: transform 0.2s ease;
+    }
+    
+    /* Visual feedback for touch */
+    .leaflet-marker-icon:active {
+        transform: scale(1.1);
+    }
+    
+    /* Improve sidebar touch interaction */
+    .sidebar {
+        overflow-y: auto;
+        /* Using modern standard property for smooth scrolling */
+        overscroll-behavior: contain; 
+    }
+    
+    /* Better touch targets for buttons */
+    button, .mini-btn {
+        min-height: 44px;
+        min-width: 44px;
+        padding: 8px 12px;
+    }
+    
+    /* Prevent zoom on input focus */
+    input, select, textarea {
+        font-size: 16px;
+    }
+    
+    /* Improve drag handles on mobile */
+    .drag-handle {
+        font-size: 20px;
+        padding: 8px;
+        min-width: 44px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* Better route stop interaction */
+    .route-stop-row {
+        min-height: 50px;
+        padding: 12px 8px;
+    }
+    
+    /* Touch-friendly waypoint markers */
+    .waypoint-marker {
+        min-width: 28px;
+        min-height: 28px;
+        font-size: 14px;
+        line-height: 28px;
+    }
+}
+
+/* Prevent text selection on touch devices during drag */
+@media (pointer: coarse) {
+    .route-stop-row[draggable="true"] {
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+    }
+}

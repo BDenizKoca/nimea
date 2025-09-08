@@ -1,6 +1,7 @@
 ---
 layout: base.njk
 title: Ana Sayfa
+lang: tr
 ---
 
 # Nimea Evreni Külliyatına hoş geldiniz
@@ -11,3 +12,7 @@ Seçenekler:
 
 * [Etkileşimli Harita](map/)
 * [Külliyat (Wiki)](wiki/)
+
+---
+
+[Click here for English](/en/)

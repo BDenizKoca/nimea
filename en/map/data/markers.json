@@ -1,0 +1,128 @@
+{
+  "markers": [
+    {
+      "id": "varkas",
+      "name": "Varkas",
+      "x": 1251,
+      "y": 1110,
+      "type": "city",
+      "faction": "Kuruntar",
+      "summary": "Başkent, yıkık bir kutsal şehrin üzerine inşa edildi.",
+      "images": [
+        "images/varkas_1.jpg",
+        "images/varkas_2.jpg"
+      ],
+      "public": true
+    },
+    {
+      "id": "aurelium",
+      "name": "Aurelium",
+      "x": 1705,
+      "y": 1248,
+      "type": "city",
+      "faction": "Empire of Aurelius",
+      "summary": "The magnificent capital of the Empire of Aurelius and the largest urban center in Nimea.",
+      "iconUrl": "https://file.garden/aLboplo8eB2dIZKp/mapmarker.png",
+      "images": [],
+      "public": true
+    },
+    {
+      "id": "camkale",
+      "name": "Çamkale",
+      "x": 1531,
+      "y": 890,
+      "type": "city",
+      "faction": "Bağımsız şehir.",
+      "summary": "Mihver Çam gölgesinde krallık ile yönetilen ülke.",
+      "iconUrl": "https://file.garden/aLboplo8eB2dIZKp/ChatGPT%20Image%20Sep%202%2C%202025%2C%2010_43_34%20PM.png",
+      "images": [],
+      "public": true,
+      "wikiSlug": "camkale"
+    },
+    {
+      "id": "custodiskapi",
+      "name": "Custodis Kapısı",
+      "x": 1156,
+      "y": 1420,
+      "type": "fortress",
+      "faction": "Custodis Senatosu",
+      "summary": "Custodislerin yüzyıllardır savundukları kapı.",
+      "images": [],
+      "public": true
+    },
+    {
+      "id": "ruatan",
+      "name": "Ruatan",
+      "x": 1384.999847688527,
+      "y": 1658.9843218106353,
+      "type": "city",
+      "faction": "Ruatan Krallığı",
+      "summary": "Ruatan",
+      "images": [],
+      "public": true
+    },
+    {
+      "id": "evergreen",
+      "name": "Evergreen",
+      "x": 845.999943517365,
+      "y": 762.9844702261285,
+      "type": "city",
+      "faction": "Evergreen Krallıgı",
+      "summary": "Evergreen",
+      "images": [],
+      "public": true
+    },
+    {
+      "id": "kuzey-kent",
+      "name": "Kuzey Kent",
+      "x": 1556.999927,
+      "y": 2263.49217,
+      "type": "city",
+      "summary": "Kuzey",
+      "images": [],
+      "public": true
+    },
+    {
+      "id": "ky-kent",
+      "name": "kıyı kent",
+      "x": 2084.499884,
+      "y": 785.492198,
+      "type": "city",
+      "summary": "kıyı kenti",
+      "images": [],
+      "public": true
+    },
+    {
+      "id": "uurumtepe",
+      "name": "uçurumtepe",
+      "x": 597.49996,
+      "y": 512.492254,
+      "type": "city",
+      "summary": "uçurumlarla kaplı",
+      "images": [],
+      "public": true
+    },
+    {
+      "id": "dogu-karakolu",
+      "name": "Doğu Karakolu",
+      "x": 1649.999887229678,
+      "y": 823.9844420248907,
+      "type": "fortress",
+      "faction": "Çamkale Krallığı",
+      "summary": "Çamkale Krallığı Doğu Karakolu",
+      "images": [],
+      "public": true
+    },
+    {
+      "id": "tasyurt",
+      "name": "Taşyurt",
+      "x": 1061.999987,
+      "y": 1001.74611,
+      "type": "city",
+      "faction": "Taşyurt Krallığı",
+      "summary": "Taşyurt Krallığı Başkenti",
+      "images": [],
+      "public": true
+    }
+  ]
+}

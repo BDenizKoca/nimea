@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="{{ lang or 'tr' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,9 +12,21 @@
     <div class="container">
         <header>
             <nav>
+                {% if lang == 'en' %}
+                <a href="{{ '/en/' | url }}">Home</a> |
+                <a href="{{ '/en/wiki/' | url }}">Wiki</a> |
+                <a href="{{ '/en/map/' | url }}">Map</a>
+                <div class="lang-switch">
+                    <a href="{{ page.url | replace('/en', '') }}">TR</a>
+                </div>
+                {% else %}
                 <a href="{{ '/' | url }}">Ana Sayfa</a> |
                 <a href="{{ '/wiki/' | url }}">Külliyat</a> |
                 <a href="{{ '/map/' | url }}">Harita</a>
+                <div class="lang-switch">
+                    <a href="{{ '/en' + page.url }}">EN</a>
+                </div>
+                {% endif %}
             </nav>
         </header>
         <main>
@@ -32,7 +44,9 @@
             
             {% if map_id %}
             <div class="map-actions">
-                <a href="{{ '/map/?focus=' + map_id | url }}" class="show-on-map-btn">Haritada Göster</a>
+                <a href="{% if lang == 'en' %}{{ '/en/map/?focus=' + map_id | url }}{% else %}{{ '/map/?focus=' + map_id | url }}{% endif %}" class="show-on-map-btn">
+                    {% if lang == 'en' %}Show on Map{% else %}Haritada Göster{% endif %}
+                </a>
             </div>
             {% endif %}
             

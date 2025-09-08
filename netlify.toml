@@ -17,10 +17,22 @@
   to = "/admin/index.html"
   status = 200
 
+# Handle English SPA routing for the map
+[[redirects]]
+  from = "/en/map/*"
+  to = "/en/map/index.html"
+  status = 200
+
 # Handle SPA routing for the map
 [[redirects]]
   from = "/map/*"
   to = "/map/index.html"
+  status = 200
+
+# Handle English wiki routing
+[[redirects]]
+  from = "/en/wiki/*"
+  to = "/en/wiki/index.html"
   status = 200
 
 # Handle wiki routing

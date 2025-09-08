@@ -236,3 +236,28 @@ main img:not(.cover-image img):not(.portrait-image img) {
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.3);
 }
+
+/* Language switcher */
+nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.lang-switch {
+    font-size: 0.9rem;
+}
+
+.lang-switch a {
+    background: rgba(184, 134, 11, 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    border: 1px solid rgba(184, 134, 11, 0.3);
+    text-decoration: none;
+    font-weight: normal;
+}
+
+.lang-switch a:hover {
+    background: rgba(184, 134, 11, 0.2);
+}
