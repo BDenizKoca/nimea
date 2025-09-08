@@ -46,11 +46,16 @@
             </div>
             {% endif %}
             
-            {% if map_id %}
-            <div class="map-actions">
+            {% if name %}
+            <div class="entry-actions">
+                {% if map_id %}
                 <a href="{% if lang == 'en' %}{{ '/en/map/?focus=' + map_id | url }}{% else %}{{ '/map/?focus=' + map_id | url }}{% endif %}" class="show-on-map-btn">
                     {% if lang == 'en' %}Show on Map{% else %}Haritada Göster{% endif %}
                 </a>
+                {% endif %}
+                <button type="button" class="share-btn" data-title="{{ name }}" data-summary="{{ summary }}">
+                    {% if lang == 'en' %}Share{% else %}Paylaş{% endif %}
+                </button>
             </div>
             {% endif %}
             
@@ -70,6 +75,49 @@
         });
       }
     </script>
+        <script>
+            // Lightweight share handler with clipboard fallback and toast
+            document.addEventListener('DOMContentLoaded', () => {
+                const btn = document.querySelector('.share-btn');
+                if (!btn) return;
+                const makeToast = (msg) => {
+                    let t = document.querySelector('.toast');
+                    if (!t) {
+                        t = document.createElement('div');
+                        t.className = 'toast';
+                        document.body.appendChild(t);
+                    }
+                    t.textContent = msg;
+                    t.classList.add('visible');
+                    setTimeout(() => t.classList.remove('visible'), 2000);
+                };
+                btn.addEventListener('click', async () => {
+                    const title = btn.getAttribute('data-title') || document.title;
+                    const text = btn.getAttribute('data-summary') || '';
+                    const url = window.location.href;
+                    try {
+                        if (navigator.share) {
+                            await navigator.share({ title, text, url });
+                        } else if (navigator.clipboard && navigator.clipboard.writeText) {
+                            await navigator.clipboard.writeText(url);
+                            makeToast('{% if lang == 'en' %}Link copied{% else %}Bağlantı kopyalandı{% endif %}');
+                        } else {
+                            // Legacy fallback
+                            const ta = document.createElement('textarea');
+                            ta.value = url;
+                            document.body.appendChild(ta);
+                            ta.select();
+                            try { document.execCommand('copy'); } catch {}
+                            document.body.removeChild(ta);
+                            makeToast('{% if lang == 'en' %}Link copied{% else %}Bağlantı kopyalandı{% endif %}');
+                        }
+                    } catch (err) {
+                        makeToast('{% if lang == 'en' %}Share failed{% else %}Paylaşım başarısız{% endif %}');
+                        console.error('Share failed', err);
+                    }
+                });
+            });
+        </script>
 
     <!-- Görsel Önizleme Modalı -->
     <div class="image-modal-overlay" id="image-modal-overlay">
