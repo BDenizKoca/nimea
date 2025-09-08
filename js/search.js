@@ -71,16 +71,24 @@
         }
       }
       if(merged.size===0) return;
-      const markerRecords = Array.from(merged.values()).filter(m=>m && m.public!==false).map(m=>({
-        id: `marker:${m.id}`,
-        type: 'marker',
-        category: m.type || 'marker',
-        lang: 'neutral',
-        title: m.name || m.id,
-        summary: m.summary || '',
-        url: `/map/?focus=${encodeURIComponent(m.id)}`,
-        tokens: tokenize(`${m.name||m.id} ${m.id} ${m.summary||''} ${m.faction||''} ${m.type||''}`)
-      }));
+      const pageLang = document.documentElement.lang || 'tr';
+      const baseMapPath = pageLang==='en' ? '/en/map/' : '/map/';
+      const markerRecords = Array.from(merged.values()).filter(m=>m && m.public!==false).map(m=>{
+        const loc = (m.i18n && m.i18n[pageLang]) ? m.i18n[pageLang] : null;
+        const title = (loc && loc.name) || m.name || m.id;
+        const summary = (loc && loc.summary) || m.summary || '';
+        const faction = (loc && loc.faction) || m.faction || '';
+        return ({
+          id: `marker:${m.id}`,
+          type: 'marker',
+          category: m.type || 'marker',
+          lang: 'neutral',
+          title,
+          summary,
+          url: `${baseMapPath}?focus=${encodeURIComponent(m.id)}`,
+          tokens: tokenize(`${title} ${m.id} ${summary} ${faction} ${m.type||''}`)
+        });
+      });
       if(!Array.isArray(STATE.index)) STATE.index = [];
       const byId = new Map(STATE.index.map(r=>[r.id, r]));
       for(const rec of markerRecords){ byId.set(rec.id, rec); }

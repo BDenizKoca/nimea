@@ -1,26 +1,34 @@
 {
     "markers": [
-        {
-            "id": "varkas",
-            "name": "Varkas",
-            "x": 1234,
-            "y": 987,
-            "type": "city",
-            "faction": "Kuruntar",
-            "summary": "Başkent, yıkık bir kutsal şehrin üzerine inşa edildi.",
-            "images": ["images/varkas_1.jpg", "images/varkas_2.jpg"],
-            "public": true
-        },
-        {
-            "id": "aurelium",
-            "name": "Aurelium",
-            "x": 2000,
-            "y": 1200,
-            "type": "city",
-            "faction": "Empire of Aurelius",
-            "summary": "The magnificent capital of the Empire of Aurelius and the largest urban center in Nimea.",
-            "images": [],
-            "public": true
-        }
+                {
+                        "id": "varkas",
+                        "name": "Varkas",
+                        "x": 1234,
+                        "y": 987,
+                        "type": "city",
+                        "faction": "Kuruntar",
+                        "summary": "Başkent, yıkık bir kutsal şehrin üzerine inşa edildi.",
+                        "i18n": {
+                            "tr": { "name": "Varkas", "summary": "Başkent, yıkık bir kutsal şehrin üzerine inşa edildi.", "faction": "Kuruntar" },
+                            "en": { "name": "Varkas", "summary": "The capital built atop the ruins of a sacred city.", "faction": "Kuruntar" }
+                        },
+                        "images": ["images/varkas_1.jpg", "images/varkas_2.jpg"],
+                        "public": true
+                },
+                {
+                        "id": "aurelium",
+                        "name": "Aurelium",
+                        "x": 2000,
+                        "y": 1200,
+                        "type": "city",
+                        "faction": "Empire of Aurelius",
+                        "summary": "The magnificent capital of the Empire of Aurelius and the largest urban center in Nimea.",
+                        "i18n": {
+                            "tr": { "name": "Aurelium", "summary": "Aurelius İmparatorluğu'nun görkemli başkenti ve Nimea'nın en büyük şehri.", "faction": "Aurelius İmparatorluğu" },
+                            "en": { "name": "Aurelium", "summary": "The magnificent capital of the Empire of Aurelius and the largest urban center in Nimea.", "faction": "Empire of Aurelius" }
+                        },
+                        "images": [],
+                        "public": true
+                }
     ]
 }
