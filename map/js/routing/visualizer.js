@@ -1,4 +1,4 @@
-// map/js/routing/visualizer.js - Route visualization and UI module
+﻿// map/js/routing/visualizer.js - Route visualization and UI module
 
 (function(window) {
     'use strict';
@@ -18,8 +18,14 @@
         }
     }
 
-    /**
-     * Analyze path segments to distinguish between road and terrain traversal
+    /**        if (bridge.state.route.length === 0) { 
+            summaryDiv.innerHTML = '<p>Henüz rota tanımlanmadı. Bir işaretçi ekleyin.</p>'; 
+            return; 
+        }
+        if (bridge.state.route.length === 1) { 
+            summaryDiv.innerHTML = '<p>Rota hesaplamak için ikinci bir durak ekleyin.</p>'; 
+            return; 
+        } Analyze path segments to distinguish between road and terrain traversal
      */
     function analyzePathSegments(pathIds, routingGraph, startMarker = null, endMarker = null) {
         console.log(`Analyzing path with ${pathIds.length} nodes:`, pathIds);
@@ -271,8 +277,8 @@
     }
 
     /**
-     * Render a single unified route spanning all legs (post-leg computation) with gentle waviness.
-     * Uses the already computed leg segments to collect original node sequences.
+     * Render a single unified route spanning all legs (post-Ayak computation) with gentle waviness.
+     * Uses the already computed Ayak segments to collect original node sequences.
      */
     function renderFullUnifiedRoute(routeLegs) {
         if (!routeLegs || !routeLegs.length) return;
@@ -408,14 +414,14 @@
         const totalKm = bridge.state.routeLegs.reduce((a, l) => a + l.distanceKm, 0);
         const hasUnreachable = bridge.state.routeLegs.some(l => l.unreachable);
         
-        // Analyze route composition
+        // Analyze Rota Bileşimi
         let roadKm = 0;
         let terrainKm = 0;
         let bridgeKm = 0;
         
-        bridge.state.routeLegs.forEach(leg => {
-            if (leg.segments) {
-                leg.segments.forEach(segment => {
+        bridge.state.routeLegs.forEach(Ayak => {
+            if (Ayak.segments) {
+                Ayak.segments.forEach(segment => {
                     const segmentDistance = computeSegmentDistance(segment.points);
                     switch (segment.type) {
                         case 'road':
@@ -435,9 +441,9 @@
                     }
                 });
             } else {
-                // If leg has no segments, treat entire leg as terrain
-                console.warn(`Leg ${leg.from.name} → ${leg.to.name} has no segments, treating as terrain`);
-                terrainKm += leg.distanceKm;
+                // If Ayak has no segments, treat entire Ayak as terrain
+                console.warn(`Ayak ${Ayak.from.name} → ${Ayak.to.name} has no segments, treating as terrain`);
+                terrainKm += Ayak.distanceKm;
             }
         });
         
@@ -459,12 +465,12 @@
         }
         
         const legsHtml = bridge.state.routeLegs.map((l, i) => {
-            let legInfo = `Leg ${i + 1}: ${l.from.name} → ${l.to.name}: ${l.distanceKm.toFixed(2)} km`;
+            let legInfo = `Ayak ${i + 1}: ${l.from.name} → ${l.to.name}: ${l.distanceKm.toFixed(2)} km`;
             
             if (l.unreachable) {
                 legInfo += ' <span class="route-status blocked">BLOCKED!</span>';
                 if (l.error) {
-                    legInfo += `<br><small class="route-error">Error: ${l.error}</small>`;
+                    legInfo += `<br><small class="route-error">Hata: ${l.error}</small>`;
                 }
             } else if (l.hybrid) {
                 legInfo += ' <span class="route-status hybrid">hybrid route</span>';
@@ -478,14 +484,14 @@
         // Generate warnings and info
         let alertsHtml = '';
         if (hasUnreachable) {
-            alertsHtml += '<div class="route-alert warning">⚠️ Some destinations are unreachable due to terrain barriers!</div>';
+            alertsHtml += '<div class="route-alert warning">⚠️ Bazı hedefler arazi engelleri nedeniyle ulaşılamaz!</div>';
         } else if (terrainKm > roadKm) {
-            alertsHtml += '<div class="route-alert info">ℹ️ Route primarily uses off-road terrain (slower travel)</div>';
+            alertsHtml += '<div class="route-alert info">ℹ️ Rota ağırlıklı olarak arazi dışı yolları kullanır (daha yavaş seyahat)</div>';
         } else if (terrainKm > 0) {
-            alertsHtml += '<div class="route-alert info">ℹ️ Route includes some off-road terrain sections</div>';
+            alertsHtml += '<div class="route-alert info">ℹ️ Rota bazı arazi dışı bölümler içerir</div>';
         }
         
-        // Route composition breakdown with proper percentage calculation
+        // Rota Bileşimi breakdown with proper percentage calculation
         // Use the corrected segment totals for percentage calculation
         const actualTotal = roadKm + terrainKm + bridgeKm;
         let roadPercent = actualTotal > 0 ? Math.round((roadKm / actualTotal) * 100) : 0;
@@ -508,46 +514,46 @@
         
         const compositionHtml = `
             <div class="route-composition">
-                <h4>Route Composition</h4>
+                <h4>Rota Bileşimi</h4>
                 <div class="composition-item road">
                     <span class="composition-color" style="background-color: #2563eb;"></span>
-                    Roads: ${roadKm.toFixed(1)} km (${roadPercent}%)
+                    Yollar: ${roadKm.toFixed(1)} km (${roadPercent}%)
                 </div>
                 <div class="composition-item terrain">
                     <span class="composition-color" style="background-color: #dc2626;"></span>
-                    Off-road: ${terrainKm.toFixed(1)} km (${terrainPercent}%)
+                    Arazi: ${terrainKm.toFixed(1)} km (${terrainPercent}%)
                 </div>
                 ${bridgeKm > 0 ? `
                 <div class="composition-item bridge">
                     <span class="composition-color" style="background-color: #7c3aed;"></span>
-                    Connections: ${bridgeKm.toFixed(1)} km (${bridgePercent}%)
+                    Köprüler: ${bridgeKm.toFixed(1)} km (${bridgePercent}%)
                 </div>` : ''}
             </div>
         `;
         
         summaryDiv.innerHTML = `
-            <h3>Hybrid Route Summary</h3>
+            <h3>Hibrit Rota Özeti</h3>
             ${alertsHtml}
             <div class="route-totals">
-                <p><strong>Total Distance:</strong> ${totalKm.toFixed(2)} km</p>
+                <p><strong>Toplam Mesafe:</strong> ${totalKm.toFixed(2)} km</p>
                 ${compositionHtml}
             </div>
             <div class="route-legs">
-                <h4>Route Legs</h4>
+                <h4>Rota Ayakları</h4>
                 <ul>${legsHtml}</ul>
             </div>
             <div class="travel-times">
-                <h4>Estimated Travel Times</h4>
+                <h4>Tahmini Seyahat Süreleri</h4>
                 <div class="travel-time-item">
-                    <strong>Walking:</strong> ${(totalKm / bridge.config.profiles.walk.speed).toFixed(1)} days
+                    <strong>Yürüyüş:</strong> ${(totalKm / bridge.config.profiles.walk.speed).toFixed(1)} gün
                 </div>
                 <div class="travel-time-item">
-                    <strong>Wagon:</strong> ${(totalKm / bridge.config.profiles.wagon.speed).toFixed(1)} days
-                    ${terrainKm > 0 ? '<small>(+25% for off-road sections)</small>' : ''}
+                    <strong>Vagon:</strong> ${(totalKm / bridge.config.profiles.wagon.speed).toFixed(1)} gün
+                    ${terrainKm > 0 ? '<small>(arazi dışı bölümler için +%25)</small>' : ''}
                 </div>
                 <div class="travel-time-item">
-                    <strong>Horse:</strong> ${(totalKm / bridge.config.profiles.horse.speed).toFixed(1)} days
-                    ${terrainKm > 0 ? '<small>(+15% for off-road sections)</small>' : ''}
+                    <strong>At:</strong> ${(totalKm / bridge.config.profiles.horse.speed).toFixed(1)} gün
+                    ${terrainKm > 0 ? '<small>(arazi dışı bölümler için +%15)</small>' : ''}
                 </div>
             </div>
         `;
@@ -562,7 +568,7 @@
     function updateRouteSummaryCalculating() {
         const summaryDiv = document.getElementById('route-summary');
         if (!summaryDiv) return;
-        summaryDiv.innerHTML = '<p>Calculating route...</p>';
+        summaryDiv.innerHTML = '<p>Rota hesaplanıyor...</p>';
     }
 
     /**
@@ -572,11 +578,11 @@
         const summaryDiv = document.getElementById('route-summary');
         if (!summaryDiv) return;
         if (!bridge.state.route.length) { 
-            summaryDiv.innerHTML = '<p>No route defined yet. Add a marker.</p>'; 
+            summaryDiv.innerHTML = '<p>Henüz rota tanımlanmadı. Bir işaretçi ekleyin.</p>'; 
             return; 
         }
         if (bridge.state.route.length === 1) { 
-            summaryDiv.innerHTML = '<p>Add a second stop to compute a route.</p>'; 
+            summaryDiv.innerHTML = '<p>Rota hesaplamak için ikinci bir durak ekleyin.</p>'; 
             return; 
         }
     }
@@ -620,3 +626,4 @@
     };
 
 })(window);
+

@@ -520,7 +520,7 @@
                 ${bridgeKm > 0 ? `
                 <div class="composition-item bridge">
                     <span class="composition-color" style="background-color: #7c3aed;"></span>
-                    Connections: ${bridgeKm.toFixed(1)} km (${bridgePercent}%)
+                    Bridges: ${bridgeKm.toFixed(1)} km (${bridgePercent}%)
                 </div>` : ''}
             </div>
         `;

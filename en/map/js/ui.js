@@ -1,4 +1,4 @@
-// map/js/ui.js
+﻿// map/js/ui.js
 
 (function(window) {
     'use strict';
@@ -134,23 +134,23 @@
         if (!infoSidebar || !infoContent) return;
 
     const wikiLink = bridge.generateWikiLink(data);
-    const addRouteBtn = bridge.state.isDmMode ? '' : `<button class="wiki-link add-to-route" data-id="${data.id}">${window.nimeaI18n ? window.nimeaI18n.t('addToRoute') : 'Rotaya Ekle'}</button>`;
+    const addRouteBtn = bridge.state.isDmMode ? '' : `<button class="wiki-link add-to-route" data-id="${data.id}">${window.nimeaI18n ? window.nimeaI18n.t('addToRoute') : 'Add to Route'}</button>`;
         
         // Add edit button for DM mode
         const dmButtons = bridge.state.isDmMode ? `
             <div class="dm-actions">
-                <button class="edit-marker-btn" data-id="${data.id}">${window.nimeaI18n ? window.nimeaI18n.t('edit') : 'Düzenle'}</button>
-                <button class="delete-marker-btn" data-id="${data.id}">${window.nimeaI18n ? window.nimeaI18n.t('delete') : 'Sil'}</button>
+                <button class="edit-marker-btn" data-id="${data.id}">${window.nimeaI18n ? window.nimeaI18n.t('edit') : 'Edit'}</button>
+                <button class="delete-marker-btn" data-id="${data.id}">${window.nimeaI18n ? window.nimeaI18n.t('delete') : 'Delete'}</button>
             </div>
         ` : '';
         
         const content = `
             <h2>${data.name}</h2>
             <p>${data.summary}</p>
-            ${data.type ? `<p><strong>Tür:</strong> ${data.type}</p>` : ''}
-            ${data.faction ? `<p><strong>Cemiyet/Devlet:</strong> ${data.faction}</p>` : ''}
+            ${data.type ? `<p><strong>Type:</strong> ${data.type}</p>` : ''}
+            ${data.faction ? `<p><strong>Faction:</strong> ${data.faction}</p>` : ''}
             ${data.images && data.images.length > 0 ? data.images.map(img => `<img src="../${img}" alt="${data.name}" style="width:100%;">`).join('') : ''}
-            ${wikiLink ? `<a href="${wikiLink}" class="wiki-link" target="_blank">${window.nimeaI18n ? window.nimeaI18n.t('showOnWiki') : 'Külliyatta Gör'}</a>` : ''}
+            ${wikiLink ? `<a href="${wikiLink}" class="wiki-link" target="_blank">${window.nimeaI18n ? window.nimeaI18n.t('showOnWiki') : 'View on Wiki'}</a>` : ''}
             ${addRouteBtn}
             ${dmButtons}
         `;
@@ -187,7 +187,7 @@
             if (deleteBtn) {
                 deleteBtn.addEventListener('click', (e) => {
                     const markerId = e.target.dataset.id;
-                    if (confirm(`"${data.name}" ${window.nimeaI18n ? window.nimeaI18n.t('confirmDelete') : 'işaretini silmek istediğine emin misin? Bu işlem geri alınamaz.'}`)) {
+                    if (confirm(`"${data.name}" ${window.nimeaI18n ? window.nimeaI18n.t('confirmDelete') : 'marker? Are you sure you want to delete it? This action cannot be undone.'}`)) {
                         if (bridge.dmModule && bridge.dmModule.deleteMarker) {
                             bridge.dmModule.deleteMarker(markerId);
                             // Close the info sidebar after deletion
@@ -236,3 +236,5 @@
     window.__nimea_ui_init = initUiModule;
 
 })(window);
+
+

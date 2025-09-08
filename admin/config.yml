@@ -11,8 +11,9 @@ public_folder: "/images"
 publish_mode: simple
 
 collections:
+  # Turkish Collections
   - name: "player-characters"
-    label: "Player Characters"
+    label: "Player Characters (TR)"
     folder: "wiki/player-characters"
     create: true
     identifier_field: "slug"
@@ -27,7 +28,7 @@ collections:
       - { label: "Body", name: "body", widget: "markdown" }
 
   - name: "characters"
-    label: "Characters"
+    label: "Characters (TR)"
     folder: "wiki/characters"
     create: true
     identifier_field: "slug"
@@ -42,7 +43,7 @@ collections:
       - { label: "Body", name: "body", widget: "markdown" }
 
   - name: "nations-factions"
-    label: "Nations & Factions"
+    label: "Nations & Factions (TR)"
     folder: "wiki/nations-factions"
     create: true
     identifier_field: "slug"
@@ -57,7 +58,7 @@ collections:
       - { label: "Body", name: "body", widget: "markdown" }
 
   - name: "locations-regions"
-    label: "Locations & Regions"
+    label: "Locations & Regions (TR)"
     folder: "wiki/locations-regions"
     create: true
     identifier_field: "slug"
@@ -73,7 +74,7 @@ collections:
       - { label: "Body", name: "body", widget: "markdown" }
 
   - name: "gods-religions"
-    label: "Gods & Religions"
+    label: "Gods & Religions (TR)"
     folder: "wiki/gods-religions"
     create: true
     identifier_field: "slug"
@@ -88,8 +89,100 @@ collections:
       - { label: "Body", name: "body", widget: "markdown" }
 
   - name: "magic-powers"
-    label: "Magic & Powers"
+    label: "Magic & Powers (TR)"
     folder: "wiki/magic-powers"
+    create: true
+    identifier_field: "slug"
+    slug: "{{slug}}"
+    fields:
+      - { label: "Layout", name: "layout", widget: "hidden", default: "base.njk" }
+      - { label: "Name", name: "name", widget: "string" }
+      - { label: "Slug", name: "slug", widget: "string", hint: "URL-friendly version of the name" }
+      - { label: "Summary", name: "summary", widget: "text", hint: "A brief description" }
+      - { label: "Cover Image", name: "cover_image", widget: "image", required: false }
+      - { label: "Public", name: "public", widget: "boolean", default: true }
+      - { label: "Body", name: "body", widget: "markdown" }
+
+  # English Collections
+  - name: "en-player-characters"
+    label: "Player Characters (EN)"
+    folder: "en/wiki/player-characters"
+    create: true
+    identifier_field: "slug"
+    slug: "{{slug}}"
+    fields:
+      - { label: "Layout", name: "layout", widget: "hidden", default: "base.njk" }
+      - { label: "Name", name: "name", widget: "string" }
+      - { label: "Slug", name: "slug", widget: "string", hint: "URL-friendly version of the name" }
+      - { label: "Summary", name: "summary", widget: "text", hint: "A brief description" }
+      - { label: "Cover Image", name: "cover_image", widget: "image", required: false }
+      - { label: "Public", name: "public", widget: "boolean", default: true }
+      - { label: "Body", name: "body", widget: "markdown" }
+
+  - name: "en-characters"
+    label: "Characters (EN)"
+    folder: "en/wiki/characters"
+    create: true
+    identifier_field: "slug"
+    slug: "{{slug}}"
+    fields:
+      - { label: "Layout", name: "layout", widget: "hidden", default: "base.njk" }
+      - { label: "Name", name: "name", widget: "string" }
+      - { label: "Slug", name: "slug", widget: "string", hint: "URL-friendly version of the name" }
+      - { label: "Summary", name: "summary", widget: "text", hint: "A brief description" }
+      - { label: "Cover Image", name: "cover_image", widget: "image", required: false }
+      - { label: "Public", name: "public", widget: "boolean", default: true }
+      - { label: "Body", name: "body", widget: "markdown" }
+
+  - name: "en-nations-factions"
+    label: "Nations & Factions (EN)"
+    folder: "en/wiki/nations-factions"
+    create: true
+    identifier_field: "slug"
+    slug: "{{slug}}"
+    fields:
+      - { label: "Layout", name: "layout", widget: "hidden", default: "base.njk" }
+      - { label: "Name", name: "name", widget: "string" }
+      - { label: "Slug", name: "slug", widget: "string", hint: "URL-friendly version of the name" }
+      - { label: "Summary", name: "summary", widget: "text", hint: "A brief description" }
+      - { label: "Cover Image", name: "cover_image", widget: "image", required: false }
+      - { label: "Public", name: "public", widget: "boolean", default: true }
+      - { label: "Body", name: "body", widget: "markdown" }
+
+  - name: "en-locations-regions"
+    label: "Locations & Regions (EN)"
+    folder: "en/wiki/locations-regions"
+    create: true
+    identifier_field: "slug"
+    slug: "{{slug}}"
+    fields:
+      - { label: "Layout", name: "layout", widget: "hidden", default: "base.njk" }
+      - { label: "Name", name: "name", widget: "string" }
+      - { label: "Slug", name: "slug", widget: "string", hint: "URL-friendly version of the name" }
+      - { label: "Summary", name: "summary", widget: "text", hint: "A brief description" }
+      - { label: "Cover Image", name: "cover_image", widget: "image", required: false }
+      - { label: "Map ID", name: "map_id", widget: "string", required: false, hint: "Link to map marker" }
+      - { label: "Public", name: "public", widget: "boolean", default: true }
+      - { label: "Body", name: "body", widget: "markdown" }
+
+  - name: "en-gods-religions"
+    label: "Gods & Religions (EN)"
+    folder: "en/wiki/gods-religions"
+    create: true
+    identifier_field: "slug"
+    slug: "{{slug}}"
+    fields:
+      - { label: "Layout", name: "layout", widget: "hidden", default: "base.njk" }
+      - { label: "Name", name: "name", widget: "string" }
+      - { label: "Slug", name: "slug", widget: "string", hint: "URL-friendly version of the name" }
+      - { label: "Summary", name: "summary", widget: "text", hint: "A brief description" }
+      - { label: "Cover Image", name: "cover_image", widget: "image", required: false }
+      - { label: "Public", name: "public", widget: "boolean", default: true }
+      - { label: "Body", name: "body", widget: "markdown" }
+
+  - name: "en-magic-powers"
+    label: "Magic & Powers (EN)"
+    folder: "en/wiki/magic-powers"
     create: true
     identifier_field: "slug"
     slug: "{{slug}}"

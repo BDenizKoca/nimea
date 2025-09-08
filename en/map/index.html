@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;700&family=EB+Garamond:wght@400;500;700&display=swap&subset=latin-ext">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.css" />
-    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header class="map-header">
@@ -15,36 +15,39 @@
             <a href="../" class="nav-link">Home</a>
             <a href="../wiki/" class="nav-link">Wiki</a>
             <h1 class="map-title">Nimea Interactive Map</h1>
+            <div class="lang-switch">
+                <a href="../../map/">TR</a>
+            </div>
         </nav>
     </header>
     
     <div id="map"></div>
 
     <!-- Route sidebar reopen button -->
-    <button id="reopen-route-sidebar" class="reopen-route-btn hidden" title="Rota Planlayıcısını Aç">Rota</button>
+    <button id="reopen-route-sidebar" class="reopen-route-btn hidden" title="Open Route Planner">🗺️</button>
 
     <div class="map-legend hidden" id="map-legend" role="region" aria-label="Map Legend">
-        <h4>Açıklamalar</h4>
+        <h4>Legend</h4>
         <ul>
-            <li><span class="legend-swatch legend-road"></span> Yol</li>
-            <li><span class="legend-swatch legend-difficult"></span> Zorlu Arazi</li>
-            <li><span class="legend-swatch legend-unpassable"></span> Geçilmez Arazi</li>
-            <li><span class="legend-swatch legend-route"></span> Rota</li>
+            <li><span class="legend-swatch legend-road"></span> Road</li>
+            <li><span class="legend-swatch legend-difficult"></span> Difficult Terrain</li>
+            <li><span class="legend-swatch legend-unpassable"></span> Impassable Terrain</li>
+            <li><span class="legend-swatch legend-route"></span> Route</li>
         </ul>
-    <div class="legend-note">Ölçek: 115 px = 50 km</div>
+    <div class="legend-note">Scale: 115 px = 50 km</div>
     </div>
 
     <!-- Overlay segmented control will appear through existing container -->
 
     <div class="sidebar left-sidebar" id="route-sidebar">
         <button id="close-route-sidebar" class="sidebar-close-btn">&times;</button>
-    <h2>Rota Planlayıcı</h2>
+    <h2>Route Planner</h2>
         <div id="route-stops"></div>
         <div id="route-summary"></div>
     </div>
 
     <div class="sidebar right-sidebar" id="info-sidebar">
-        <button id="close-info-sidebar" aria-label="Kapat">&times;</button>
+        <button id="close-info-sidebar" aria-label="Close">&times;</button>
         <div id="info-content"></div>
     </div>
 
@@ -67,65 +70,65 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="marker-type">Tür</label>
+                    <label for="marker-type">Type</label>
                     <select id="marker-type" name="marker-type">
-                        <option value="city">Şehir</option>
-                        <option value="town">Kasaba</option>
-                        <option value="village">Köy</option>
-                        <option value="fortress">Hisar</option>
-                        <option value="ruin">Harabe</option>
-                        <option value="landmark">Anıt</option>
-                        <option value="dungeon">Zindan</option>
-                        <option value="other">Diğer</option>
+                        <option value="city">City</option>
+                        <option value="town">Town</option>
+                        <option value="village">Village</option>
+                        <option value="fortress">Fortress</option>
+                        <option value="ruin">Ruin</option>
+                        <option value="landmark">Landmark</option>
+                        <option value="dungeon">Dungeon</option>
+                        <option value="other">Other</option>
                     </select>
                 </div>
                 
                 <div class="form-group">
-                    <label for="marker-icon">Özel Simge</label>
+                    <label for="marker-icon">Custom Icon</label>
                     <div class="icon-input-container">
-                        <input type="text" id="marker-icon" name="marker-icon" placeholder="Varsayılan için boş bırak" maxlength="10">
-                        <!-- Emoji önerileri kaldırıldı -->
+                        <input type="text" id="marker-icon" name="marker-icon" placeholder="Leave empty for default" maxlength="10">
+                        <!-- Emoji suggestions removed -->
                     </div>
-                    <small>İstersen özel bir simge karakteri yazabilirsin</small>
+                    <small>You can enter a custom icon character if you want</small>
                 </div>
                 
                 <div class="form-group">
-                    <label for="marker-icon-url">Veya Özel Görsel URL</label>
+                    <label for="marker-icon-url">Or Custom Image URL</label>
                     <input type="url" id="marker-icon-url" name="marker-icon-url" placeholder="https://example.com/icon.png">
-                    <small>PNG/JPG bir simge URL’si kullanabilirsin (yukarıdaki değerin yerine geçer)</small>
+                    <small>You can use a PNG/JPG icon URL (replaces the above value)</small>
                 </div>
                 
                 <div class="form-group">
-                    <label for="marker-faction">Cemiyet/Devlet</label>
+                    <label for="marker-faction">Faction/Nation</label>
                     <input type="text" id="marker-faction" name="marker-faction" placeholder="e.g., Empire of Aurelius">
                 </div>
                 
                 <div class="form-group">
-                    <label for="marker-summary">Özet *</label>
+                    <label for="marker-summary">Summary *</label>
                     <textarea id="marker-summary" name="marker-summary" rows="3" required></textarea>
                 </div>
 
                 <div class="form-group">
-                    <label for="marker-wiki-slug">Wiki Kısa Ad (Slug)</label>
+                    <label for="marker-wiki-slug">Wiki Slug</label>
                     <input type="text" id="marker-wiki-slug" name="marker-wiki-slug" placeholder="Optional: e.g., empire-of-aurelius">
-                    <small>Verilirse doğrudan /wiki/&lt;slug&gt;/ adresine bağlanır; aksi hâlde otomatik üretilir.</small>
+                    <small>If provided, links directly to /wiki/&lt;slug&gt;/; otherwise auto-generated.</small>
                 </div>
                 
                 <div class="form-group">
-                    <label for="marker-coordinates">Koordinatlar</label>
+                    <label for="marker-coordinates">Coordinates</label>
                     <input type="text" id="marker-coordinates" readonly>
                 </div>
                 
                 <div class="form-group">
                     <label>
                         <input type="checkbox" id="marker-public" name="marker-public" checked>
-                        Herkese açık (oyuncular görebilir)
+                        Public (players can see)
                     </label>
                 </div>
                 
                 <div class="form-actions">
-                    <button type="button" id="cancel-marker">Vazgeç</button>
-                    <button type="submit" id="save-marker">İşareti Oluştur</button>
+                    <button type="button" id="cancel-marker">Cancel</button>
+                    <button type="submit" id="save-marker">Create Marker</button>
                 </div>
             </form>
         </div>
@@ -134,23 +137,23 @@
     <!-- Bulk Import Modal for DM Mode -->
     <div class="modal hidden" id="bulk-import-modal">
         <div class="modal-content">
-            <h3>Toplu İşaret İçe Aktarma</h3>
+            <h3>Bulk Marker Import</h3>
             <div class="form-group">
-                <label for="csv-input">CSV Verisi</label>
+                <label for="csv-input">CSV Data</label>
                 <textarea id="csv-input" rows="10" placeholder="name,x,y,type,faction,summary,public
-Varkas,1234,987,city,Kuruntar,Eski başkent,true
-Thornhold,2000,1500,fortress,Empire,Dağ kalesi,true"></textarea>
-                <small>Biçim: name,x,y,type,faction,summary,public (başlık satırı isteğe bağlı)</small>
+Varkas,1234,987,city,Kuruntar,Ancient capital,true
+Thornhold,2000,1500,fortress,Empire,Mountain fortress,true"></textarea>
+                <small>Format: name,x,y,type,faction,summary,public (header row optional)</small>
             </div>
             
             <div class="form-group">
-                <label for="csv-file">Ya da CSV dosyası yükle:</label>
+                <label for="csv-file">Or upload CSV file:</label>
                 <input type="file" id="csv-file" accept=".csv" />
             </div>
             
             <div class="form-actions">
-                <button type="button" id="cancel-import">Vazgeç</button>
-                <button type="button" id="process-import">İşaretleri İçe Aktar</button>
+                <button type="button" id="cancel-import">Cancel</button>
+                <button type="button" id="process-import">Import Markers</button>
             </div>
         </div>
     </div>
@@ -158,30 +161,30 @@ Thornhold,2000,1500,fortress,Empire,Dağ kalesi,true"></textarea>
     <!-- Terrain Type Selection Modal -->
     <div class="modal hidden" id="terrain-type-modal">
         <div class="modal-content">
-            <h3>Arazi Türü Seç</h3>
+            <h3>Select Terrain Type</h3>
             <div class="terrain-options">
-                <button type="button" class="terrain-btn road-btn" data-type="road">Yol<br>
-                    <small>Daha hızlı</small></button>
-                <button type="button" class="terrain-btn difficult-btn" data-type="difficult">Zorlu<br>
-                    <small>Daha yavaş</small></button>
-                <button type="button" class="terrain-btn forest-btn" data-type="forest">Orman<br>
-                    <small>Orta zorluk</small></button>
-                <button type="button" class="terrain-btn unpassable-btn" data-type="unpassable">Geçilmez<br>
-                    <small>İmkânsız</small></button>
+                <button type="button" class="terrain-btn road-btn" data-type="road">Road<br>
+                    <small>Faster</small></button>
+                <button type="button" class="terrain-btn difficult-btn" data-type="difficult">Difficult<br>
+                    <small>Slower</small></button>
+                <button type="button" class="terrain-btn forest-btn" data-type="forest">Forest<br>
+                    <small>Medium difficulty</small></button>
+                <button type="button" class="terrain-btn unpassable-btn" data-type="unpassable">Impassable<br>
+                    <small>Impossible</small></button>
             </div>
             <div class="form-actions">
-                <button type="button" id="cancel-terrain">Vazgeç</button>
+                <button type="button" id="cancel-terrain">Cancel</button>
             </div>
         </div>
     </div>
 
     <div class="leaflet-top leaflet-right">
         <div class="leaflet-control-layers leaflet-control" id="overlay-toggles">
-            <div class="overlay-segmented" role="group" aria-label="Kaplama görünürlüğü">
-                <button type="button" data-mode="both" class="active" aria-pressed="true"><span>İkisi</span></button>
-                <button type="button" data-mode="regions" aria-pressed="false"><span>Bölgeler</span></button>
-                <button type="button" data-mode="borders" aria-pressed="false"><span>Sınırlar</span></button>
-                <button type="button" data-mode="none" aria-pressed="false"><span>Kapalı</span></button>
+            <div class="overlay-segmented" role="group" aria-label="Overlay visibility">
+                <button type="button" data-mode="both" class="active" aria-pressed="true"><span>Both</span></button>
+                <button type="button" data-mode="regions" aria-pressed="false"><span>Regions</span></button>
+                <button type="button" data-mode="borders" aria-pressed="false"><span>Borders</span></button>
+                <button type="button" data-mode="none" aria-pressed="false"><span>Off</span></button>
             </div>
         </div>
     </div>
@@ -219,3 +222,4 @@ Thornhold,2000,1500,fortress,Empire,Dağ kalesi,true"></textarea>
     <script src="map.js"></script>
 </body>
 </html>
+

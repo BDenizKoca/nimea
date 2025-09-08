@@ -61,7 +61,7 @@ body, html {
     left: 50%;
     bottom: 18px;
     transform: translateX(-50%);
-    z-index: 1200; /* Below header (2000) & sidebars (1000+) but above map */
+    z-index: 800; /* Below sidebars (1000+) and header (2000) but above map */
     background: rgba(244,240,230,0.9);
     border: 2px solid var(--color-border);
     padding: 6px 10px;
@@ -155,6 +155,50 @@ body, html {
     padding: 10px 20px;
     max-width: 1200px;
     margin: 0 auto;
+}
+
+/* Language Switcher (unified with wiki) */
+.lang-switch {
+    display: flex;
+    gap: 6px;
+    font-size: 0.9rem;
+    margin-left: 10px;
+}
+
+.lang-switch a {
+    background: rgba(184, 134, 11, 0.1);
+    padding: 4px 10px;
+    border-radius: 16px;
+    border: 1px solid rgba(184, 134, 11, 0.35);
+    text-decoration: none;
+    font-weight: 500;
+    color: #8b4513;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    position: relative;
+}
+
+.lang-switch a:hover,
+.lang-switch a:focus-visible {
+    background: rgba(184, 134, 11, 0.22);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(184,134,11,0.25);
+}
+
+.lang-switch a:active {
+    background: rgba(184,134,11,0.32);
+}
+
+/* Compact layout for very small devices */
+@media (max-width: 520px) {
+    .lang-switch a {
+        padding: 4px 8px;
+        font-size: 0.75rem;
+        border-radius: 14px;
+    }
 }
 
 .nav-link {

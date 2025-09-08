@@ -64,13 +64,11 @@
         }
     };
 
-    let currentLang = 'tr';
+    let currentLang = 'en';
 
     function initI18n() {
-        // Detect language from URL
-        if (window.location.pathname.startsWith('/en')) {
-            currentLang = 'en';
-        }
+        // For English version, always use English
+        currentLang = 'en';
         
         // Update document language
         document.documentElement.lang = currentLang;
@@ -82,7 +80,7 @@
     function t(key, ...args) {
         let value = translations[currentLang][key];
         if (!value) {
-            value = translations['tr'][key] || key;
+            value = translations['en'][key] || key;
         }
         
         // Replace placeholders with arguments

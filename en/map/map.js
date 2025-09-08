@@ -247,26 +247,30 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function generateWikiLink(markerData) {
+        // Detect if we're in English version
+        const isEnglish = window.location.pathname.startsWith('/en');
+        const baseWikiPath = isEnglish ? '/en/wiki' : '/wiki';
+        
         // 1. Explicit slug override
         if (markerData.wikiSlug) {
             // Check if it's already a full path
             if (markerData.wikiSlug.includes('/')) {
-                return `/wiki/${markerData.wikiSlug.replace(/^\/wiki\//,'').replace(/\/+/g,'/')}/`;
+                return `${baseWikiPath}/${markerData.wikiSlug.replace(/^\/wiki\//,'').replace(/\/+/g,'/')}/`;
             }
             // Otherwise, infer the correct category based on type
             if (markerData.type && ['city','town','village','fortress','ruin','landmark','dungeon'].includes(markerData.type)) {
-                return `/wiki/locations-regions/${markerData.wikiSlug}/`;
+                return `${baseWikiPath}/locations-regions/${markerData.wikiSlug}/`;
             }
             // For character types, use characters folder
             if (markerData.type === 'character') {
-                return `/wiki/characters/${markerData.wikiSlug}/`;
+                return `${baseWikiPath}/characters/${markerData.wikiSlug}/`;
             }
             // Default fallback
-            return `/wiki/${markerData.wikiSlug}/`;
+            return `${baseWikiPath}/${markerData.wikiSlug}/`;
         }
         // 2. Infer by type (extendable)
         if (markerData.type && ['city','town','village','fortress','ruin','landmark','dungeon'].includes(markerData.type)) {
-            return `/wiki/locations-regions/${markerData.id}/`;
+            return `${baseWikiPath}/locations-regions/${markerData.id}/`;
         }
         return null;
     }

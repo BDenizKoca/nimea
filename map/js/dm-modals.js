@@ -269,7 +269,7 @@
             
             // When editing, we don't need a pending marker
             if (!isEditMode && !this.pendingMarker) {
-                this.bridge.showNotification('Error: No pending marker to save. Please try again.', 'error');
+                this.bridge.showNotification('Hata: Kaydedilecek bekleyen işaretçi yok. Lütfen tekrar deneyin.', 'error');
                 document.getElementById('marker-creation-modal').classList.add('hidden');
                 return;
             }
@@ -332,27 +332,27 @@
          */
         validateMarkerData(id, name, summary, lat, lng, isEditMode, originalId) {
             if (!id || !name || !summary) {
-                this.bridge.showNotification('Please fill in all required fields', 'error');
+                this.bridge.showNotification('Lütfen tüm gerekli alanları doldurun', 'error');
                 return false;
             }
             if (isNaN(lat) || isNaN(lng)) {
-                this.bridge.showNotification('Error: Invalid coordinates. Please place the marker again.', 'error');
+                this.bridge.showNotification('Hata: Geçersiz koordinatlar. Lütfen işaretçiyi tekrar yerleştirin.', 'error');
                 return false;
             }
             if (!/^[a-zA-Z0-9_-]+$/.test(id)) {
-                this.bridge.showNotification('ID can only contain letters, numbers, hyphens, and underscores', 'error');
+                this.bridge.showNotification('ID sadece harf, rakam, tire ve alt çizgi içerebilir', 'error');
                 return false;
             }
             
             // Check for ID conflicts, but allow the same ID when editing
             if (!isEditMode && this.bridge.state.markers.some(m => m.id === id)) {
-                this.bridge.showNotification('Marker ID already exists', 'error');
+                this.bridge.showNotification('İşaretçi ID\'si zaten mevcut', 'error');
                 return false;
             }
             
             // Also check if we're editing but changing the ID to one that already exists
             if (isEditMode && id !== originalId && this.bridge.state.markers.some(m => m.id === id)) {
-                this.bridge.showNotification('Cannot change ID: another marker with this ID already exists', 'error');
+                this.bridge.showNotification('ID değiştirilemez: bu ID\'ye sahip başka bir işaretçi zaten var', 'error');
                 return false;
             }
 
@@ -367,7 +367,7 @@
         updateExistingMarker(markerData, originalId) {
             const markerIndex = this.bridge.state.markers.findIndex(m => m.id === originalId);
             if (markerIndex === -1) {
-                this.bridge.showNotification('Error: Could not find original marker to update', 'error');
+                this.bridge.showNotification('Hata: Güncellenecek orijinal işaretçi bulunamadı', 'error');
                 return;
             }
             
@@ -485,7 +485,7 @@
          */
         processBulkImport(csvData) {
             if (!csvData.trim()) {
-                this.bridge.showNotification('Please enter CSV data', 'error');
+                this.bridge.showNotification('Lütfen CSV verisi girin', 'error');
                 return;
             }
 

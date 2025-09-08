@@ -1,4 +1,4 @@
-// map/js/dm-controls.js
+﻿// map/js/dm-controls.js
 // UI Controls for DM Mode
 
 (function(window) {
@@ -35,9 +35,9 @@
                     container.style.display = 'flex';
                     container.style.flexDirection = 'column';
                                         container.innerHTML = `
-                                            <a class="leaflet-control-button" id="dm-download-json" title="İşaret ve arazi verisini indir">İndir</a>
-                                            <a class="leaflet-control-button" id="dm-publish-json" title="Değişiklikleri depoya kaydet (giriş gerekli)">Yayınla</a>
-                                            <span class="dm-dirty-indicator" style="display:none; background:#d9534f; color:#fff; font-size:10px; padding:2px 4px; text-align:center;">KAYDEDİLMEDİ</span>
+                                            <a class="leaflet-control-button" id="dm-download-json" title="Download marker and terrain data">Download</a>
+                                            <a class="leaflet-control-button" id="dm-publish-json" title="Save changes to repository (login required)">Publish</a>
+                                            <span class="dm-dirty-indicator" style="display:none; background:#d9534f; color:#fff; font-size:10px; padding:2px 4px; text-align:center;">UNSAVED</span>
                                         `;
                     
                     const downloadBtn = container.querySelector('#dm-download-json');
@@ -46,7 +46,7 @@
                     downloadBtn.onclick = () => self.bridge.dmModule.exportData();
                     publishBtn.onclick = async () => {
                         if (!self.bridge.state.dirty.markers && !self.bridge.state.dirty.terrain) {
-                            self.bridge.showNotification('Yayınlanacak değişiklik yok', 'info');
+                            self.bridge.showNotification('No changes to publish', 'info');
                             return;
                         }
                         await self.bridge.dmModule.publishAll();
@@ -71,10 +71,10 @@
                     const container = L.DomUtil.create('div', 'terrain-controls');
                     container.innerHTML = `
                         <div class="leaflet-bar leaflet-control">
-                            <a class="leaflet-control-button terrain-mode-btn" data-mode="road" title="Yolları boya">Yol</a>
+                            <a class="leaflet-control-button terrain-mode-btn" data-mode="road" title="Paint roads">Road</a>
                             <a class="leaflet-control-button terrain-mode-btn" data-mode="difficult" title="Zorlu araziyi boya">Zorlu</a>
-                            <a class="leaflet-control-button terrain-mode-btn" data-mode="unpassable" title="Geçilmez alanları boya">Geçilmez</a>
-                            <a class="leaflet-control-button" id="clear-terrain-mode" title="Normal çizim">Normal</a>
+                            <a class="leaflet-control-button terrain-mode-btn" data-mode="unpassable" title="Paint impassable areas">Impassable</a>
+                            <a class="leaflet-control-button" id="clear-terrain-mode" title="Normal drawing">Normal</a>
                         </div>
                     `;
                     
@@ -109,8 +109,8 @@
                 onAdd: function () {
                     const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
                     const button = L.DomUtil.create('a', 'leaflet-control-button', container);
-                    button.innerHTML = 'İçe Aktar';
-                    button.title = 'CSV ile işaretleri içe aktar';
+                    button.innerHTML = 'Import';
+                    button.title = 'Import markers from CSV';
                     button.onclick = () => self.bridge.dmModule.openBulkImportModal();
                     return container;
                 }
@@ -129,7 +129,7 @@
                     const container = L.DomUtil.create('div', 'auth-controls');
                     container.innerHTML = `
                         <div class="leaflet-bar leaflet-control">
-                            <a class="leaflet-control-button" id="dm-login-btn" title="Canlı CMS için giriş">Giriş</a>
+                            <a class="leaflet-control-button" id="dm-login-btn" title="Login for live CMS">Login</a>
                             <a class="leaflet-control-button" id="dm-status-btn" title="CMS durumu">Durum</a>
                         </div>
                     `;
@@ -149,14 +149,14 @@
                             }
                         } catch (e) {
                             console.error('Login button error:', e);
-                            self.bridge.showNotification('Kimlik doğrulama kullanılamıyor (konsola bakınız).', 'error');
+                            self.bridge.showNotification('Authentication unavailable (check console).', 'error');
                         }
                     });
 
                     statusBtn.addEventListener('click', () => {
                         const status = self.bridge.state.isLiveCMS 
-                            ? 'Canlı CMS: Değişiklikler depoya otomatik kaydedilir' 
-                            : 'Çevrimdışı Kip: Veriyi kaydetmek için Dışa Aktar düğmesini kullan';
+                            ? 'Live CMS: Changes are automatically saved to repository' 
+                            : 'Offline Mode: Use Export button to save data';
                         self.bridge.showNotification(status, 'info');
                     });
 
@@ -166,12 +166,12 @@
                         window.netlifyIdentity.on('login', () => {
                             self.bridge.state.isLiveCMS = true;
                             self.updateAuthUI();
-                            self.bridge.showNotification('Canlı CMS kipi etkinleştirildi', 'success');
+                            self.bridge.showNotification('Live CMS mode enabled', 'success');
                         });
                         window.netlifyIdentity.on('logout', () => {
                             self.bridge.state.isLiveCMS = false;
                             self.updateAuthUI();
-                            self.bridge.showNotification('Oturum kapatıldı. Çevrimdışı kipe geçildi.', 'info');
+                            self.bridge.showNotification('Logged out. Switched to offline mode.', 'info');
                         });
                     }
 
@@ -187,8 +187,8 @@
          */
         setTerrainMode(mode) {
             this.currentTerrainMode = mode;
-            const modeTr = mode === 'road' ? 'Yol' : mode === 'difficult' ? 'Zorlu' : mode === 'unpassable' ? 'Geçilmez' : mode;
-            this.bridge.showNotification(`Arazi kipi: ${modeTr}. Araziyi boyamak için çokgen/çizgi çiz.`, 'success');
+            const modeEn = mode === 'road' ? 'Road' : mode === 'difficult' ? 'Difficult' : mode === 'unpassable' ? 'Impassable' : mode;
+            this.bridge.showNotification(`Terrain mode: ${modeEn}. Draw polygons/lines to paint terrain.`, 'success');
         }
 
         /**
@@ -196,7 +196,7 @@
          */
         clearTerrainMode() {
             this.currentTerrainMode = null;
-            this.bridge.showNotification('Normal çizim kipi etkin', 'success');
+            this.bridge.showNotification('Normal drawing kipi etkin', 'success');
         }
 
         /**
@@ -234,12 +234,12 @@
             const isAuthenticated = window.gitClient && window.gitClient.isAuthenticated;
 
             if (loginBtn) {
-                loginBtn.textContent = isAuthenticated ? 'Çıkış' : 'Giriş';
-                loginBtn.title = isAuthenticated ? 'Oturumu kapat' : 'Canlı CMS için giriş';
+                loginBtn.textContent = isAuthenticated ? 'Logout' : 'Login';
+                loginBtn.title = isAuthenticated ? 'Logout' : 'Login for live CMS';
             }
             
             if (statusBtn) {
-                statusBtn.textContent = this.bridge.state.isLiveCMS ? 'Durum: Canlı' : 'Durum: Kapalı';
+                statusBtn.textContent = this.bridge.state.isLiveCMS ? 'Status: Live' : 'Status: Offline';
                 statusBtn.style.color = this.bridge.state.isLiveCMS ? '#28a745' : '#6c757d';
             }
             
@@ -252,3 +252,6 @@
     window.DmControls = DmControls;
 
 })(window);
+
+
+
