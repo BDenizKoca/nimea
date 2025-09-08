@@ -25,6 +25,26 @@
 			"type": "shell",
 			"command": "npx eleventy",
 			"group": "build"
+		},
+		{
+			"label": "Build site after adding EN hubs",
+			"type": "shell",
+			"command": "npm run build",
+			"args": [],
+			"problemMatcher": [
+				"$eslint-stylish"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Rebuild after search-index fix",
+			"type": "shell",
+			"command": "npm run build",
+			"args": [],
+			"problemMatcher": [
+				"$eslint-stylish"
+			],
+			"group": "build"
 		}
 	]
 }
