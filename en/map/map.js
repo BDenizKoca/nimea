@@ -121,10 +121,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadInitialData() {
         try {
-            // Load markers
+            // Load markers from single source of truth (TR dataset)
             let markersData = { markers: [] };
             try {
-                const markersRes = await fetch('data/markers.json');
+                const markersRes = await fetch('/map/data/markers.json');
                 if (markersRes.ok) {
                     markersData = await markersRes.json();
                 }
@@ -132,10 +132,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.warn('Could not load markers.json, using empty array');
             }
 
-            // Load terrain
+            // Load terrain from unified source
             let terrainData = { type: 'FeatureCollection', features: [] };
             try {
-                const terrainRes = await fetch('data/terrain.geojson');
+                const terrainRes = await fetch('/map/data/terrain.geojson');
                 if (terrainRes.ok) {
                     terrainData = await terrainRes.json();
                 }
@@ -143,10 +143,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.warn('Could not load terrain.geojson, using empty features');
             }
 
-            // Load config
+            // Load config from unified source
             let remoteConfig = {};
             try {
-                const configRes = await fetch('data/config.json');
+                const configRes = await fetch('/map/data/config.json');
                 if (configRes.ok) {
                     remoteConfig = await configRes.json();
                 }
