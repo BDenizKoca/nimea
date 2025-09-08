@@ -156,12 +156,12 @@
                     style = { 
                         color: '#dc2626', // Red for terrain traversal
                         weight: 3, 
-                        opacity: 0.8,
+                const isEnglish = ((document.documentElement.lang || '').toLowerCase().startsWith('en')) || location.pathname.startsWith('/en');
                         dashArray: '8, 8', // Dashed for off-road
                         pane: 'routePane'
                     };
                     break;
-                case 'bridge':
+                const daily = computeDailyBreakdown(bridge.state.routeLegs, kmPerDay);
                     style = { 
                         color: '#7c3aed', // Purple for bridges
                         weight: 3, 
@@ -595,7 +595,14 @@
         if (adv) {
             const updateAdv = () => {
                 if (adv.open) {
-                    try { renderDayMarkers(daily, t); } catch (e) { console.warn('Failed to render day markers:', e); }
+                    try {
+                        const wagon = 'wagon';
+                        const sel2 = document.getElementById('travel-profile-select');
+                        if (sel2) sel2.value = wagon;
+                        bridge.state.travelProfile = wagon;
+                        const d2 = computeDailyBreakdown(bridge.state.routeLegs, (bridge.config.profiles[wagon]||{}).speed || kmPerDay);
+                        renderDayMarkers(d2, t);
+                    } catch (e) { console.warn('Failed to render day markers:', e); }
                 } else {
                     clearDayMarkers();
                 }
