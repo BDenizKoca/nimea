@@ -59,6 +59,10 @@
       "type": "fortress",
       "faction": "Custodis Senatosu",
       "summary": "Custodislerin yüzyıllardır savundukları kapı.",
+      "i18n": {
+        "tr": { "name": "Custodis Kapısı", "summary": "Custodislerin yüzyıllardır savundukları kapı.", "faction": "Custodis Senatosu" },
+        "en": { "name": "Custodis Kapısı", "summary": "Custodislerin yüzyıllardır savundukları kapı.", "faction": "Custodis Senatosu" }
+      },
       "images": [],
       "public": true
     },
@@ -70,6 +74,10 @@
       "type": "city",
       "faction": "Ruatan Krallığı",
       "summary": "Ruatan",
+      "i18n": {
+        "tr": { "name": "Ruatan", "summary": "Ruatan", "faction": "Ruatan Krallığı" },
+        "en": { "name": "Ruatan", "summary": "Ruatan", "faction": "Ruatan Krallığı" }
+      },
       "images": [],
       "public": true
     },
@@ -81,6 +89,10 @@
       "type": "city",
       "faction": "Evergreen Krallıgı",
       "summary": "Evergreen",
+      "i18n": {
+        "tr": { "name": "Evergreen", "summary": "Evergreen", "faction": "Evergreen Krallıgı" },
+        "en": { "name": "Evergreen", "summary": "Evergreen", "faction": "Evergreen Krallıgı" }
+      },
       "images": [],
       "public": true
     },
@@ -91,6 +103,10 @@
       "y": 2263.49217,
       "type": "city",
       "summary": "Kuzey",
+      "i18n": {
+        "tr": { "name": "Kuzey Kent", "summary": "Kuzey" },
+        "en": { "name": "Kuzey Kent", "summary": "Kuzey" }
+      },
       "images": [],
       "public": true
     },
@@ -101,6 +117,10 @@
       "y": 785.492198,
       "type": "city",
       "summary": "kıyı kenti",
+      "i18n": {
+        "tr": { "name": "kıyı kent", "summary": "kıyı kenti" },
+        "en": { "name": "kıyı kent", "summary": "kıyı kenti" }
+      },
       "images": [],
       "public": true
     },
@@ -111,6 +131,10 @@
       "y": 512.492254,
       "type": "city",
       "summary": "uçurumlarla kaplı",
+      "i18n": {
+        "tr": { "name": "uçurumtepe", "summary": "uçurumlarla kaplı" },
+        "en": { "name": "uçurumtepe", "summary": "uçurumlarla kaplı" }
+      },
       "images": [],
       "public": true
     },
@@ -122,6 +146,10 @@
       "type": "fortress",
       "faction": "Çamkale Krallığı",
       "summary": "Çamkale Krallığı Doğu Karakolu",
+      "i18n": {
+        "tr": { "name": "Doğu Karakolu", "summary": "Çamkale Krallığı Doğu Karakolu", "faction": "Çamkale Krallığı" },
+        "en": { "name": "Doğu Karakolu", "summary": "Çamkale Krallığı Doğu Karakolu", "faction": "Çamkale Krallığı" }
+      },
       "images": [],
       "public": true
     },
@@ -133,6 +161,10 @@
       "type": "city",
       "faction": "Taşyurt Krallığı",
       "summary": "Taşyurt Krallığı Başkenti",
+      "i18n": {
+        "tr": { "name": "Taşyurt", "summary": "Taşyurt Krallığı Başkenti", "faction": "Taşyurt Krallığı" },
+        "en": { "name": "Taşyurt", "summary": "Taşyurt Krallığı Başkenti", "faction": "Taşyurt Krallığı" }
+      },
       "images": [],
       "public": true
     }

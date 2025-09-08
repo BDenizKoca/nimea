@@ -122,6 +122,27 @@
 			"command": "npm run build",
 			"args": [],
 			"group": "build"
+		},
+		{
+			"label": "Build Eleventy for wiki EN/TR hub changes",
+			"type": "shell",
+			"command": "npm run build",
+			"args": [],
+			"group": "build"
+		},
+		{
+			"label": "Build with share button changes",
+			"type": "shell",
+			"command": "npm run build",
+			"args": [],
+			"group": "build"
+		},
+		{
+			"label": "Build after marker i18n changes",
+			"type": "shell",
+			"command": "npm run build",
+			"args": [],
+			"group": "build"
 		}
 	]
 }
