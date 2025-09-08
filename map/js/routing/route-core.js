@@ -142,6 +142,14 @@
             bridge.routingModule.clearAllWaypoints();
         }
 
+        // Clear day markers from map if present
+        try {
+            if (bridge.state.dayMarkerLayers) {
+                bridge.state.dayMarkerLayers.forEach(m => bridge.map.removeLayer(m));
+                bridge.state.dayMarkerLayers = [];
+            }
+        } catch(e) { console.warn('Failed clearing day markers:', e); }
+
         console.log("Route and waypoints cleared, updating display");
         if (routeUI && routeUI.updateRouteDisplay) {
             routeUI.updateRouteDisplay(reorderRoute);

@@ -531,11 +531,13 @@
             </div>
         `;
         
-        // Daily breakdown controls and list
-        const profileKey = bridge.state.travelProfile || 'walk';
-        const profile = bridge.config.profiles[profileKey] || bridge.config.profiles.walk;
-        const kmPerDay = profile.speed; // speed is km/day in our config
-        const daily = computeDailyBreakdown(bridge.state.routeLegs, kmPerDay);
+    // Prepare profile for advanced section
+    const isEnglish = location.pathname.startsWith('/en');
+    const t = (tr, en) => (isEnglish ? en : tr);
+    const profileKey = bridge.state.travelProfile || 'walk';
+    const profile = bridge.config.profiles[profileKey] || bridge.config.profiles.walk;
+    const kmPerDay = profile.speed; // speed is km/day in our config
+    const daily = computeDailyBreakdown(bridge.state.routeLegs, kmPerDay);
 
         summaryDiv.innerHTML = `
             <h3>Hibrit Rota Özeti</h3>
@@ -544,13 +546,17 @@
                 <p><strong>Toplam Mesafe:</strong> ${totalKm.toFixed(2)} km</p>
                 ${compositionHtml}
             </div>
-            <div class="travel-profile">
-                <label for="travel-profile-select"><strong>Profil:</strong></label>
-                <select id="travel-profile-select">
-                    ${Object.keys(bridge.config.profiles).map(k => `<option value="${k}" ${k===profileKey?'selected':''}>${capitalize(k)}</option>`).join('')}
-                </select>
-                <span class="profile-meta">${kmPerDay} km/gün</span>
-            </div>
+            <details id="advanced-travel" class="advanced-travel">
+                <summary>${t('Gelişmiş', 'Advanced')}</summary>
+                <div class="travel-profile">
+                    <label for="travel-profile-select"><strong>${t('Profil', 'Profile')}:</strong></label>
+                    <select id="travel-profile-select">
+                        ${Object.keys(bridge.config.profiles).map(k => `<option value="${k}" ${k===profileKey?'selected':''}>${capitalize(k)}</option>`).join('')}
+                    </select>
+                    <span class="profile-meta">${kmPerDay} ${t('km/gün', 'km/day')}</span>
+                    <div class="profile-note">${t('Açınca günlük işaretler haritada görünür.', 'Open to show daily markers on the map.')}</div>
+                </div>
+            </details>
             <div class="route-legs">
                 <h4>Rota Ayakları</h4>
                 <ul>${legsHtml}</ul>
@@ -569,12 +575,7 @@
                     ${terrainKm > 0 ? '<small>(arazi dışı bölümler için +%15)</small>' : ''}
                 </div>
             </div>
-            <div class="day-breakdown">
-                <h4>Günlük Plan</h4>
-                <ol>
-                    ${daily.days.map(d => `<li>Gün ${d.day}: ${d.distance.toFixed(1)} km ${d.to ? `(${d.from.name} → ${d.to.name})` : ''}</li>`).join('')}
-                </ol>
-            </div>
+            
             <div class="route-share">
                 <button id="copy-route-link" class="wiki-link">Rota Bağlantısını Kopyala</button>
             </div>
@@ -589,15 +590,27 @@
         // Add styling if not already present
         ensureRoutingStyles();
 
-        // Render day markers on map
-        try { renderDayMarkers(daily); } catch (e) { console.warn('Failed to render day markers:', e); }
+        // Wire Advanced behavior: show markers only when open
+        const adv = document.getElementById('advanced-travel');
+        if (adv) {
+            const updateAdv = () => {
+                if (adv.open) {
+                    try { renderDayMarkers(daily, t); } catch (e) { console.warn('Failed to render day markers:', e); }
+                } else {
+                    clearDayMarkers();
+                }
+            };
+            adv.addEventListener('toggle', updateAdv);
+            // Initialize state
+            updateAdv();
+        }
 
         // Wire profile change
         const sel = document.getElementById('travel-profile-select');
         if (sel) {
             sel.addEventListener('change', (e) => {
                 bridge.state.travelProfile = e.target.value;
-                // Re-render summary only; legs already computed
+                // Re-render summary (will recalc daily and markers if advanced open)
                 updateRouteSummaryFromLegs();
             });
         }
@@ -649,9 +662,11 @@
                 .route-totals, .route-legs, .travel-times { margin: 12px 0; }
                 .travel-time-item { margin: 4px 0; }
                 .travel-time-item small { color: #666; display: block; margin-left: 20px; }
-                .travel-profile { display:flex; align-items:center; gap:10px; margin:10px 0; }
+                .advanced-travel { margin: 10px 0; }
+                .advanced-travel > summary { cursor: pointer; font-weight: 600; }
+                .travel-profile { display:flex; align-items:center; gap:10px; margin:10px 0 0 0; }
                 #travel-profile-select { padding:4px 8px; border:1px solid #d3c0a5; border-radius:4px; background:#fff; }
-                .day-breakdown ol { margin: 8px 0 0 18px; }
+                .profile-note { font-size: 12px; color: #666; }
             `;
             document.head.appendChild(style);
         }
@@ -726,23 +741,27 @@
         return { days, markers };
     }
 
-    function renderDayMarkers(daily) {
+    function renderDayMarkers(daily, tFn) {
         // Clear previous
-        if (bridge.state.dayMarkerLayers) {
-            bridge.state.dayMarkerLayers.forEach(m => bridge.map.removeLayer(m));
-        }
-        bridge.state.dayMarkerLayers = [];
+        clearDayMarkers();
         if (!daily || !daily.markers || !daily.markers.length) return;
         daily.markers.forEach(d => {
             const icon = L.divIcon({
                 className: 'waypoint-icon',
-                html: `<div class="waypoint-marker" title="Gün ${d.day}">${d.day}</div>`,
+                html: `<div class=\"waypoint-marker\" title=\"${tFn('Gün', 'Day')} ${d.day}\">${d.day}</div>`,
                 iconSize: [24, 24],
                 iconAnchor: [12, 12]
             });
             const marker = L.marker([d.lat, d.lng], { icon, pane: 'routePane' }).addTo(bridge.map);
             bridge.state.dayMarkerLayers.push(marker);
         });
+    }
+
+    function clearDayMarkers() {
+        if (bridge.state.dayMarkerLayers) {
+            bridge.state.dayMarkerLayers.forEach(m => bridge.map.removeLayer(m));
+        }
+        bridge.state.dayMarkerLayers = [];
     }
 
     function capitalize(s){ return (s||'').charAt(0).toUpperCase() + (s||'').slice(1); }
