@@ -9,8 +9,16 @@ public: true
 
 # Valorun
 
+## Faith Details
+
+Name: Valorun
+
 Domain: War, Rage, Strength
 
 Symbol: A cracked, blood-split helm; a sword thrust in flame
 
 Scars are testimony. He salutes purpose, not cruelty.
+
+## Architecture & Symbolism
+
+Mustering yards, drill grounds, and scar halls; symbols are helms, flame-bitten blades, and torn banners.

@@ -9,16 +9,24 @@ public: true
 
 # Pelagris
 
+## Faith Details
+
+Name: Pelagris
+
 Domain: Sea, Storm, Depth
 
 Symbol: A serpent-wreathed wave; a trident cracked by lightning
 
-No temple can contain her — she lives in impact and abyss.
+She cannot be contained by walls — she lives in impact and abyss.
 
-## Cults
+## Cults & Followers
 
 - Tidebound; Salt-born.
 
-## Rituals
+## Rituals & Taboos
 
 - Use the sea without offering and doom your line; the drowned belong to her.
+
+## Architecture & Symbolism
+
+Shrines are coastal cliffs, wave-battered arches, and beacon towers lashed by storm; her marks are tridents, coiled serpents, and salt-scarred stone.

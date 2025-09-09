@@ -9,8 +9,14 @@ public: true
 
 # Valtoni
 
+## Faith Details
+
+Name: Valtoni
+
 Domain: Luck, Fortune, Chance
 
 Symbol: A coin in the air; a gold wheel with a missing tooth
 
-Gambling halls, dueling grounds, and crossroads are his shrines.
+## Architecture & Symbolism
+
+Gambling halls, dueling grounds, and crossroads are his shrines; symbols are spinning coins and broken-tooth wheels.

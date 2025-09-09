@@ -9,14 +9,22 @@ public: true
 
 # Tanofeks
 
+## Faith Details
+
+Name: Tanofeks
+
 Domain: Craft, Mastery, Sacred Labor
 
 Symbol: A hammer resting on an anvil; a blade mended in gold
 
-## Cults
+## Cults & Followers
 
 - Bound Guild; Flame Keepers.
 
-## Rituals
+## Rituals & Taboos
 
 - No emblem before reworking a piece; a master never finishes their last work.
+
+## Architecture & Symbolism
+
+Forge-temples, bellows halls, and guild houses; symbols are anvils, gold seams, and soot-blackened hands.

@@ -9,8 +9,14 @@ public: true
 
 # Vespilo
 
+## Faith Details
+
+Name: Vespilo
+
 Domain: Guile, Lies, Theft
 
 Symbol: A stolen hand holding a key; a mask hung upside-down
 
-Prayers are riddles; mirrors are veiled during rites.
+## Architecture & Symbolism
+
+Hidden rooms, trick doors, and back-alley shrines; symbols are masks, stolen keys, and reversed sigils.

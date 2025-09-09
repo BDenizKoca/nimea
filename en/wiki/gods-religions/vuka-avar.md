@@ -9,8 +9,14 @@ public: true
 
 # Vuka'avar
 
+## Faith Details
+
+Name: Vuka'avar
+
 Domain: Chaos, Change, Rupture
 
 Symbol: A spiral piercing a perfect circle; a map torn by wind
 
-Temples are places that “should not be”: leaning towers, endless stairs.
+## Architecture & Symbolism
+
+Temples are places that “should not be”: leaning towers, endless stairs; symbols are spirals, torn maps, and broken geometry.
