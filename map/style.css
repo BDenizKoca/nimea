@@ -417,8 +417,9 @@ body, html {
 /* Mobile adjustments for reopen button */
 @media (max-width: 700px) {
     .reopen-route-btn {
-        top: 75px; /* Below the header on mobile */
-        left: 15px;
+        top: auto; /* Use bottom positioning on mobile */
+        bottom: 18px; /* Align with overlay toggles */
+        left: 15px; /* Default left padding; JS will adjust next to overlay toggles */
         width: 44px;
         height: 44px;
         font-size: 18px;
@@ -477,7 +478,8 @@ button.wiki-link {
 @media (min-width: 701px) {
     .info-primary-action, .info-secondary-action { display: flex; justify-content: center; }
     .info-primary-action .add-to-route, .info-secondary-action .wiki-link {
-        width: 320px; /* fixed equal width on desktop */
+        width: 240px; /* fixed equal width on desktop; fits 300px sidebar with padding */
+        max-width: 100%;
     }
 }
 
@@ -486,6 +488,12 @@ button.wiki-link {
     .info-actions { grid-template-columns: 1fr; }
     .info-primary-action .wiki-link, .info-primary-action .add-to-route,
     .info-secondary-action .wiki-link { min-height: 44px; font-size: 15px; }
+}
+
+/* Make action buttons full-width on narrow screens */
+@media (max-width: 700px) {
+    .info-primary-action .wiki-link, .info-primary-action .add-to-route,
+    .info-secondary-action .wiki-link { width: 100%; }
 }
 
 /* DM Action buttons */
@@ -977,6 +985,27 @@ button.wiki-link {
 }
 /* Removed stray property & brace that caused CSS parsing error at end of file */
 
+
+/* Center Clear Route button and unify sizing */
+.route-actions { display: flex; justify-content: center; margin: 12px 0; }
+.route-actions .clear-route-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 8px 16px;
+    font-size: 14px;
+    line-height: 1.2;
+}
+@media (min-width: 701px) {
+    .route-actions .clear-route-btn {
+        width: 240px; /* Match info action width and fit sidebar */
+        max-width: 100%;
+    }
+}
+@media (max-width: 700px) {
+    .route-actions .clear-route-btn { width: 100%; }
+}
 
 /* Sidebar adaptation for narrow screens */
 @media (max-width: 900px) {
