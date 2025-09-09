@@ -5,7 +5,8 @@ const CORE_ASSETS = [
   '/en/index.html',
   '/css/style.css',
   '/manifest.webmanifest',
-  '/js/search.js'
+  '/js/search.js',
+  '/offline.html'
 ];
 
 const MAP_ASSETS = [
@@ -53,7 +54,14 @@ self.addEventListener('fetch', (event) => {
   const req = event.request;
   // Bypass for non-GET
   if (req.method !== 'GET') return;
-  event.respondWith(networkFirst(req));
+  const url = new URL(req.url);
+  // Runtime caching for common CDN assets (Leaflet, Geoman, Netlify Identity)
+  const isCdn = /(^https:\/\/unpkg\.com\/)|(^https:\/\/identity\.netlify\.com\/)/.test(req.url);
+  if (isCdn) {
+    event.respondWith(cacheFirst(req));
+  } else {
+    event.respondWith(networkFirst(req));
+  }
 });
 
 function normalizeUrl(u) {
@@ -76,6 +84,20 @@ async function networkFirst(request) {
       const fallback = await caches.match('/offline.html');
       if (fallback) return fallback;
     }
+    throw e;
+  }
+}
+
+async function cacheFirst(request) {
+  const cached = await caches.match(request);
+  if (cached) return cached;
+  try {
+    const fresh = await fetch(request);
+    const cache = await caches.open(CACHE_NAME);
+    cache.put(request, fresh.clone());
+    return fresh;
+  } catch (e) {
+    // Fallback: nothing cached
     throw e;
   }
 }

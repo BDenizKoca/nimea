@@ -8,17 +8,11 @@
   "theme_color": "#8b4513",
   "description": "Nimea wiki and interactive map (offline capable)",
   "icons": [
-    {
-      "src": "/images/regions.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/images/regions.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    }
+    { "src": "/images/regions.png", "sizes": "192x192",  "type": "image/png", "purpose": "any" },
+    { "src": "/images/regions.png", "sizes": "256x256",  "type": "image/png", "purpose": "any" },
+    { "src": "/images/regions.png", "sizes": "384x384",  "type": "image/png", "purpose": "any" },
+    { "src": "/images/regions.png", "sizes": "512x512",  "type": "image/png", "purpose": "any" },
+    { "src": "/images/regions.png", "sizes": "192x192",  "type": "image/png", "purpose": "maskable" },
+    { "src": "/images/regions.png", "sizes": "512x512",  "type": "image/png", "purpose": "maskable" }
   ]
 }

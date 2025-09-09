@@ -11,6 +11,10 @@
     <link rel="manifest" href="/manifest.webmanifest">
     <link rel="icon" href="/images/regions.png">
     <link rel="apple-touch-icon" href="/images/regions.png">
+    <meta name="theme-color" content="#8b4513">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
 </head>
 <body>
     <header class="map-header">
@@ -21,6 +25,7 @@
             <div class="lang-switch">
                 <a href="../../map/">TR</a>
             </div>
+            <button id="pwa-install" class="wiki-link" style="margin-left:10px; display:none;">Install App</button>
         </nav>
     </header>
     
@@ -238,6 +243,23 @@ Thornhold,2000,1500,fortress,Empire,Mountain fortress,true"></textarea>
     <script src="/map/js/terrain.js"></script>
     <script src="map.js"></script>
         <script>
+            // PWA install prompt handling (EN)
+            let deferredPrompt;
+            const installBtn = document.getElementById('pwa-install');
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                installBtn.style.display = 'inline-block';
+            });
+            installBtn?.addEventListener('click', async () => {
+                if (!deferredPrompt) return;
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome) {
+                    installBtn.style.display = 'none';
+                }
+                deferredPrompt = null;
+            });
             if ('serviceWorker' in navigator) {
                 window.addEventListener('load', () => {
                     navigator.serviceWorker.register('/service-worker.js').catch(console.error);

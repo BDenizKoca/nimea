@@ -790,8 +790,8 @@
             const icon = L.divIcon({
                 className: 'waypoint-icon',
                 html: `<div class=\"waypoint-marker\" title=\"${tFn('Gün Sonu', 'End of Day')} ${d.day}\">${d.day}</div>`,
-                iconSize: [24, 24],
-                iconAnchor: [12, 12]
+                iconSize: [20, 20],
+                iconAnchor: [10, 10]
             });
             const marker = L.marker([d.lat, d.lng], { icon, pane: 'routePane' }).addTo(bridge.map);
             bridge.state.dayMarkerLayers.push(marker);
