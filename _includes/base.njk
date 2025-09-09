@@ -4,6 +4,39 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ title or name }} | Nimea</title>
+        {% set pageDescription = summary or '' %}
+        {% if pageDescription %}
+        <meta name="description" content="{{ pageDescription }}">
+        {% endif %}
+    
+        {# Canonical & language alternates #}
+        <link rel="canonical" href="{{ page.url | url }}">
+        {% if lang == 'en' %}
+            <link rel="alternate" hreflang="tr" href="{{ page.url | replace('/en', '') | url }}">
+            <link rel="alternate" hreflang="en" href="{{ page.url | url }}">
+            <link rel="alternate" hreflang="x-default" href="{{ page.url | url }}">
+        {% else %}
+            <link rel="alternate" hreflang="tr" href="{{ page.url | url }}">
+            <link rel="alternate" hreflang="en" href="{{ '/en' + page.url | url }}">
+            <link rel="alternate" hreflang="x-default" href="{{ page.url | url }}">
+        {% endif %}
+
+        {# Open Graph #}
+        <meta property="og:title" content="{{ title or name }} | Nimea">
+        {% if pageDescription %}<meta property="og:description" content="{{ pageDescription }}">{% endif %}
+        <meta property="og:type" content="article">
+        {% if cover_image %}<meta property="og:image" content="{{ cover_image | url }}">{% endif %}
+        {% if lang == 'en' %}
+            <meta property="og:locale" content="en_US">
+        {% else %}
+            <meta property="og:locale" content="tr_TR">
+        {% endif %}
+
+        {# Twitter #}
+        <meta name="twitter:card" content="{% if cover_image %}summary_large_image{% else %}summary{% endif %}">
+        <meta name="twitter:title" content="{{ title or name }} | Nimea">
+        {% if pageDescription %}<meta name="twitter:description" content="{{ pageDescription }}">{% endif %}
+        {% if cover_image %}<meta name="twitter:image" content="{{ cover_image | url }}">{% endif %}
     <link rel="stylesheet" href="{{ '/css/style.css' | url }}">
     <!-- Theme color: provide light/dark variants; unsupported browsers safely ignore -->
     <meta name="theme-color" content="#8b4513" media="(prefers-color-scheme: light)">
