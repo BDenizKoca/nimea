@@ -34,8 +34,7 @@
         const closeInfoSidebarBtn = document.getElementById('close-info-sidebar');
         const routeSidebar = document.getElementById('route-sidebar');
         const closeRouteSidebarBtn = document.getElementById('close-route-sidebar');
-        const reopenRouteSidebarBtn = document.getElementById('reopen-route-sidebar');
-        const headerDrawerBtn = document.getElementById('route-drawer-btn');
+    const reopenRouteSidebarBtn = document.getElementById('reopen-route-sidebar');
         
         // Info sidebar close button
         if (infoSidebar && closeInfoSidebarBtn) {
@@ -52,8 +51,9 @@
                     // Position FAB next to overlay toggles on mobile
                     positionReopenFab();
                 }
-                // Update header drawer pressed state
-                if (headerDrawerBtn) headerDrawerBtn.setAttribute('aria-pressed', 'false');
+                // Update overlay toggle pressed state
+                const overlayRouteBtn = document.querySelector('#overlay-toggles .route-toggle');
+                if (overlayRouteBtn) overlayRouteBtn.setAttribute('aria-pressed', 'false');
             });
         }
         
@@ -68,18 +68,18 @@
             positionReopenFab();
         }
         
-        // Header drawer button toggles route sidebar
-        if (routeSidebar && headerDrawerBtn) {
-            headerDrawerBtn.addEventListener('click', () => {
-                const isOpen = routeSidebar.classList.toggle('open');
-                headerDrawerBtn.setAttribute('aria-pressed', isOpen ? 'true' : 'false');
-                // Hide the floating FAB if using header control
-                if (reopenRouteSidebarBtn) {
-                    if (isOpen) {
+        // Overlay bar route toggle button
+        if (routeSidebar) {
+            const overlayRouteBtn = document.querySelector('#overlay-toggles .route-toggle');
+            if (overlayRouteBtn) {
+                overlayRouteBtn.addEventListener('click', () => {
+                    const isOpen = routeSidebar.classList.toggle('open');
+                    overlayRouteBtn.setAttribute('aria-pressed', isOpen ? 'true' : 'false');
+                    if (reopenRouteSidebarBtn && isOpen) {
                         reopenRouteSidebarBtn.classList.add('hidden');
                     }
-                }
-            });
+                });
+            }
         }
 
         // Add click-outside-to-close functionality for info sidebar on mobile

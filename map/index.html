@@ -23,8 +23,6 @@
         <nav class="map-nav">
             <a href="../" class="nav-link">Ana Sayfa</a>
             <a href="../wiki/" class="nav-link">Külliyat</a>
-            <!-- Route drawer button (opens/closes route sidebar) -->
-            <button id="route-drawer-btn" class="header-icon-btn" title="Rota Planlayıcı" aria-label="Rota Planlayıcı" aria-pressed="false">🗺️</button>
             <h1 class="map-title">Nimea Etkileşimli Harita</h1>
             <div class="lang-switch">
                 <a href="../en/map/">EN</a>
@@ -216,6 +214,7 @@ Thornhold,2000,1500,fortress,Empire,Dağ kalesi,true"></textarea>
     <div class="leaflet-top leaflet-right">
         <div class="leaflet-control-layers leaflet-control" id="overlay-toggles">
             <div class="overlay-segmented" role="group" aria-label="Kaplama görünürlüğü">
+                <button type="button" class="route-toggle" aria-pressed="false" aria-label="Rota Planlayıcı" title="Rota Planlayıcı">🗺️</button>
                 <button type="button" data-mode="both" class="active" aria-pressed="true"><span>İkisi</span></button>
                 <button type="button" data-mode="regions" aria-pressed="false"><span>Bölgeler</span></button>
                 <button type="button" data-mode="borders" aria-pressed="false"><span>Sınırlar</span></button>
