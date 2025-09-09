@@ -17,11 +17,6 @@ This wiki contains records of people, places, nations, beliefs and events in the
 * [Locations & Regions](/en/wiki/locations-regions/) - Cities, kingdoms, landmarks and geographical features
 * [Gods & Religions](/en/wiki/gods-religions/) - Deities, faiths, and religious practices
 * [Magic & Powers](/en/wiki/magic-powers/) - Magical systems, artifacts and supernatural abilities
-
----
-
-[Türkçe için buraya tıklayın](/wiki/)
-
 ## Recent Entries
 
 {% assign recentEn = collections.charactersEn

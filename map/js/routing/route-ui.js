@@ -15,7 +15,7 @@
         domCache = domCacheObj;
         routeDragDrop = routeDragDropObj;
         
-        console.log("Route UI module initialized");
+    (window.__nimea_log && __nimea_log.log)("Route UI module initialized");
     }
 
     /**
@@ -24,21 +24,21 @@
      */
     function setupRouteEventDelegation() {
         const stopsDiv = domCache.get('route-stops');
-        console.log("Setting up route event delegation - stopsDiv:", stopsDiv);
+    (window.__nimea_log && __nimea_log.log)("Setting up route event delegation - stopsDiv:", stopsDiv);
         
         if (!stopsDiv) {
-            console.error("Route stops container not found - trying direct getElementById");
+            (window.__nimea_log && __nimea_log.error)("Route stops container not found - trying direct getElementById");
             const fallbackStopsDiv = document.getElementById('route-stops');
-            console.log("Fallback stopsDiv:", fallbackStopsDiv);
+            (window.__nimea_log && __nimea_log.log)("Fallback stopsDiv:", fallbackStopsDiv);
             if (fallbackStopsDiv) {
-                console.log("Using fallback element for event delegation");
+                (window.__nimea_log && __nimea_log.log)("Using fallback element for event delegation");
                 fallbackStopsDiv.addEventListener('click', handleRouteStopClick);
             }
             return;
         }
         
         // Use permanent event delegation - this listener will handle all future button clicks
-        console.log("Adding click event listener to stopsDiv");
+    (window.__nimea_log && __nimea_log.log)("Adding click event listener to stopsDiv");
         stopsDiv.addEventListener('click', handleRouteStopClick);
         
         // Set up delegation for the clear button too (it's outside the stops div)
@@ -47,7 +47,7 @@
             routeSidebar.addEventListener('click', handleClearButtonClick);
         }
         
-        console.log("Route event delegation set up permanently");
+    (window.__nimea_log && __nimea_log.log)("Route event delegation set up permanently");
     }
 
     /**
@@ -57,7 +57,7 @@
         if (e.target.id === 'clear-route-btn') {
             e.preventDefault();
             e.stopPropagation();
-            console.log("Clear route button clicked via delegation");
+            (window.__nimea_log && __nimea_log.log)("Clear route button clicked via delegation");
             if (bridge.routingModule && bridge.routingModule.clearRoute) {
                 bridge.routingModule.clearRoute();
             }
@@ -69,24 +69,24 @@
      */
     function handleRouteStopClick(e) {
         const target = e.target;
-        console.log("Route stop click detected:", target, "classes:", target.classList.toString(), "dataset:", target.dataset);
+    (window.__nimea_log && __nimea_log.log)("Route stop click detected:", target, "classes:", target.classList.toString(), "dataset:", target.dataset);
         
         // Handle remove button clicks
         if (target.classList.contains('mini-btn') && target.dataset.ridx !== undefined) {
             e.preventDefault();
             e.stopPropagation();
             const ridx = parseInt(target.dataset.ridx, 10);
-            console.log("Remove button clicked for index:", ridx);
+            (window.__nimea_log && __nimea_log.log)("Remove button clicked for index:", ridx);
             if (bridge.routingModule && bridge.routingModule.removeRouteIndex) {
-                console.log("Calling removeRouteIndex with:", ridx);
+                (window.__nimea_log && __nimea_log.log)("Calling removeRouteIndex with:", ridx);
                 bridge.routingModule.removeRouteIndex(ridx);
             } else {
-                console.error("removeRouteIndex not available on bridge.routingModule");
+                (window.__nimea_log && __nimea_log.error)("removeRouteIndex not available on bridge.routingModule");
             }
             return;
         }
         
-        console.log("Click not handled - target doesn't match remove button criteria");
+    (window.__nimea_log && __nimea_log.log)("Click not handled - target doesn't match remove button criteria");
     }
 
     /**
@@ -95,23 +95,23 @@
     function updateRouteDisplay(reorderCallback) {
         const stopsDiv = domCache.get('route-stops');
         if (!stopsDiv) {
-            console.error('Route stops container not found');
+            (window.__nimea_log && __nimea_log.error)('Route stops container not found');
             return;
         }
 
         try {
             // Add debugging to understand what's happening
-            console.log("updateRouteDisplay called - bridge.state:", bridge.state);
-            console.log("bridge.state.route:", bridge.state.route, "type:", typeof bridge.state.route, "isArray:", Array.isArray(bridge.state.route));
+            (window.__nimea_log && __nimea_log.log)("updateRouteDisplay called - bridge.state:", bridge.state);
+            (window.__nimea_log && __nimea_log.log)("bridge.state.route:", bridge.state.route, "type:", typeof bridge.state.route, "isArray:", Array.isArray(bridge.state.route));
             
             if (!bridge.state.route || !Array.isArray(bridge.state.route)) {
-                console.error("bridge.state.route is not a valid array:", bridge.state.route);
+                (window.__nimea_log && __nimea_log.error)("bridge.state.route is not a valid array:", bridge.state.route);
                 stopsDiv.innerHTML = '<div class="error-message">Route data is invalid. Please refresh the page.</div>';
                 return;
             }
             
             stopsDiv.innerHTML = bridge.state.route.map((stop, idx) => {
-                console.log(`Rendering stop ${idx}:`, stop);
+                (window.__nimea_log && __nimea_log.log)(`Rendering stop ${idx}:`, stop);
                 const stopType = stop.isWaypoint ? 'waypoint' : 'marker';
                 return `<div class="route-stop-row" draggable="true" data-route-index="${idx}">
                             <span class="drag-handle">⋮⋮</span>
@@ -132,7 +132,7 @@
                 routeDragDrop.setupDragAndDrop(stopsDiv, reorderCallback);
             }
         } catch (error) {
-            console.error('Error updating route display:', error);
+            (window.__nimea_log && __nimea_log.error)('Error updating route display:', error);
             // Fallback: ensure the div is cleared in case of partial failure
             if (stopsDiv) {
                 stopsDiv.innerHTML = '<div class="error-message">Error loading route. Please refresh the page.</div>';
@@ -145,13 +145,8 @@
      */
     function openRouteSidebar() {
         const routeSidebar = domCache.get('route-sidebar');
-        const reopenRouteSidebarBtn = domCache.get('reopen-route-sidebar');
         if (routeSidebar) {
             routeSidebar.classList.add('open');
-            // Hide reopen button when sidebar opens
-            if (reopenRouteSidebarBtn) {
-                reopenRouteSidebarBtn.classList.add('hidden');
-            }
         }
     }
 

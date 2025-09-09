@@ -34,7 +34,6 @@
         const closeInfoSidebarBtn = document.getElementById('close-info-sidebar');
         const routeSidebar = document.getElementById('route-sidebar');
         const closeRouteSidebarBtn = document.getElementById('close-route-sidebar');
-    const reopenRouteSidebarBtn = document.getElementById('reopen-route-sidebar');
         
         // Info sidebar close button
         if (infoSidebar && closeInfoSidebarBtn) {
@@ -45,27 +44,10 @@
         if (routeSidebar && closeRouteSidebarBtn) {
             closeRouteSidebarBtn.addEventListener('click', () => {
                 routeSidebar.classList.remove('open');
-                // Show reopen button
-                if (reopenRouteSidebarBtn) {
-                    reopenRouteSidebarBtn.classList.remove('hidden');
-                    // Position FAB next to overlay toggles on mobile
-                    positionReopenFab();
-                }
                 // Update overlay toggle pressed state
                 const overlayRouteBtn = document.querySelector('#overlay-toggles .route-toggle');
                 if (overlayRouteBtn) overlayRouteBtn.setAttribute('aria-pressed', 'false');
             });
-        }
-        
-        // Route sidebar reopen button
-        if (routeSidebar && reopenRouteSidebarBtn) {
-            reopenRouteSidebarBtn.addEventListener('click', () => {
-                routeSidebar.classList.add('open');
-                // Hide reopen button
-                reopenRouteSidebarBtn.classList.add('hidden');
-            });
-            // Initial placement for FAB
-            positionReopenFab();
         }
         
         // Overlay bar route toggle button
@@ -75,9 +57,6 @@
                 overlayRouteBtn.addEventListener('click', () => {
                     const isOpen = routeSidebar.classList.toggle('open');
                     overlayRouteBtn.setAttribute('aria-pressed', isOpen ? 'true' : 'false');
-                    if (reopenRouteSidebarBtn && isOpen) {
-                        reopenRouteSidebarBtn.classList.add('hidden');
-                    }
                 });
             }
         }
@@ -99,23 +78,7 @@
         }
     }
 
-    // Position the reopen-route FAB to the left of the overlay segmented control on DESKTOP only
-    function positionReopenFab() {
-        const overlayToggles = document.getElementById('overlay-toggles');
-        const fab = document.getElementById('reopen-route-sidebar');
-        if (!fab) return;
-        // Reset defaults for mobile (keep original placement via CSS)
-        fab.style.left = '';
-        fab.style.right = '';
-        fab.style.bottom = '';
-        // Only adjust on desktop and when overlay toggles exist
-        if (!overlayToggles || window.innerWidth <= 700) return;
-        const rect = overlayToggles.getBoundingClientRect();
-        // Calculate left position so FAB sits ~10px left of the overlay control
-        const desiredLeft = Math.max(10, rect.left - 54); // 44px FAB + 10px gap
-        fab.style.left = desiredLeft + 'px';
-        fab.style.bottom = '18px';
-    }
+    // Removed deprecated reopen FAB positioning helper
 
     function setupOverlayControls() {
         const overlayToggleContainer = document.querySelector('#overlay-toggles .overlay-segmented');
@@ -140,15 +103,8 @@
                 if (routeSidebar.classList.contains('open')) routeSidebar.classList.add('open');
                 if (infoSidebar.classList.contains('open')) infoSidebar.classList.add('open');
             }
-            // Reposition FAB relative to overlay toggles on resize
-            positionReopenFab();
         });
-        // Ensure initial positioning when DOM is ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', positionReopenFab);
-        } else {
-            positionReopenFab();
-        }
+        // Removed FAB repositioning hooks
     }
 
     function applyOverlayMode(mode) {

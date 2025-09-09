@@ -418,9 +418,7 @@ body, html {
     color: #333;
 }
 
-/* Route sidebar reopen button (deprecated in favor of header drawer). Keep for fallback but hidden by default) */
-.reopen-route-btn { display: none; }
-.reopen-route-btn.hidden { display: none; }
+/* Removed deprecated reopen-route FAB styles */
 
 /* Hide DM toggle by default; shown when logged in */
 #dm-mode-toggle { display: none; }
