@@ -94,30 +94,31 @@ body, html {
     z-index: 800; /* Below sidebars (1000+) and header (2000) but above map */
     background: rgba(244,240,230,0.9);
     border: 2px solid var(--color-border);
-    padding: 6px 10px;
-    border-radius: 40px;
+    padding: 8px 12px; /* +~15% for larger tap area */
+    border-radius: 44px;
     box-shadow: var(--shadow-elev);
 }
 .overlay-segmented {
     display: flex;
-    gap: 4px;
+    gap: 6px; /* slightly larger spacing */
     align-items: center;
 }
 .overlay-segmented button {
     background: #fff;
     border: 1px solid var(--color-border);
     border-radius: 20px;
-    padding: 6px 12px;
+    padding: 8px 14px; /* +~15% */
     cursor: pointer;
     font-family: inherit;
-    font-size: 12px;
+    font-size: 13px;
     color: var(--color-accent);
     font-weight: 600;
     transition: var(--transition-fast);
+    min-height: 36px; /* better click target */
 }
 .overlay-segmented .route-toggle {
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     border-radius: 16px;
     padding: 0;
     display: inline-flex;
@@ -472,16 +473,17 @@ button.wiki-link {
 .info-actions .add-to-route { background: #2c5e2e; }
 .info-actions .add-to-route:hover { background: #3a7a3d; }
 
-/* Desktop: center the two buttons and keep same width */
-@media (min-width: 701px) {
-    .info-primary-action, .info-secondary-action { display: flex; justify-content: center; }
-}
-
-/* On very small screens, stack actions vertically to prevent crowding */
-@media (max-width: 420px) {
-    .info-actions { grid-template-columns: 1fr; }
-    .info-primary-action .wiki-link, .info-primary-action .add-to-route,
-    .info-secondary-action .wiki-link { min-height: 44px; font-size: 15px; }
+/* Mobile: larger overlay controls and route icon */
+@media (max-width: 520px) {
+    #overlay-toggles { padding: 6px 10px; bottom: 12px; }
+    .overlay-segmented { gap: 4px; }
+    .overlay-segmented button {
+        padding: 6px 10px;
+        font-size: 12px;
+        min-width: auto;
+        min-height: 40px; /* mobile tap target */
+    }
+    .overlay-segmented .route-toggle { width: 36px; height: 36px; font-size: 18px; }
 }
 
 /* Make action buttons full-width on narrow screens */
@@ -489,7 +491,6 @@ button.wiki-link {
     .info-primary-action .wiki-link, .info-primary-action .add-to-route,
     .info-secondary-action .wiki-link { width: 100%; }
 }
-
 /* DM Action buttons */
 .dm-actions {
     margin-top: 20px;
