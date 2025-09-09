@@ -1,5 +1,7 @@
 # Nimea Wiki and Interactive Map
 
+This is my solution to organizing and presenting my worldbuilding/setting notes and map with my players. The original purpose is to be a game aid for my TTRPG group.
+
 A zero-backend wiki and interactive map for the fantasy realm of Nimea. Built with Eleventy, Decap CMS, and Leaflet.js.
 
 Live Site: https://nimea-wiki.netlify.app/
@@ -17,6 +19,13 @@ Live Site: https://nimea-wiki.netlify.app/
 - Terrain-aware A* pathfinding that respects road/difficult/unpassable costs
 - Automatic wiki integration: markers can link to relevant wiki pages (optional custom slug)
 
+Quality-of-life and polish:
+- Bilingual TR/EN for both wiki and map (shared data and scripts; no duplication)
+- Advanced panel with travel profile selector (Wagon/Horse/Foot), proportional day markers (End of Day N), fully localized
+- PWA support: installable app with offline fallback after first load
+- DM image management: add/remove image URLs per marker and set/clear a banner image shown above the title in the info sidebar
+- Global search on wiki pages (intentionally not on map)
+
 Single source of truth (no drift):
 - Both TR (`/map`) and EN (`/en/map`) load the same data from `map/data`.
 - Both languages reuse the same map modules in `map/js/*`.
@@ -26,7 +35,9 @@ Single source of truth (no drift):
 
 ## Why I Built It
 
-I wanted a light, self-hostable worldbuilding stack where both the wiki and the map are versioned, editable through a browser, and deployable as a static site. This avoids server costs while keeping collaboration simple.
+Frankly, nothing else existed which does what I am looking (At least not exactly or free): A simple wiki with an interactive map. So I built it myself. 
+
+If you want a deeper explanation, here you go: I wanted a light, self-hostable worldbuilding stack where both the wiki and the map are versioned, editable through a browser, and deployable as a static site. This avoids server costs while keeping collaboration simple.
 
 ---
 
@@ -43,6 +54,7 @@ Local setup:
 Notes:
 - The EN map page references shared scripts: `/map/js/*` and shared data `/map/data/*`.
 - DM editor supports bilingual fields (TR/EN) for marker name, summary, and faction. Top-level fields remain as fallback.
+- You can install the site as a PWA from the map header button (supported browsers). After the first successful load, the map works offline with cached assets.
 
 ---
 
@@ -51,6 +63,9 @@ Notes:
 Public map usage:
 - Plan routes, inspect markers, view overlays.
 - Use the share button in a built route's summary to copy a link that reconstructs the same path.
+
+DM Mode (optional):
+Internal-only editing tools for the GM/DM; usage details are intentionally omitted here.
 
 ### Route Sharing
 
@@ -92,6 +107,10 @@ No compression yet (links stay readable); can migrate to a `v2` format later if 
 - Richer marker types and iconography
 - Import/export tools for bulk content
 - Optional multilingual wiki content
+- Auto-generate `map/data/markers.json` from wiki frontmatter during build
+- "Show on Map" buttons and direct `/map?focus=<id>` deep links from wiki pages
+- Optional map-side filtering/search (kept on wiki for now by design)
+- Drag-and-drop reordering for marker images in DM editor
 
 ---
 
