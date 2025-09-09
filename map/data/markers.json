@@ -59,7 +59,9 @@
       "faction": "Bağımsız şehir.",
       "summary": "Mihver Çam gölgesinde krallık ile yönetilen ülke.",
       "iconUrl": "https://i.ibb.co/S7JWqkss/camkale.png",
-      "images": [],
+      "images": [
+        "https://i.ibb.co/qYTjySW0/Chat-GPT-Image-Sep-2-2025-03-50-31-PM.png"
+      ],
       "public": true,
       "wikiSlug": "camkale",
       "i18n": {
