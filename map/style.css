@@ -254,6 +254,23 @@ body, html {
     touch-action: manipulation;
 }
 
+/* Ensure Leaflet controls are fully visible on mobile, accounting for header & safe areas */
+@supports (padding: max(0px)) {
+    .leaflet-top {
+        top: calc(env(safe-area-inset-top) + 70px); /* header (60px) + gap */
+    }
+    .leaflet-bottom {
+        bottom: calc(env(safe-area-inset-bottom) + 12px);
+    }
+    .leaflet-left { left: calc(env(safe-area-inset-left) + 10px); }
+    .leaflet-right { right: calc(env(safe-area-inset-right) + 10px); }
+}
+
+@media (max-width: 700px) {
+    .leaflet-top { top: 70px; }
+    .leaflet-bottom { bottom: 16px; }
+}
+
 /* Make marker icons more tappable */
 .leaflet-marker-icon {
     touch-action: none !important; /* Disable browser gestures on markers */
@@ -890,7 +907,8 @@ button.wiki-link {
 
 @media (max-width: 700px) {
     body, html { overflow: hidden; }
-    #map { height: 100%; margin-top: 60px; }
+    /* Keep map sized below the fixed header without overflowing viewport */
+    #map { height: calc(100% - 60px); margin-top: 60px; }
     /* Route planner stays left slide-in */
     .left-sidebar {
         left: 0;

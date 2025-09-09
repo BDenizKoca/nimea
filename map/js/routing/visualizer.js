@@ -741,34 +741,34 @@
             }
         }
 
-        // Create a polyline-based interpolation to place day markers
+        // Create day markers using proportional distances along the polyline
         const polylines = (bridge.state.routeUnifiedPolyline && bridge.state.routeUnifiedPolyline.getLatLngs()) || [];
         const points = Array.isArray(polylines[0]) ? polylines[0] : polylines; // Leaflet may nest
-        const cumulative = [];
-        let sum = 0;
+        const cumUnits = [0];
         for (let i = 1; i < points.length; i++) {
             const dx = points[i].lng - points[i-1].lng;
             const dy = points[i].lat - points[i-1].lat;
-            const seg = Math.sqrt(dx*dx + dy*dy) * bridge.config.kmPerPixel;
-            sum += seg;
-            cumulative.push(sum);
+            const segUnits = Math.sqrt(dx*dx + dy*dy); // arbitrary units; we use fractions, not km
+            cumUnits.push(cumUnits[cumUnits.length - 1] + segUnits);
         }
+        const totalUnits = cumUnits[cumUnits.length - 1] || 0;
 
         const markers = [];
-        let target = kmPerDay;
-        for (let d = 1; d <= Math.floor(totalKm / kmPerDay); d++) {
-            const idx = cumulative.findIndex(c => c >= target);
-            if (idx >= 0) {
-                const prevCum = cumulative[idx-1] || 0;
-                const segKm = (cumulative[idx] - prevCum) || 0.0001;
-                const t = (target - prevCum) / segKm;
-                const a = points[idx];
-                const b = points[idx+1] || a;
-                const lat = a.lat + (b.lat - a.lat) * t;
-                const lng = a.lng + (b.lng - a.lng) * t;
-                markers.push({ day: d, lat, lng });
-            }
-            target += kmPerDay;
+        const fullDays = Math.floor(totalKm / kmPerDay);
+        for (let d = 1; d <= fullDays; d++) {
+            const frac = (d * kmPerDay) / totalKm; // 0..1
+            const targetUnits = frac * totalUnits;
+            // find segment where cumulative surpasses targetUnits
+            let idx = cumUnits.findIndex(u => u >= targetUnits);
+            if (idx <= 0) idx = 1; // ensure valid segment
+            const prevU = cumUnits[idx - 1];
+            const segU = (cumUnits[idx] - prevU) || 1e-6;
+            const t = (targetUnits - prevU) / segU;
+            const a = points[idx - 1];
+            const b = points[idx] || a;
+            const lat = a.lat + (b.lat - a.lat) * t;
+            const lng = a.lng + (b.lng - a.lng) * t;
+            markers.push({ day: d, lat, lng });
         }
 
         // Store markers for rendering
@@ -783,7 +783,7 @@
         daily.markers.forEach(d => {
             const icon = L.divIcon({
                 className: 'waypoint-icon',
-                html: `<div class=\"waypoint-marker\" title=\"${tFn('Gün', 'Day')} ${d.day}\">${d.day}</div>`,
+                html: `<div class=\"waypoint-marker\" title=\"${tFn('Gün Sonu', 'End of Day')} ${d.day}\">${d.day}</div>`,
                 iconSize: [24, 24],
                 iconAnchor: [12, 12]
             });
