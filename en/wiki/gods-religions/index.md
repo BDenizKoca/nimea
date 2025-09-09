@@ -11,6 +11,7 @@ Deities, faiths, and religious practices across Nimea.
 
 ## Pantheon
 
-{% for god in collections.godsEn %}
+{% assign sorted = collections.godsEn | sort: 'data.name' %}
+{% for god in sorted %}
 - [{{ god.data.name }}]({{ god.url }}) - {{ god.data.summary }}
 {% endfor %}

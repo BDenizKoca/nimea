@@ -85,6 +85,7 @@ collections:
       - { label: "Slug", name: "slug", widget: "string", hint: "URL-friendly version of the name" }
       - { label: "Summary", name: "summary", widget: "text", hint: "A brief description" }
       - { label: "Cover Image", name: "cover_image", widget: "image", required: false }
+      - { label: "Portrait Image", name: "portrait_image", widget: "image", required: false }
       - { label: "Public", name: "public", widget: "boolean", default: true }
       - { label: "Body", name: "body", widget: "markdown" }
 
@@ -177,6 +178,7 @@ collections:
       - { label: "Slug", name: "slug", widget: "string", hint: "URL-friendly version of the name" }
       - { label: "Summary", name: "summary", widget: "text", hint: "A brief description" }
       - { label: "Cover Image", name: "cover_image", widget: "image", required: false }
+      - { label: "Portrait Image", name: "portrait_image", widget: "image", required: false }
       - { label: "Public", name: "public", widget: "boolean", default: true }
       - { label: "Body", name: "body", widget: "markdown" }
 
