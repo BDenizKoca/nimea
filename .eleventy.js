@@ -10,7 +10,7 @@ module.exports = function(eleventyConfig) {
   eleventyConfig.addPassthroughCopy("en/overlays");
   eleventyConfig.addPassthroughCopy("en/images");
   eleventyConfig.addPassthroughCopy("map.webp");
-  eleventyConfig.addPassthroughCopy("myicon.png");
+  // myicon.png remains in repo as source for generator; not needed to pass-through at runtime.
   eleventyConfig.addPassthroughCopy("manifest.webmanifest");
   eleventyConfig.addPassthroughCopy("service-worker.js");
   eleventyConfig.addPassthroughCopy("offline.html");

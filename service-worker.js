@@ -40,7 +40,12 @@ const MAP_ASSETS = [
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-  caches.open(CACHE_NAME).then(cache => cache.addAll(["/myicon.png", ...CORE_ASSETS, ...MAP_ASSETS].map(normalizeUrl))).then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then(cache => cache.addAll([
+      '/images/icons/icon-192.png',
+      '/images/icons/icon-512.png',
+      '/images/icons/icon-180.png',
+      ...CORE_ASSETS, ...MAP_ASSETS
+    ].map(normalizeUrl))).then(() => self.skipWaiting())
   );
 });
 

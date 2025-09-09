@@ -5,12 +5,14 @@
   "main": "index.js",
   "scripts": {
     "start": "eleventy --serve",
-    "build": "eleventy"
+    "build": "eleventy",
+    "icons": "node scripts/generate-icons.js"
   },
   "keywords": ["wiki", "fantasy", "map", "eleventy"],
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "@11ty/eleventy": "^3.1.2"
+    "@11ty/eleventy": "^3.1.2",
+    "sharp": "^0.33.3"
   }
 }
