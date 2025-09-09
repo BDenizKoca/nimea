@@ -5,6 +5,7 @@ slug: tanofeks
 summary: Craft and mastery; perfection is not given, only earned by repetition.
 lang: en
 public: true
+type: deity
 ---
 
 # Tanofeks

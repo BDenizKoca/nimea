@@ -5,6 +5,7 @@ slug: leksai
 summary: Justice, not mere law; the fire that tempers vows and blades.
 lang: en
 public: true
+type: deity
 ---
 
 # Leksai

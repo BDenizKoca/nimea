@@ -4,6 +4,7 @@ name: Magus
 slug: magus
 summary: Bilgelik ve hakikatin arayışı; cevapların değil doğru sorunun tanrısı.
 public: true
+type: deity
 ---
 
 # Magus (Bilgi Tanrısı)

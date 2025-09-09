@@ -4,6 +4,7 @@ name: Kantemis
 slug: kantemis
 summary: Gece ve sessizliğin tanrısı; çığlıktan önceki nefes ve söylenmemiş sözlerin bekçisi.
 public: true
+type: deity
 ---
 
 # Kantemis

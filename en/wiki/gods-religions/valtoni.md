@@ -5,7 +5,7 @@ slug: valtoni
 summary: Luck and happenstance; he blesses uncertainty, not certainty.
 lang: en
 public: true
----
+type: deity
 
 # Valtoni
 

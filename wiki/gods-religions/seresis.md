@@ -4,6 +4,7 @@ name: Seresis
 slug: seresis
 summary: Hasat ve mevsimlerin tanrıçası; bolluk kadar kıtlığın da öğretmeni.
 public: true
+type: deity
 ---
 
 # Seresis (Hasadın Koruyucusu)

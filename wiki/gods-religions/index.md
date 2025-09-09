@@ -1,6 +1,9 @@
 ---
 layout: base.njk
 title: Tanrılar ve İnançlar
+type: hub
+summary: Nimea’daki inanç topluluklarını, öğretileri ve tanrıları keşfedin.
+cover_image: 
 ---
 
 # Tanrılar ve İnançlar

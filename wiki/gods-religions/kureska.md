@@ -4,6 +4,7 @@ name: Kureska
 slug: kureska
 summary: Yaşam ve şifanın tanrıçası; acıyı silmez, ona anlam ve denge katar.
 public: true
+type: deity
 ---
 
 # Kureska

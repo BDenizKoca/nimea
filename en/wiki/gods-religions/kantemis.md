@@ -5,6 +5,7 @@ slug: kantemis
 summary: Lord of night and silence; the breath before the scream.
 lang: en
 public: true
+type: deity
 ---
 
 # Kantemis

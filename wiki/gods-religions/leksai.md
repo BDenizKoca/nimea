@@ -4,6 +4,7 @@ name: Leksai
 slug: leksai
 summary: Adaletin tanrıçası; yasaların değil, sarsılmaz adaletin ateşi.
 public: true
+type: deity
 ---
 
 # Leksai (Adalet Tanrıçası)

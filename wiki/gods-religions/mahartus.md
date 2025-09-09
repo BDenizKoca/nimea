@@ -4,6 +4,7 @@ name: Mahartus
 slug: mahartus
 summary: Kaderin ve zamanın bilgisi; düğümü çözen ama asla bağlamayan el.
 public: true
+type: deity
 ---
 
 # Mahartus (Kader Efendisi)

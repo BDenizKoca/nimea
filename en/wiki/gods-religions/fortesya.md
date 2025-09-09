@@ -5,6 +5,7 @@ slug: fortesya
 summary: Goddess of hearth and shelter; endurance over conquest, vows remembered.
 lang: en
 public: true
+type: deity
 ---
 
 # Fortesya

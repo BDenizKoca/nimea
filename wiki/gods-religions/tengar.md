@@ -4,6 +4,7 @@ name: Tengar
 slug: tengar
 summary: Ufuk ve kozmik düzenin ilahi yönü; dua değil, hizalanma ister.
 public: true
+type: deity
 ---
 
 # Tengar (Ufuk Lordu)

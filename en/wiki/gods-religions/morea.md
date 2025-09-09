@@ -5,6 +5,7 @@ slug: morea
 summary: Death as completion; feared, necessary, silent.
 lang: en
 public: true
+type: deity
 ---
 
 # Morea

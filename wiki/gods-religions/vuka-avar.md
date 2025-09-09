@@ -4,6 +4,7 @@ name: Vuka'avar
 slug: vuka-avar
 summary: Kaos ve dönüşümün fısıltısı; yok etmez, çözülmenin kaçınılmazlığıdır.
 public: true
+type: deity
 ---
 
 # Vuka'avar

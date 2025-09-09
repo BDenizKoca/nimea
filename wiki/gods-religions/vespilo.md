@@ -4,6 +4,7 @@ name: Vespilo
 slug: vespilo
 summary: Hile ve yalanın bozucusu; hiçbir şeyin göründüğü gibi olmadığını hatırlatır.
 public: true
+type: deity
 ---
 
 # Vespilo

@@ -4,6 +4,7 @@ name: Conveitas
 slug: conveitas
 summary: Güzellik ve doğurganlığın çekim gücü; ruhu ve bedeni yeni olana çağıran cazibe.
 public: true
+type: deity
 ---
 
 # Conveitas

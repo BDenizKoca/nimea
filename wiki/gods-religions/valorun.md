@@ -4,6 +4,7 @@ name: Valorun
 slug: valorun
 summary: Savaşın çıplak hakikati; öfke, irade ve son çığlıktan önceki nefes.
 public: true
+type: deity
 ---
 
 # Valorun

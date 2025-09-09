@@ -4,6 +4,7 @@ name: Fortesya
 slug: fortesya
 summary: Koruma ve evin tanrıçası; savaş değil dayanıklılık, siper değil söz hatırlanışı.
 public: true
+type: deity
 ---
 
 # Fortesya

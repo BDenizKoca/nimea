@@ -5,6 +5,7 @@ slug: pelagris
 summary: Sea and storm; generosity and wrath in endless tide.
 lang: en
 public: true
+type: deity
 ---
 
 # Pelagris

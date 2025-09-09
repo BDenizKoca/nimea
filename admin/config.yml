@@ -79,6 +79,9 @@ collections:
     create: true
     identifier_field: "slug"
     slug: "{{slug}}"
+    filter:
+      field: type
+      value: deity
     fields:
       - { label: "Layout", name: "layout", widget: "hidden", default: "base.njk" }
       - { label: "Name", name: "name", widget: "string" }
@@ -172,6 +175,9 @@ collections:
     create: true
     identifier_field: "slug"
     slug: "{{slug}}"
+    filter:
+      field: type
+      value: deity
     fields:
       - { label: "Layout", name: "layout", widget: "hidden", default: "base.njk" }
       - { label: "Name", name: "name", widget: "string" }
@@ -181,6 +187,32 @@ collections:
       - { label: "Portrait Image", name: "portrait_image", widget: "image", required: false }
       - { label: "Public", name: "public", widget: "boolean", default: true }
       - { label: "Body", name: "body", widget: "markdown" }
+
+  # Hub pages as single-file entries so they don't inherit deity-required fields
+  - name: "gods-religions-hub-tr"
+    label: "Gods & Religions Hub (TR)"
+    files:
+      - label: "TR: Gods & Religions Hub"
+        name: "gods-religions-hub-tr"
+        file: "wiki/gods-religions/index.md"
+        fields:
+          - { label: "Layout", name: "layout", widget: "hidden", default: "base.njk" }
+          - { label: "Title", name: "title", widget: "string" }
+          - { label: "Summary", name: "summary", widget: "text", required: false }
+          - { label: "Cover Image", name: "cover_image", widget: "image", required: false }
+
+  - name: "gods-religions-hub-en"
+    label: "Gods & Religions Hub (EN)"
+    files:
+      - label: "EN: Gods & Religions Hub"
+        name: "gods-religions-hub-en"
+        file: "en/wiki/gods-religions/index.md"
+        fields:
+          - { label: "Layout", name: "layout", widget: "hidden", default: "base.njk" }
+          - { label: "Title", name: "title", widget: "string" }
+          - { label: "Language", name: "lang", widget: "hidden", default: "en" }
+          - { label: "Summary", name: "summary", widget: "text", required: false }
+          - { label: "Cover Image", name: "cover_image", widget: "image", required: false }
 
   - name: "en-magic-powers"
     label: "Magic & Powers (EN)"

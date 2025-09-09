@@ -4,6 +4,7 @@ name: Morea
 slug: morea
 summary: Ölüm ve sonların tanrıçası; acımasız değil, tamamlayan sessiz son.
 public: true
+type: deity
 ---
 
 # Morea

@@ -5,6 +5,7 @@ slug: mahartus
 summary: Knower of fate; the knot in the thread and the pulse in the flow.
 lang: en
 public: true
+type: deity
 ---
 
 # Mahartus

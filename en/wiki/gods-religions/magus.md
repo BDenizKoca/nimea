@@ -5,6 +5,7 @@ slug: magus
 summary: The quest for truth; not answers, but the right question.
 lang: en
 public: true
+type: deity
 ---
 
 # Magus

@@ -4,6 +4,7 @@ name: Falorn
 slug: falorn
 summary: Avcılık ve isabetin tanrısı; şiddeti değil ölçülü iz sürmeyi kutsar.
 public: true
+type: deity
 ---
 
 # Falorn

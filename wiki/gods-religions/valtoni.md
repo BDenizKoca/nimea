@@ -4,6 +4,7 @@ name: Valtoni
 slug: valtoni
 summary: Şans ve rastlantının efendisi; kesinliği değil belirsizliği kutsar.
 public: true
+type: deity
 ---
 
 # Valtoni

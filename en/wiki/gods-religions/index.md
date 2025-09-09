@@ -3,6 +3,9 @@ layout: base.njk
 title: Gods & Religions
 lang: en
 permalink: /en/wiki/gods-religions/
+type: hub
+summary: Explore the pantheon, faiths, and religious practices across Nimea.
+cover_image: 
 ---
 
 # Gods & Religions

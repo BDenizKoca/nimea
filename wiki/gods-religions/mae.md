@@ -4,6 +4,7 @@ name: Mae
 slug: mae
 summary: Sanat ve ifadenin ilhamı; şekli kıran duygu ve notalar arasındaki nefes.
 public: true
+type: deity
 ---
 
 # Mae

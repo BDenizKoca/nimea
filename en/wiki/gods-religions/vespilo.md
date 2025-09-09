@@ -5,6 +5,7 @@ slug: vespilo
 summary: Trickery and theft; a reminder that nothing is as it seems.
 lang: en
 public: true
+type: deity
 ---
 
 # Vespilo

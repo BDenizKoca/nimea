@@ -4,6 +4,7 @@ name: Pelagris
 slug: pelagris
 summary: Deniz ve fırtınanın tanrıçası; cömert ve acımasız derinliğin nefesi.
 public: true
+type: deity
 ---
 
 # Pelagris (Denizlerin Hükümdarı)

@@ -4,6 +4,7 @@ name: Kulusta
 slug: kulusta
 summary: Ticaret ve değerin tanrısı; zenginliği değil, akıllı alışverişi ve akışı kutsar.
 public: true
+type: deity
 ---
 
 # Kulusta

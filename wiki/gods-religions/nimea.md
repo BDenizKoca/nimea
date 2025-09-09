@@ -4,6 +4,7 @@ name: Nimea
 slug: nimea
 summary: Toprak Ana; sabrın, kökün ve kaçınılmaz doğanın tanrıçası.
 public: true
+type: deity
 ---
 
 # Nimea (Toprak Ana)

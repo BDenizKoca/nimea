@@ -5,6 +5,7 @@ slug: seresis
 summary: Harvest and seasons; discipline of sowing and cycles of reaping.
 lang: en
 public: true
+type: deity
 ---
 
 # Seresis

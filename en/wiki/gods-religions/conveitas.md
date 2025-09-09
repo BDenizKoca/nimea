@@ -5,6 +5,7 @@ slug: conveitas
 summary: Beauty and fecundity; the pull that births the new in flesh and soul.
 lang: en
 public: true
+type: deity
 ---
 
 # Conveitas

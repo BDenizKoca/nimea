@@ -5,6 +5,7 @@ slug: nimea
 summary: Earthmother; inevitability, root, and patient growth.
 lang: en
 public: true
+type: deity
 ---
 
 # Nimea

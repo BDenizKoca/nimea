@@ -4,6 +4,7 @@ name: Tanofeks
 slug: tanofeks
 summary: Zanaat ve ustalığın tanrısı; mükemmellik verilmez, tekrar ile hak edilir.
 public: true
+type: deity
 ---
 
 # Tanofeks

@@ -5,6 +5,7 @@ slug: mae
 summary: Art and expression; the breath between notes and the tremor before a kiss.
 lang: en
 public: true
+type: deity
 ---
 
 # Mae

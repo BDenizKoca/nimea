@@ -5,6 +5,7 @@ slug: falorn
 summary: God of the hunt and true aim; reveres restraint over violence.
 lang: en
 public: true
+type: deity
 ---
 
 # Falorn

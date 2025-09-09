@@ -5,6 +5,7 @@ slug: tengar
 summary: Horizon and order; not a person but a direction to align with.
 lang: en
 public: true
+type: deity
 ---
 
 # Tengar

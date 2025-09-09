@@ -5,6 +5,7 @@ slug: vuka-avar
 summary: Chaos and change; not destruction, but the inevitability of unraveling.
 lang: en
 public: true
+type: deity
 ---
 
 # Vuka'avar

@@ -5,6 +5,7 @@ slug: kulusta
 summary: Trade and value; wealth is movement, not hoard.
 lang: en
 public: true
+type: deity
 ---
 
 # Kulusta

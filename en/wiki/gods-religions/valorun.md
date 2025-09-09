@@ -5,6 +5,7 @@ slug: valorun
 summary: War’s bare truth; will, rage, and the breath before the shout.
 lang: en
 public: true
+type: deity
 ---
 
 # Valorun

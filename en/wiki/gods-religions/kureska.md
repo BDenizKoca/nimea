@@ -5,6 +5,7 @@ slug: kureska
 summary: Life and healing; she adds meaning to pain and offers balance.
 lang: en
 public: true
+type: deity
 ---
 
 # Kureska
