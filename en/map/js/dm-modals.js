@@ -34,6 +34,9 @@
             const idInput = document.getElementById('marker-id');
             const iconInput = document.getElementById('marker-icon');
             const cancelBtn = document.getElementById('cancel-marker');
+            const addImageBtn = document.getElementById('add-image-url');
+            const imageUrlInput = document.getElementById('marker-image-url');
+            const imagesListEl = document.getElementById('marker-images-list');
 
             // Update ID when name changes, but only for new markers (not when editing)
             nameInput.addEventListener('input', () => {
@@ -77,6 +80,21 @@
                     this.pendingMarker = null;
                 }
                 modal.classList.add('hidden');
+            });
+
+            // Add image URL row to list
+            const addImageRow = (val = '') => {
+                const row = document.createElement('div');
+                row.className = 'image-list-item';
+                row.innerHTML = `<input type="url" placeholder="https://... or images/sample.jpg" value="${val}"><button type="button" class="remove-image">Remove</button>`;
+                row.querySelector('.remove-image').addEventListener('click', () => row.remove());
+                imagesListEl.appendChild(row);
+            };
+            addImageBtn?.addEventListener('click', () => {
+                const v = (imageUrlInput?.value || '').trim();
+                if (!v) return;
+                addImageRow(v);
+                imageUrlInput.value = '';
             });
 
             form.addEventListener('submit', (e) => {
@@ -164,6 +182,9 @@
             form.removeAttribute('data-edit-mode');
             form.removeAttribute('data-original-id');
             document.getElementById('marker-id').removeAttribute('data-manually-edited');
+            // Reset images list
+            const imagesListEl = document.getElementById('marker-images-list');
+            if (imagesListEl) imagesListEl.innerHTML = '';
             
             // Update UI for creation mode
             title.textContent = 'Create New Marker';
@@ -232,6 +253,19 @@
             document.getElementById('marker-lat').value = markerData.y;
             document.getElementById('marker-lng').value = markerData.x;
             document.getElementById('marker-coordinates').value = `X: ${Math.round(markerData.x)}, Y: ${Math.round(markerData.y)}`;
+            // Load existing images
+            const imagesListEl = document.getElementById('marker-images-list');
+            if (imagesListEl) {
+                imagesListEl.innerHTML = '';
+                const images = Array.isArray(markerData.images) ? markerData.images : [];
+                images.forEach(url => {
+                    const row = document.createElement('div');
+                    row.className = 'image-list-item';
+                    row.innerHTML = `<input type=\"url\" placeholder=\"https://... or images/sample.jpg\" value=\"${url}\"><button type=\"button\" class=\"remove-image\">Remove</button>`;
+                    row.querySelector('.remove-image').addEventListener('click', () => row.remove());
+                    imagesListEl.appendChild(row);
+                });
+            }
             
             // Show the modal
             modal.classList.remove('hidden');
@@ -304,10 +338,19 @@
                 summary,
                 customIcon: customIcon ? customIcon.trim() : undefined,
                 iconUrl: iconUrl ? iconUrl.trim() : undefined,
-                images: [], // Preserve existing images in edit mode
+                images: [], // Will populate from UI; preserve in edit mode handled below
                 public: isPublic,
                 wikiSlug: wikiSlug ? wikiSlug.trim() || undefined : undefined,
             };
+
+            // Collect images from UI list
+            const imagesListEl2 = document.getElementById('marker-images-list');
+            if (imagesListEl2) {
+                const urls = Array.from(imagesListEl2.querySelectorAll('input[type="url"]'))
+                    .map(inp => (inp.value || '').trim())
+                    .filter(v => v.length > 0);
+                markerData.images = urls;
+            }
 
             if (isEditMode) {
                 this.updateExistingMarker(markerData, originalId);

@@ -23,6 +23,13 @@ body, html {
     display: block;
 }
 
+/* DM modal image list/input */
+.image-input-row { display: flex; gap: 8px; align-items: center; }
+.image-input-row .flex-1 { flex: 1; }
+.image-list { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+.image-list .image-list-item { display:flex; align-items:center; gap:8px; }
+.image-list .image-list-item input { flex:1; }
+
 /* Respect safe areas on iOS */
 @supports(padding:max(0px)){
     body { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }

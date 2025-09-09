@@ -959,6 +959,13 @@ button:focus, .leaflet-control-button:focus {
     outline-offset: 2px;
 }
 
+/* DM modal image list/input */
+.image-input-row { display: flex; gap: 8px; align-items: center; }
+.image-input-row .flex-1 { flex: 1; }
+.image-list { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+.image-list .image-list-item { display:flex; align-items:center; gap:8px; }
+.image-list .image-list-item input { flex:1; }
+
 /* === UNIFIED ROUTE LINE STYLES === */
 .unified-route-line {
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
