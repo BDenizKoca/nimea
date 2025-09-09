@@ -133,43 +133,6 @@ document.addEventListener('DOMContentLoaded', () => {
         try { localStorage.setItem(LS_DM_KEY, '1'); } catch (e) {}
     }
 
-    // Hidden toggles to switch DM on devices without URL bar (PWA)
-    function toggleDmPrompt() {
-        const enable = !(function(){ try { return localStorage.getItem(LS_DM_KEY) === '1'; } catch(e){ return false; } })();
-        const msg = 'DM modu ' + (enable ? 'açılacak' : 'kapatılacak') + ' (yeniden yüklenecek). Devam edilsin mi?';
-        if (confirm(msg)) {
-            try {
-                if (enable) localStorage.setItem(LS_DM_KEY, '1');
-                else localStorage.removeItem(LS_DM_KEY);
-            } catch (e) {}
-            window.location.reload();
-        }
-    }
-    // Keyboard: Ctrl/Cmd + Alt + D
-    document.addEventListener('keydown', (e) => {
-        const isCombo = (e.ctrlKey || e.metaKey) && e.altKey && (e.key && e.key.toLowerCase() === 'd');
-        if (isCombo) {
-            e.preventDefault();
-            toggleDmPrompt();
-        }
-    });
-    // Gesture: 5 taps on the map title within 3 seconds
-    (function(){
-        const titleEl = document.querySelector('.map-title');
-        if (!titleEl) return;
-        let tapCount = 0; let timer;
-        titleEl.addEventListener('click', () => {
-            tapCount++;
-            clearTimeout(timer);
-            if (tapCount >= 5) {
-                tapCount = 0;
-                toggleDmPrompt();
-                return;
-            }
-            timer = setTimeout(() => { tapCount = 0; }, 3000);
-        }, { passive: true });
-    })();
-
     // Netlify Identity integration: auto-enable DM when logged in; disable on logout
     if (window.netlifyIdentity) {
         window.netlifyIdentity.on('init', (user) => {

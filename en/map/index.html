@@ -27,6 +27,7 @@
             <div class="lang-switch">
                 <a href="../../map/">TR</a>
             </div>
+            <button id="dm-mode-toggle" class="wiki-link">DM Mode</button>
             <button id="pwa-install" class="wiki-link">Install App</button>
         </nav>
     </header>
@@ -277,23 +278,33 @@ Thornhold,2000,1500,fortress,Empire,Mountain fortress,true"></textarea>
                     navigator.serviceWorker.register('/service-worker.js').catch(console.error);
                 });
             }
-            // Hidden Admin access (EN): Ctrl/Cmd+Alt+A or 5 taps on header to open /admin/
+            // Visible DM toggle when logged in (EN)
             (function(){
-                function goAdminConfirm(){ if(confirm('Open Admin?')) window.location.assign('/admin/'); }
-                document.addEventListener('keydown', (e) => {
-                    const isCombo = (e.ctrlKey || e.metaKey) && e.altKey && (e.key && e.key.toLowerCase() === 'a');
-                    if (isCombo) { e.preventDefault(); goAdminConfirm(); }
-                });
-                const headerBar = document.querySelector('.map-header .map-nav');
-                if (headerBar) {
-                    let tap=0; let t;
-                    headerBar.addEventListener('click', ()=>{
-                        tap++; clearTimeout(t);
-                        if (tap>=5) { tap=0; goAdminConfirm(); return; }
-                        t = setTimeout(()=>{ tap=0; }, 3000);
-                    }, { passive:true });
+                const LS_DM_KEY = 'nimea.dm';
+                const btn = document.getElementById('dm-mode-toggle');
+                const isDm = () => {
+                    try { return localStorage.getItem(LS_DM_KEY) === '1' || new URLSearchParams(location.search).has('dm'); } catch(e){ return false; }
+                };
+                function render(user){
+                    if (!btn) return;
+                    const loggedIn = !!user;
+                    if (!loggedIn) { btn.style.display = 'none'; return; }
+                    btn.style.display = 'inline-block';
+                    btn.textContent = isDm() ? 'Disable DM' : 'Enable DM';
                 }
+                if (window.netlifyIdentity) {
+                    try { render(window.netlifyIdentity.currentUser && window.netlifyIdentity.currentUser()); } catch {}
+                    window.netlifyIdentity.on('init', render);
+                    window.netlifyIdentity.on('login', render);
+                    window.netlifyIdentity.on('logout', () => render(null));
+                }
+                btn && btn.addEventListener('click', () => {
+                    const enable = !isDm();
+                    try { if (enable) localStorage.setItem(LS_DM_KEY,'1'); else localStorage.removeItem(LS_DM_KEY);} catch(e){}
+                    location.reload();
+                });
             })();
+            // Admin can be reached via header Admin link in wiki; no hidden shortcuts on map.
         </script>
 </body>
 </html>

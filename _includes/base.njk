@@ -36,6 +36,8 @@
                     {% else %}
                       <a href="{{ '/en' + page.url }}">EN</a>
                     {% endif %}
+                                        <span aria-hidden="true" style="opacity:.5; margin: 0 .25rem;">·</span>
+                                        <a href="#" id="admin-link" class="admin-link">{% if lang == 'en' %}Admin{% else %}Yönetim{% endif %}</a>
                 </div>
             </div>
         </header>
@@ -75,6 +77,28 @@
     </div>
     
     <script>
+            // Visible Admin link: requires login, otherwise opens Identity modal
+            document.addEventListener('DOMContentLoaded', () => {
+                const link = document.getElementById('admin-link');
+                if (!link) return;
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (window.netlifyIdentity && typeof window.netlifyIdentity.currentUser === 'function') {
+                        const user = window.netlifyIdentity.currentUser();
+                        if (user) {
+                            window.location.assign('/admin/');
+                        } else {
+                            window.netlifyIdentity.open();
+                            window.netlifyIdentity.on('login', () => window.location.assign('/admin/'));
+                        }
+                    } else {
+                        // Fallback: try to go directly
+                        window.location.assign('/admin/');
+                    }
+                });
+            });
+        </script>
+        <script>
       // Handle Netlify Identity redirects for email confirmation
       if (window.netlifyIdentity) {
         window.netlifyIdentity.on("init", user => {
@@ -120,40 +144,7 @@
                 });
       }
     </script>
-        <script>
-            // Hidden Admin access for PWA (no URL bar):
-            // - Keyboard: Ctrl/Cmd + Alt + A
-            // - Gesture: 5 taps on the header bar within 3 seconds
-            (function(){
-                function goAdminConfirm() {
-                    const msg = '{{ lang == "en" ? "Open Admin?" : "Yönetimi aç?" }}';
-                    if (confirm(msg)) {
-                        window.location.assign('/admin/');
-                    }
-                }
-                document.addEventListener('keydown', (e) => {
-                    const isCombo = (e.ctrlKey || e.metaKey) && e.altKey && (e.key && e.key.toLowerCase() === 'a');
-                    if (isCombo) {
-                        e.preventDefault();
-                        goAdminConfirm();
-                    }
-                });
-                const headerBar = document.querySelector('.site-header .header-bar');
-                if (headerBar) {
-                    let tapCount = 0; let timer;
-                    headerBar.addEventListener('click', () => {
-                        tapCount++;
-                        clearTimeout(timer);
-                        if (tapCount >= 5) {
-                            tapCount = 0;
-                            goAdminConfirm();
-                            return;
-                        }
-                        timer = setTimeout(() => { tapCount = 0; }, 3000);
-                    }, { passive: true });
-                }
-            })();
-        </script>
+            <!-- Hidden Admin shortcuts removed; use visible Admin link instead. -->
         <script>
             // Lightweight share handler with clipboard fallback and toast
             document.addEventListener('DOMContentLoaded', () => {
