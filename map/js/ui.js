@@ -142,6 +142,8 @@
 
         const wikiLink = bridge.generateWikiLink(data);
     const addRouteBtn = bridge.state.isDmMode ? '' : `<button class=\"wiki-link add-to-route\" data-id=\"${data.id}\">${window.nimeaI18n ? window.nimeaI18n.t('addToRoute') : 'Rotaya Ekle'}</button>`;
+        const setBannerLbl = isEnglish ? 'Set as banner' : 'Banner yap';
+        const clearBannerLbl = isEnglish ? 'Clear banner' : 'Bannerı kaldır';
         
         // Resolve assets to absolute URLs (keep http(s) as-is)
         const resolveAssetUrl = (u) => {
@@ -160,10 +162,17 @@
             usedFirstFromImages = true;
         }
         // Remaining images for below-the-fold gallery (avoid duplicating banner)
-        const galleryImages = Array.isArray(data.images) ? (usedFirstFromImages ? data.images.slice(1) : data.images) : [];
+        let galleryImages = Array.isArray(data.images) ? (usedFirstFromImages ? data.images.slice(1) : data.images) : [];
+        if (bannerUrl && Array.isArray(data.images)) {
+            // Exclude whatever matches the resolved banner URL
+            galleryImages = galleryImages.filter(img => resolveAssetUrl(img) !== bannerUrl);
+        }
         const galleryHtml = galleryImages && galleryImages.length > 0
             ? galleryImages.map(img => {
                 const src = resolveAssetUrl(img);
+                if (bridge.state.isDmMode) {
+                    return `<div class="info-image"><img src="${src}" alt="${name}" style="width:100%;"><div><button class=\"wiki-link set-banner-btn\" data-id=\"${data.id}\" data-src=\"${src}\">${setBannerLbl}</button></div></div>`;
+                }
                 return `<img src="${src}" alt="${name}" style="width:100%;">`;
               }).join('')
             : '';
@@ -182,6 +191,7 @@
             <p>${summary}</p>
             ${data.type ? `<p><strong>Tür:</strong> ${data.type}</p>` : ''}
             ${faction ? `<p><strong>Cemiyet/Devlet:</strong> ${faction}</p>` : ''}
+            ${bridge.state.isDmMode && bannerUrl ? `<div><button class=\"wiki-link clear-banner-btn\" data-id=\"${data.id}\">${clearBannerLbl}</button></div>` : ''}
             ${galleryHtml}
             ${wikiLink || addRouteBtn ? `<div class=\"info-actions\">${wikiLink ? `<a href=\"${wikiLink}\" class=\"wiki-link\" target=\"_blank\">${window.nimeaI18n ? window.nimeaI18n.t('showOnWiki') : 'Külliyatta Gör'}</a>` : ''}${addRouteBtn}</div>` : ''}
             ${dmButtons}
@@ -226,6 +236,44 @@
                             closeInfoSidebar();
                         }
                     }
+                });
+            }
+
+            // DM: Set banner from existing images
+            const unresolveAssetUrl = (u) => {
+                if (!u) return u;
+                // Keep http(s) as-is
+                if (/^https?:\/\//i.test(u)) return u;
+                return u.startsWith('/') ? u.slice(1) : u;
+            };
+            infoContent.querySelectorAll('.set-banner-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const markerId = e.currentTarget.dataset.id;
+                    const resolvedSrc = e.currentTarget.dataset.src;
+                    const markerIdx = bridge.state.markers.findIndex(m => m.id === markerId);
+                    if (markerIdx === -1) return;
+                    const rawMatch = (bridge.state.markers[markerIdx].images || []).find(img => resolveAssetUrl(img) === resolvedSrc);
+                    const bannerRaw = rawMatch || unresolveAssetUrl(resolvedSrc);
+                    bridge.state.markers[markerIdx].banner = bannerRaw;
+                    bridge.markDirty('markers');
+                    if (bridge.uiModule && bridge.uiModule.updatePublishUI) bridge.uiModule.updatePublishUI();
+                    // Re-open to refresh UI
+                    openInfoSidebar(bridge.state.markers[markerIdx]);
+                    bridge.showNotification(isEnglish ? 'Banner set for location.' : 'Banner ayarlandı.', 'success');
+                });
+            });
+
+            const clearBtn = infoContent.querySelector('.clear-banner-btn');
+            if (clearBtn) {
+                clearBtn.addEventListener('click', (e) => {
+                    const markerId = e.currentTarget.dataset.id;
+                    const markerIdx = bridge.state.markers.findIndex(m => m.id === markerId);
+                    if (markerIdx === -1) return;
+                    delete bridge.state.markers[markerIdx].banner;
+                    bridge.markDirty('markers');
+                    if (bridge.uiModule && bridge.uiModule.updatePublishUI) bridge.uiModule.updatePublishUI();
+                    openInfoSidebar(bridge.state.markers[markerIdx]);
+                    bridge.showNotification(isEnglish ? 'Banner cleared.' : 'Banner kaldırıldı.', 'success');
                 });
             }
         }
