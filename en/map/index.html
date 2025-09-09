@@ -277,6 +277,23 @@ Thornhold,2000,1500,fortress,Empire,Mountain fortress,true"></textarea>
                     navigator.serviceWorker.register('/service-worker.js').catch(console.error);
                 });
             }
+            // Hidden Admin access (EN): Ctrl/Cmd+Alt+A or 5 taps on header to open /admin/
+            (function(){
+                function goAdminConfirm(){ if(confirm('Open Admin?')) window.location.assign('/admin/'); }
+                document.addEventListener('keydown', (e) => {
+                    const isCombo = (e.ctrlKey || e.metaKey) && e.altKey && (e.key && e.key.toLowerCase() === 'a');
+                    if (isCombo) { e.preventDefault(); goAdminConfirm(); }
+                });
+                const headerBar = document.querySelector('.map-header .map-nav');
+                if (headerBar) {
+                    let tap=0; let t;
+                    headerBar.addEventListener('click', ()=>{
+                        tap++; clearTimeout(t);
+                        if (tap>=5) { tap=0; goAdminConfirm(); return; }
+                        t = setTimeout(()=>{ tap=0; }, 3000);
+                    }, { passive:true });
+                }
+            })();
         </script>
 </body>
 </html>

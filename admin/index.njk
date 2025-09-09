@@ -11,6 +11,40 @@ permalink: /admin/index.html
   <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 </head>
 <body>
+  <style>
+    .admin-topbar{position:fixed;top:0;left:0;right:0;z-index:9999;background:#2e2216;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:8px 12px;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;font-size:14px}
+    .admin-topbar .brand{opacity:.9}
+    .admin-topbar .actions{display:flex;align-items:center;gap:8px}
+    .admin-topbar .actions a{color:#fff;text-decoration:none;opacity:.85}
+    .admin-topbar .btn{background:#8b4513;color:#fff;border:0;border-radius:6px;padding:6px 10px;cursor:pointer}
+  </style>
+  <div class="admin-topbar">
+    <div class="brand">Content Manager · Nimea</div>
+    <div class="actions">
+      <a href="/" title="Home">Home</a>
+      <a href="/wiki/" title="Wiki">Wiki</a>
+      <a href="/map/" title="Map">Map</a>
+      <button class="btn" id="return-to-site" title="Return to Site">Return to Site</button>
+    </div>
+  </div>
+  <script>
+    (function(){
+      const btn = document.getElementById('return-to-site');
+      function goBack(){
+        try {
+          const ref = document.referrer;
+          const sameOrigin = ref && ref.startsWith(window.location.origin);
+          if (sameOrigin && !/\/admin\//.test(ref)) {
+            window.location.assign(ref);
+            return;
+          }
+        } catch {}
+        // Fallback: go to home
+        window.location.assign('/');
+      }
+      btn && btn.addEventListener('click', goBack);
+    })();
+  </script>
   <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
   
   <script>

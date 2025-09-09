@@ -6,6 +6,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- CONFIG & STATE ---
+    // PWA-friendly DM activation helpers
+    const urlParams = new URLSearchParams(window.location.search);
+    const LS_DM_KEY = 'nimea.dm';
+    const urlDm = urlParams.has('dm');
+    let storedDm = false;
+    try { storedDm = localStorage.getItem(LS_DM_KEY) === '1'; } catch (e) { /* ignore */ }
+    const identityDm = !!(window.netlifyIdentity && typeof window.netlifyIdentity.currentUser === 'function' && window.netlifyIdentity.currentUser());
+
     const config = {
         kmPerPixel: 50 / 115, // 0.4347826087 (115 pixels = 50 km)
         profiles: {
@@ -16,8 +24,9 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const state = {
-        isDmMode: new URLSearchParams(window.location.search).has('dm'),
-        focusMarker: new URLSearchParams(window.location.search).get('focus'),
+        // DM is enabled by URL (?dm), persisted flag (localStorage), or Netlify Identity login
+        isDmMode: urlDm || storedDm || identityDm,
+        focusMarker: urlParams.get('focus'),
         markers: [],
         terrain: { type: 'FeatureCollection', features: [] },
         route: [],
@@ -118,6 +127,67 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     img.onerror = () => console.error("Failed to load map image.");
     img.src = mapImageUrl;
+
+    // If DM came from URL, persist it so installed PWA (no URL) can keep using DM
+    if (urlDm && !storedDm) {
+        try { localStorage.setItem(LS_DM_KEY, '1'); } catch (e) {}
+    }
+
+    // Hidden toggles to switch DM on devices without URL bar (PWA)
+    function toggleDmPrompt() {
+        const enable = !(function(){ try { return localStorage.getItem(LS_DM_KEY) === '1'; } catch(e){ return false; } })();
+        const msg = 'DM modu ' + (enable ? 'açılacak' : 'kapatılacak') + ' (yeniden yüklenecek). Devam edilsin mi?';
+        if (confirm(msg)) {
+            try {
+                if (enable) localStorage.setItem(LS_DM_KEY, '1');
+                else localStorage.removeItem(LS_DM_KEY);
+            } catch (e) {}
+            window.location.reload();
+        }
+    }
+    // Keyboard: Ctrl/Cmd + Alt + D
+    document.addEventListener('keydown', (e) => {
+        const isCombo = (e.ctrlKey || e.metaKey) && e.altKey && (e.key && e.key.toLowerCase() === 'd');
+        if (isCombo) {
+            e.preventDefault();
+            toggleDmPrompt();
+        }
+    });
+    // Gesture: 5 taps on the map title within 3 seconds
+    (function(){
+        const titleEl = document.querySelector('.map-title');
+        if (!titleEl) return;
+        let tapCount = 0; let timer;
+        titleEl.addEventListener('click', () => {
+            tapCount++;
+            clearTimeout(timer);
+            if (tapCount >= 5) {
+                tapCount = 0;
+                toggleDmPrompt();
+                return;
+            }
+            timer = setTimeout(() => { tapCount = 0; }, 3000);
+        }, { passive: true });
+    })();
+
+    // Netlify Identity integration: auto-enable DM when logged in; disable on logout
+    if (window.netlifyIdentity) {
+        window.netlifyIdentity.on('init', (user) => {
+            const hasLS = (function(){ try { return localStorage.getItem(LS_DM_KEY) === '1'; } catch(e){ return false; } })();
+            if (user && !hasLS) {
+                try { localStorage.setItem(LS_DM_KEY, '1'); } catch (e) {}
+                if (!state.isDmMode) window.location.reload();
+            }
+        });
+        window.netlifyIdentity.on('login', () => {
+            try { localStorage.setItem(LS_DM_KEY, '1'); } catch (e) {}
+            if (!state.isDmMode) window.location.reload();
+        });
+        window.netlifyIdentity.on('logout', () => {
+            try { localStorage.removeItem(LS_DM_KEY); } catch (e) {}
+            if (state.isDmMode) window.location.reload();
+        });
+    }
 
     async function loadInitialData() {
         try {

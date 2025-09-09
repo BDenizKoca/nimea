@@ -83,9 +83,77 @@
               document.location.href = "/admin/";
             });
           }
+                    // If already logged in, optionally add a subtle Admin link to the header
+                    if (user) {
+                        try {
+                            const navLeft = document.querySelector('.header-bar .nav-left');
+                            if (navLeft && !navLeft.querySelector('.admin-link')) {
+                                const a = document.createElement('a');
+                                a.href = '/admin/';
+                                a.textContent = '{{ lang == "en" ? "Admin" : "Yönetim" }}';
+                                a.className = 'admin-link';
+                                a.style.opacity = '0.7';
+                                a.style.marginLeft = '0.5rem';
+                                navLeft.appendChild(a);
+                            }
+                        } catch {}
+                    }
         });
+                window.netlifyIdentity.on('login', () => {
+                    try {
+                        const navLeft = document.querySelector('.header-bar .nav-left');
+                        if (navLeft && !navLeft.querySelector('.admin-link')) {
+                            const a = document.createElement('a');
+                            a.href = '/admin/';
+                            a.textContent = '{{ lang == "en" ? "Admin" : "Yönetim" }}';
+                            a.className = 'admin-link';
+                            a.style.opacity = '0.7';
+                            a.style.marginLeft = '0.5rem';
+                            navLeft.appendChild(a);
+                        }
+                    } catch {}
+                });
+                window.netlifyIdentity.on('logout', () => {
+                    try {
+                        document.querySelectorAll('.admin-link').forEach(n => n.remove());
+                    } catch {}
+                });
       }
     </script>
+        <script>
+            // Hidden Admin access for PWA (no URL bar):
+            // - Keyboard: Ctrl/Cmd + Alt + A
+            // - Gesture: 5 taps on the header bar within 3 seconds
+            (function(){
+                function goAdminConfirm() {
+                    const msg = '{{ lang == "en" ? "Open Admin?" : "Yönetimi aç?" }}';
+                    if (confirm(msg)) {
+                        window.location.assign('/admin/');
+                    }
+                }
+                document.addEventListener('keydown', (e) => {
+                    const isCombo = (e.ctrlKey || e.metaKey) && e.altKey && (e.key && e.key.toLowerCase() === 'a');
+                    if (isCombo) {
+                        e.preventDefault();
+                        goAdminConfirm();
+                    }
+                });
+                const headerBar = document.querySelector('.site-header .header-bar');
+                if (headerBar) {
+                    let tapCount = 0; let timer;
+                    headerBar.addEventListener('click', () => {
+                        tapCount++;
+                        clearTimeout(timer);
+                        if (tapCount >= 5) {
+                            tapCount = 0;
+                            goAdminConfirm();
+                            return;
+                        }
+                        timer = setTimeout(() => { tapCount = 0; }, 3000);
+                    }, { passive: true });
+                }
+            })();
+        </script>
         <script>
             // Lightweight share handler with clipboard fallback and toast
             document.addEventListener('DOMContentLoaded', () => {
