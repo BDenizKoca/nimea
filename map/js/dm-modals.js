@@ -93,9 +93,18 @@
             };
             addImageBtn?.addEventListener('click', () => {
                 const v = (imageUrlInput?.value || '').trim();
-                if (!v) return;
+                if (!v) {
+                    this.bridge.showNotification('Lütfen bir görsel URL\'si girin', 'error');
+                    return;
+                }
                 addImageRow(v);
                 imageUrlInput.value = '';
+            });
+            imageUrlInput?.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addImageBtn?.click();
+                }
             });
 
             form.addEventListener('submit', (e) => {
