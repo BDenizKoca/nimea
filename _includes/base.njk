@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ title }} | Nimea</title>
     <link rel="stylesheet" href="{{ '/css/style.css' | url }}">
-    <meta name="theme-color" content="#8b4513">
+    <!-- Theme color: provide light/dark variants; unsupported browsers safely ignore -->
+    <meta name="theme-color" content="#8b4513" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#2e2216" media="(prefers-color-scheme: dark)">
     <link rel="manifest" href="{{ '/manifest.webmanifest' | url }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ '/images/icons/icon-32.png' | url }}">
     <link rel="apple-touch-icon" sizes="180x180" href="{{ '/images/icons/icon-180.png' | url }}">
