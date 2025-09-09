@@ -10,6 +10,9 @@ module.exports = function(eleventyConfig) {
   eleventyConfig.addPassthroughCopy("en/overlays");
   eleventyConfig.addPassthroughCopy("en/images");
   eleventyConfig.addPassthroughCopy("map.webp");
+  eleventyConfig.addPassthroughCopy("manifest.webmanifest");
+  eleventyConfig.addPassthroughCopy("service-worker.js");
+  eleventyConfig.addPassthroughCopy("offline.html");
   // Remove GitHub Pages specific files
   // eleventyConfig.addPassthroughCopy(".nojekyll");
   // eleventyConfig.addPassthroughCopy("auth.html");

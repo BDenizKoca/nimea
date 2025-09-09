@@ -742,8 +742,14 @@
         }
 
         // Create day markers using proportional distances along the polyline
-        const polylines = (bridge.state.routeUnifiedPolyline && bridge.state.routeUnifiedPolyline.getLatLngs()) || [];
+        const poly = bridge.state.routeUnifiedPolyline;
+        const polylines = (poly && typeof poly.getLatLngs === 'function' && poly.getLatLngs()) || [];
         const points = Array.isArray(polylines[0]) ? polylines[0] : polylines; // Leaflet may nest
+        if (!points || points.length < 2) {
+            // No polyline yet; skip markers this pass
+            bridge.state.dayMarkers = [];
+            return { days, markers: [] };
+        }
         const cumUnits = [0];
         for (let i = 1; i < points.length; i++) {
             const dx = points[i].lng - points[i-1].lng;
@@ -764,8 +770,8 @@
             const prevU = cumUnits[idx - 1];
             const segU = (cumUnits[idx] - prevU) || 1e-6;
             const t = (targetUnits - prevU) / segU;
-            const a = points[idx - 1];
-            const b = points[idx] || a;
+            const a = points[idx - 1] || points[0];
+            const b = points[idx] || points[points.length - 1] || a;
             const lat = a.lat + (b.lat - a.lat) * t;
             const lng = a.lng + (b.lng - a.lng) * t;
             markers.push({ day: d, lat, lng });
