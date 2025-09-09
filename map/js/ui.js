@@ -35,6 +35,7 @@
         const routeSidebar = document.getElementById('route-sidebar');
         const closeRouteSidebarBtn = document.getElementById('close-route-sidebar');
         const reopenRouteSidebarBtn = document.getElementById('reopen-route-sidebar');
+        const headerDrawerBtn = document.getElementById('route-drawer-btn');
         
         // Info sidebar close button
         if (infoSidebar && closeInfoSidebarBtn) {
@@ -51,6 +52,8 @@
                     // Position FAB next to overlay toggles on mobile
                     positionReopenFab();
                 }
+                // Update header drawer pressed state
+                if (headerDrawerBtn) headerDrawerBtn.setAttribute('aria-pressed', 'false');
             });
         }
         
@@ -65,6 +68,20 @@
             positionReopenFab();
         }
         
+        // Header drawer button toggles route sidebar
+        if (routeSidebar && headerDrawerBtn) {
+            headerDrawerBtn.addEventListener('click', () => {
+                const isOpen = routeSidebar.classList.toggle('open');
+                headerDrawerBtn.setAttribute('aria-pressed', isOpen ? 'true' : 'false');
+                // Hide the floating FAB if using header control
+                if (reopenRouteSidebarBtn) {
+                    if (isOpen) {
+                        reopenRouteSidebarBtn.classList.add('hidden');
+                    }
+                }
+            });
+        }
+
         // Add click-outside-to-close functionality for info sidebar on mobile
         if (infoSidebar) {
             document.addEventListener('click', (e) => {
@@ -90,6 +107,7 @@
         // Reset defaults for mobile (keep original placement via CSS)
         fab.style.left = '';
         fab.style.right = '';
+        fab.style.bottom = '';
         // Only adjust on desktop and when overlay toggles exist
         if (!overlayToggles || window.innerWidth <= 700) return;
         const rect = overlayToggles.getBoundingClientRect();

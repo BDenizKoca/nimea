@@ -186,6 +186,24 @@ body, html {
     max-width: 1200px;
     margin: 0 auto;
 }
+/* Header icon button (drawer) */
+.header-icon-btn {
+    margin-right: 10px;
+    width: 36px;
+    height: 36px;
+    border-radius: 18px;
+    border: 1px solid var(--color-border);
+    background: #fffdf7;
+    color: #3a2410;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.1s ease;
+}
+.header-icon-btn:hover { background: #f5f0e6; }
+.header-icon-btn[aria-pressed="true"] { background: #eaddcf; }
 /* Global Search mount styling for map header */
 .global-search { margin-left: 16px; flex: 0 0 320px; position: relative; }
 .global-search input { width:100%; padding:6px 8px; font-size:14px; border:1px solid #d3c0a5; border-radius:4px; background:#fffdf7; }
@@ -384,65 +402,12 @@ body, html {
     color: #333;
 }
 
-/* Route sidebar reopen button */
-.reopen-route-btn {
-    position: fixed;
-    top: 20px;
-    left: 20px;
-    width: 48px;
-    height: 48px;
-    background: #3a2410;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    font-size: 20px;
-    cursor: pointer;
-    z-index: 1000;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    transition: all 0.3s ease;
-    .reopen-route-btn {
-        position: fixed;
-        bottom: 18px; /* Align vertically with overlay toggles by default */
-        left: 15px;   /* JS adjusts horizontally on desktop to sit left of overlay bar */
-        width: 48px;
-        height: 48px;
-        background: #3a2410;
-        color: white;
-        border: none;
-        border-radius: 50%;
-        font-size: 20px;
-        cursor: pointer;
-        z-index: 1000;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-        transition: all 0.3s ease;
-        display: flex;                 /* Center emoji perfectly */
-        align-items: center;
-        justify-content: center;
-    }
-
-.reopen-route-btn:hover {
-    background: #5d3a1a;
-    transform: scale(1.1);
-}
-
-.reopen-route-btn.hidden {
-    display: none;
-}
+/* Route sidebar reopen button (deprecated in favor of header drawer). Keep for fallback but hidden by default) */
+.reopen-route-btn { display: none; }
+.reopen-route-btn.hidden { display: none; }
 
 /* Hide DM toggle by default; shown when logged in */
 #dm-mode-toggle { display: none; }
-
-/* Mobile adjustments for reopen button */
-@media (max-width: 700px) {
-    .reopen-route-btn {
-        top: auto; /* Use bottom positioning on mobile */
-        bottom: 18px; /* Align with overlay toggles */
-        left: 15px; /* Default left padding; JS will adjust next to overlay toggles */
-        width: 44px;
-        height: 44px;
-        font-size: 18px;
-    }
-}
 
 /* Wiki link styling */
 .wiki-link {
@@ -495,11 +460,6 @@ button.wiki-link {
 /* Desktop: center the two buttons and keep same width */
 @media (min-width: 701px) {
     .info-primary-action, .info-secondary-action { display: flex; justify-content: center; }
-        top: 75px; /* Below the header on mobile */
-        bottom: auto; /* Override desktop bottom alignment */
-        left: 15px;
-        max-width: 100%;
-    }
 }
 
 /* On very small screens, stack actions vertically to prevent crowding */
