@@ -9,8 +9,16 @@
       "faction": "Kuruntar",
       "summary": "Başkent, yıkık bir kutsal şehrin üzerine inşa edildi.",
       "i18n": {
-        "tr": { "name": "Varkas", "summary": "Başkent, yıkık bir kutsal şehrin üzerine inşa edildi.", "faction": "Kuruntar" },
-        "en": { "name": "Varkas", "summary": "The capital built atop the ruins of a sacred city.", "faction": "Kuruntar" }
+        "tr": {
+          "name": "Varkas",
+          "summary": "Başkent, yıkık bir kutsal şehrin üzerine inşa edildi.",
+          "faction": "Kuruntar"
+        },
+        "en": {
+          "name": "Varkas",
+          "summary": "The capital built atop the ruins of a sacred city.",
+          "faction": "Kuruntar"
+        }
       },
       "images": [
         "images/varkas_1.jpg",
@@ -24,15 +32,23 @@
       "x": 1705,
       "y": 1248,
       "type": "city",
-      "faction": "Empire of Aurelius",
-      "summary": "The magnificent capital of the Empire of Aurelius and the largest urban center in Nimea.",
-      "i18n": {
-        "tr": { "name": "Aurelium", "summary": "Aurelius İmparatorluğu'nun görkemli başkenti ve Nimea'nın en büyük şehri.", "faction": "Aurelius İmparatorluğu" },
-        "en": { "name": "Aurelium", "summary": "The magnificent capital of the Empire of Aurelius and the largest urban center in Nimea.", "faction": "Empire of Aurelius" }
-      },
-      "iconUrl": "https://file.garden/aLboplo8eB2dIZKp/mapmarker.png",
+      "faction": "Aurelius İmparatorluğu",
+      "summary": "Aurelius İmparatorluğu'nun görkemli başkenti ve Nimea'nın en büyük şehri.",
+      "iconUrl": "https://file.garden/aLboplo8eB2dIZKp/k%C4%B1y%C4%B1s",
       "images": [],
-      "public": true
+      "public": true,
+      "i18n": {
+        "tr": {
+          "name": "Aurelium",
+          "summary": "Aurelius İmparatorluğu'nun görkemli başkenti ve Nimea'nın en büyük şehri.",
+          "faction": "Aurelius İmparatorluğu"
+        },
+        "en": {
+          "name": "Aurelium",
+          "summary": "The magnificent capital of the Empire of Aurelius and the largest urban center in Nimea.",
+          "faction": "Empire of Aurelius"
+        }
+      }
     },
     {
       "id": "camkale",
@@ -42,14 +58,22 @@
       "type": "city",
       "faction": "Bağımsız şehir.",
       "summary": "Mihver Çam gölgesinde krallık ile yönetilen ülke.",
-      "i18n": {
-        "tr": { "name": "Çamkale", "summary": "Mihver Çam gölgesinde krallık ile yönetilen ülke.", "faction": "Bağımsız şehir." },
-        "en": { "name": "Camkale", "summary": "A border town under a monarchy in the shadow of the Axis Pine.", "faction": "Independent city" }
-      },
-      "iconUrl": "https://file.garden/aLboplo8eB2dIZKp/logo%C3%A7am.png",
+      "iconUrl": "https://file.garden/aLboplo8eB2dIZKp/camkale.png",
       "images": [],
       "public": true,
-      "wikiSlug": "camkale"
+      "wikiSlug": "camkale",
+      "i18n": {
+        "tr": {
+          "name": "Çamkale",
+          "summary": "Mihver Çam gölgesinde krallık ile yönetilen ülke.",
+          "faction": "Bağımsız şehir."
+        },
+        "en": {
+          "name": "Camkale",
+          "summary": "A border town under a monarchy in the shadow of the Axis Pine.",
+          "faction": "Independent city"
+        }
+      }
     },
     {
       "id": "custodiskapi",
@@ -59,12 +83,21 @@
       "type": "fortress",
       "faction": "Custodis Senatosu",
       "summary": "Custodislerin yüzyıllardır savundukları kapı.",
-      "i18n": {
-        "tr": { "name": "Custodis Kapısı", "summary": "Custodislerin yüzyıllardır savundukları kapı.", "faction": "Custodis Senatosu" },
-        "en": { "name": "Custodis Kapısı", "summary": "Custodislerin yüzyıllardır savundukları kapı.", "faction": "Custodis Senatosu" }
-      },
+      "iconUrl": "https://file.garden/aLboplo8eB2dIZKp/custodisk.png",
       "images": [],
-      "public": true
+      "public": true,
+      "i18n": {
+        "tr": {
+          "name": "Custodis Kapısı",
+          "summary": "Custodislerin yüzyıllardır savundukları kapı.",
+          "faction": "Custodis Senatosu"
+        },
+        "en": {
+          "name": "Custodis Kapısı",
+          "summary": "Custodislerin yüzyıllardır savundukları kapı.",
+          "faction": "Custodis Senatosu"
+        }
+      }
     },
     {
       "id": "ruatan",
@@ -75,8 +108,16 @@
       "faction": "Ruatan Krallığı",
       "summary": "Ruatan",
       "i18n": {
-        "tr": { "name": "Ruatan", "summary": "Ruatan", "faction": "Ruatan Krallığı" },
-        "en": { "name": "Ruatan", "summary": "Ruatan", "faction": "Ruatan Krallığı" }
+        "tr": {
+          "name": "Ruatan",
+          "summary": "Ruatan",
+          "faction": "Ruatan Krallığı"
+        },
+        "en": {
+          "name": "Ruatan",
+          "summary": "Ruatan",
+          "faction": "Ruatan Krallığı"
+        }
       },
       "images": [],
       "public": true
@@ -90,8 +131,16 @@
       "faction": "Evergreen Krallıgı",
       "summary": "Evergreen",
       "i18n": {
-        "tr": { "name": "Evergreen", "summary": "Evergreen", "faction": "Evergreen Krallıgı" },
-        "en": { "name": "Evergreen", "summary": "Evergreen", "faction": "Evergreen Krallıgı" }
+        "tr": {
+          "name": "Evergreen",
+          "summary": "Evergreen",
+          "faction": "Evergreen Krallıgı"
+        },
+        "en": {
+          "name": "Evergreen",
+          "summary": "Evergreen",
+          "faction": "Evergreen Krallıgı"
+        }
       },
       "images": [],
       "public": true
@@ -104,8 +153,14 @@
       "type": "city",
       "summary": "Kuzey",
       "i18n": {
-        "tr": { "name": "Kuzey Kent", "summary": "Kuzey" },
-        "en": { "name": "Kuzey Kent", "summary": "Kuzey" }
+        "tr": {
+          "name": "Kuzey Kent",
+          "summary": "Kuzey"
+        },
+        "en": {
+          "name": "Kuzey Kent",
+          "summary": "Kuzey"
+        }
       },
       "images": [],
       "public": true
@@ -118,8 +173,14 @@
       "type": "city",
       "summary": "kıyı kenti",
       "i18n": {
-        "tr": { "name": "kıyı kent", "summary": "kıyı kenti" },
-        "en": { "name": "kıyı kent", "summary": "kıyı kenti" }
+        "tr": {
+          "name": "kıyı kent",
+          "summary": "kıyı kenti"
+        },
+        "en": {
+          "name": "kıyı kent",
+          "summary": "kıyı kenti"
+        }
       },
       "images": [],
       "public": true
@@ -132,8 +193,14 @@
       "type": "city",
       "summary": "uçurumlarla kaplı",
       "i18n": {
-        "tr": { "name": "uçurumtepe", "summary": "uçurumlarla kaplı" },
-        "en": { "name": "uçurumtepe", "summary": "uçurumlarla kaplı" }
+        "tr": {
+          "name": "uçurumtepe",
+          "summary": "uçurumlarla kaplı"
+        },
+        "en": {
+          "name": "uçurumtepe",
+          "summary": "uçurumlarla kaplı"
+        }
       },
       "images": [],
       "public": true
@@ -146,12 +213,21 @@
       "type": "fortress",
       "faction": "Çamkale Krallığı",
       "summary": "Çamkale Krallığı Doğu Karakolu",
-      "i18n": {
-        "tr": { "name": "Doğu Karakolu", "summary": "Çamkale Krallığı Doğu Karakolu", "faction": "Çamkale Krallığı" },
-        "en": { "name": "Doğu Karakolu", "summary": "Çamkale Krallığı Doğu Karakolu", "faction": "Çamkale Krallığı" }
-      },
+      "iconUrl": "https://file.garden/aLboplo8eB2dIZKp/camkale-kkarakol",
       "images": [],
-      "public": true
+      "public": true,
+      "i18n": {
+        "tr": {
+          "name": "Doğu Karakolu",
+          "summary": "Çamkale Krallığı Doğu Karakolu",
+          "faction": "Çamkale Krallığı"
+        },
+        "en": {
+          "name": "Doğu Karakolu",
+          "summary": "Çamkale Krallığı Doğu Karakolu",
+          "faction": "Çamkale Krallığı"
+        }
+      }
     },
     {
       "id": "tasyurt",
@@ -162,8 +238,16 @@
       "faction": "Taşyurt Krallığı",
       "summary": "Taşyurt Krallığı Başkenti",
       "i18n": {
-        "tr": { "name": "Taşyurt", "summary": "Taşyurt Krallığı Başkenti", "faction": "Taşyurt Krallığı" },
-        "en": { "name": "Taşyurt", "summary": "Taşyurt Krallığı Başkenti", "faction": "Taşyurt Krallığı" }
+        "tr": {
+          "name": "Taşyurt",
+          "summary": "Taşyurt Krallığı Başkenti",
+          "faction": "Taşyurt Krallığı"
+        },
+        "en": {
+          "name": "Taşyurt",
+          "summary": "Taşyurt Krallığı Başkenti",
+          "faction": "Taşyurt Krallığı"
+        }
       },
       "images": [],
       "public": true
