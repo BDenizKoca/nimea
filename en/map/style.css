@@ -244,10 +244,15 @@ body, html {
 }
 
 /* PWA install button styling (hidden by default, shown when beforeinstallprompt fires) */
-#pwa-install { display: none; margin-left: 10px; }
-
-/* PWA install button styling (hidden by default, shown when beforeinstallprompt fires) */
-#pwa-install { display: none; margin-left: 10px; }
+#pwa-install { 
+    display: none; 
+    margin-left: 10px; 
+    padding: 4px 8px; 
+    font-size: 12px; 
+    line-height: 1.1; 
+    border-radius: 4px;
+    white-space: nowrap;
+}
 
 #map {
     width: 100%;
@@ -278,6 +283,7 @@ body, html {
 @media (max-width: 700px) {
     .leaflet-top { top: 70px; }
     .leaflet-bottom { bottom: 16px; }
+    #pwa-install { padding: 3px 6px; font-size: 11px; }
 }
 
 /* Make marker icons more tappable */
