@@ -36,8 +36,6 @@
                     {% else %}
                       <a href="{{ '/en' + page.url }}">EN</a>
                     {% endif %}
-                                        <span aria-hidden="true" style="opacity:.5; margin: 0 .25rem;">·</span>
-                                        <a href="#" id="admin-link" class="admin-link">{% if lang == 'en' %}Admin{% else %}Yönetim{% endif %}</a>
                 </div>
             </div>
         </header>
@@ -76,28 +74,6 @@
         </main>
     </div>
     
-    <script>
-            // Visible Admin link: requires login, otherwise opens Identity modal
-            document.addEventListener('DOMContentLoaded', () => {
-                const link = document.getElementById('admin-link');
-                if (!link) return;
-                link.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    if (window.netlifyIdentity && typeof window.netlifyIdentity.currentUser === 'function') {
-                        const user = window.netlifyIdentity.currentUser();
-                        if (user) {
-                            window.location.assign('/admin/');
-                        } else {
-                            window.netlifyIdentity.open();
-                            window.netlifyIdentity.on('login', () => window.location.assign('/admin/'));
-                        }
-                    } else {
-                        // Fallback: try to go directly
-                        window.location.assign('/admin/');
-                    }
-                });
-            });
-        </script>
         <script>
       // Handle Netlify Identity redirects for email confirmation
       if (window.netlifyIdentity) {
@@ -107,44 +83,10 @@
               document.location.href = "/admin/";
             });
           }
-                    // If already logged in, optionally add a subtle Admin link to the header
-                    if (user) {
-                        try {
-                            const navLeft = document.querySelector('.header-bar .nav-left');
-                            if (navLeft && !navLeft.querySelector('.admin-link')) {
-                                const a = document.createElement('a');
-                                a.href = '/admin/';
-                                a.textContent = '{{ lang == "en" ? "Admin" : "Yönetim" }}';
-                                a.className = 'admin-link';
-                                a.style.opacity = '0.7';
-                                a.style.marginLeft = '0.5rem';
-                                navLeft.appendChild(a);
-                            }
-                        } catch {}
-                    }
         });
-                window.netlifyIdentity.on('login', () => {
-                    try {
-                        const navLeft = document.querySelector('.header-bar .nav-left');
-                        if (navLeft && !navLeft.querySelector('.admin-link')) {
-                            const a = document.createElement('a');
-                            a.href = '/admin/';
-                            a.textContent = '{{ lang == "en" ? "Admin" : "Yönetim" }}';
-                            a.className = 'admin-link';
-                            a.style.opacity = '0.7';
-                            a.style.marginLeft = '0.5rem';
-                            navLeft.appendChild(a);
-                        }
-                    } catch {}
-                });
-                window.netlifyIdentity.on('logout', () => {
-                    try {
-                        document.querySelectorAll('.admin-link').forEach(n => n.remove());
-                    } catch {}
-                });
       }
     </script>
-            <!-- Hidden Admin shortcuts removed; use visible Admin link instead. -->
+            <!-- Admin link moved to homepage CTA; no header Admin link. -->
         <script>
             // Lightweight share handler with clipboard fallback and toast
             document.addEventListener('DOMContentLoaded', () => {
