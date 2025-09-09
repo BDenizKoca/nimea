@@ -188,12 +188,13 @@
         const content = `
             ${bannerUrl ? `<div class="info-banner"><img src="${bannerUrl}" alt="${name} banner"></div>` : ''}
             <h2>${name}</h2>
+            ${addRouteBtn ? `<div class="info-primary-action">${addRouteBtn}</div>` : ''}
             <p>${summary}</p>
             ${data.type ? `<p><strong>Tür:</strong> ${data.type}</p>` : ''}
             ${faction ? `<p><strong>Cemiyet/Devlet:</strong> ${faction}</p>` : ''}
             ${bridge.state.isDmMode && bannerUrl ? `<div><button class=\"wiki-link clear-banner-btn\" data-id=\"${data.id}\">${clearBannerLbl}</button></div>` : ''}
             ${galleryHtml}
-            ${wikiLink || addRouteBtn ? `<div class=\"info-actions\">${wikiLink ? `<a href=\"${wikiLink}\" class=\"wiki-link\" target=\"_blank\">${window.nimeaI18n ? window.nimeaI18n.t('showOnWiki') : 'Külliyatta Gör'}</a>` : ''}${addRouteBtn}</div>` : ''}
+            ${wikiLink ? `<div class=\"info-secondary-action\"><a href=\"${wikiLink}\" class=\"wiki-link\" target=\"_blank\">${window.nimeaI18n ? window.nimeaI18n.t('showOnWiki') : 'Külliyatta Gör'}</a></div>` : ''}
             ${dmButtons}
         `;
         infoContent.innerHTML = content;

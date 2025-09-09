@@ -450,20 +450,35 @@ button.wiki-link {
 }
 
 /* Equal-size action buttons in info sidebar */
-.info-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; align-items: stretch; justify-content: center; margin: 8px 0; }
-.info-actions .wiki-link, .info-actions .add-to-route {
-    width: 100%;
-    text-align: center;
-    padding: 5px 8px;
-    font-size: 12px;
-    line-height: 1.1;
+/* Primary and secondary actions in info sidebar */
+.info-primary-action, .info-secondary-action, .info-actions {
+    margin: 10px 0;
 }
+.info-primary-action .wiki-link, .info-primary-action .add-to-route,
+.info-secondary-action .wiki-link, .info-actions .wiki-link, .info-actions .add-to-route {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 40px;
+    padding: 8px 12px;
+    font-size: 14px;
+    line-height: 1.2;
+    box-sizing: border-box;
+}
+.info-primary-action .add-to-route { background: #2c5e2e; }
+.info-primary-action .add-to-route:hover { background: #3a7a3d; }
+
+/* If both actions are used together in a row somewhere */
+.info-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: stretch; }
 .info-actions .add-to-route { background: #2c5e2e; }
 .info-actions .add-to-route:hover { background: #3a7a3d; }
 
 /* On very small screens, stack actions vertically to prevent crowding */
 @media (max-width: 420px) {
     .info-actions { grid-template-columns: 1fr; }
+    .info-primary-action .wiki-link, .info-primary-action .add-to-route,
+    .info-secondary-action .wiki-link { min-height: 44px; font-size: 15px; }
 }
 
 /* DM Action buttons */
