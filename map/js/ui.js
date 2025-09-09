@@ -143,6 +143,31 @@
         const wikiLink = bridge.generateWikiLink(data);
     const addRouteBtn = bridge.state.isDmMode ? '' : `<button class=\"wiki-link add-to-route\" data-id=\"${data.id}\">${window.nimeaI18n ? window.nimeaI18n.t('addToRoute') : 'Rotaya Ekle'}</button>`;
         
+        // Resolve assets to absolute URLs (keep http(s) as-is)
+        const resolveAssetUrl = (u) => {
+            if (!u) return null;
+            if (/^https?:\/\//i.test(u)) return u;
+            // Ensure leading slash to point to site root (works for /en too)
+            return u.startsWith('/') ? u : '/' + u.replace(/^\.\/?/, '');
+        };
+        // Determine banner image (explicit banner takes priority, else first image)
+        let bannerUrl = null;
+        let usedFirstFromImages = false;
+        if (data.banner) {
+            bannerUrl = resolveAssetUrl(data.banner);
+        } else if (Array.isArray(data.images) && data.images.length > 0) {
+            bannerUrl = resolveAssetUrl(data.images[0]);
+            usedFirstFromImages = true;
+        }
+        // Remaining images for below-the-fold gallery (avoid duplicating banner)
+        const galleryImages = Array.isArray(data.images) ? (usedFirstFromImages ? data.images.slice(1) : data.images) : [];
+        const galleryHtml = galleryImages && galleryImages.length > 0
+            ? galleryImages.map(img => {
+                const src = resolveAssetUrl(img);
+                return `<img src="${src}" alt="${name}" style="width:100%;">`;
+              }).join('')
+            : '';
+        
         // Add edit button for DM mode
         const dmButtons = bridge.state.isDmMode ? `
             <div class="dm-actions">
@@ -152,11 +177,12 @@
         ` : '';
         
         const content = `
+            ${bannerUrl ? `<div class="info-banner"><img src="${bannerUrl}" alt="${name} banner"></div>` : ''}
             <h2>${name}</h2>
             <p>${summary}</p>
             ${data.type ? `<p><strong>Tür:</strong> ${data.type}</p>` : ''}
             ${faction ? `<p><strong>Cemiyet/Devlet:</strong> ${faction}</p>` : ''}
-            ${data.images && data.images.length > 0 ? data.images.map(img => `<img src="../${img}" alt="${data.name}" style="width:100%;">`).join('') : ''}
+            ${galleryHtml}
             ${wikiLink || addRouteBtn ? `<div class=\"info-actions\">${wikiLink ? `<a href=\"${wikiLink}\" class=\"wiki-link\" target=\"_blank\">${window.nimeaI18n ? window.nimeaI18n.t('showOnWiki') : 'Külliyatta Gör'}</a>` : ''}${addRouteBtn}</div>` : ''}
             ${dmButtons}
         `;
