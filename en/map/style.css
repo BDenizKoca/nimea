@@ -230,6 +230,9 @@ body, html {
 /* PWA install button styling (hidden by default, shown when beforeinstallprompt fires) */
 #pwa-install { display: none; margin-left: 10px; }
 
+/* PWA install button styling (hidden by default, shown when beforeinstallprompt fires) */
+#pwa-install { display: none; margin-left: 10px; }
+
 #map {
     width: 100%;
     height: calc(100% - 60px); /* Subtract header height */
