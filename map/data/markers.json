@@ -34,7 +34,7 @@
       "type": "city",
       "faction": "Aurelius İmparatorluğu",
       "summary": "Aurelius İmparatorluğu'nun görkemli başkenti ve Nimea'nın en büyük şehri.",
-      "iconUrl": "https://file.garden/aLboplo8eB2dIZKp/k%C4%B1y%C4%B1s",
+      "iconUrl": "https://i.ibb.co/rRjdWcD9/k-y-s.png",
       "images": [],
       "public": true,
       "i18n": {
@@ -58,7 +58,7 @@
       "type": "city",
       "faction": "Bağımsız şehir.",
       "summary": "Mihver Çam gölgesinde krallık ile yönetilen ülke.",
-      "iconUrl": "https://file.garden/aLboplo8eB2dIZKp/camkale.png",
+      "iconUrl": "https://i.ibb.co/MxtSsvcx/camkale.png",
       "images": [],
       "public": true,
       "wikiSlug": "camkale",
@@ -83,7 +83,7 @@
       "type": "fortress",
       "faction": "Custodis Senatosu",
       "summary": "Custodislerin yüzyıllardır savundukları kapı.",
-      "iconUrl": "https://file.garden/aLboplo8eB2dIZKp/custodisk.png",
+      "iconUrl": "https://i.ibb.co/rR5RFVCS/custodisk.png",
       "images": [],
       "public": true,
       "i18n": {
@@ -213,7 +213,7 @@
       "type": "fortress",
       "faction": "Çamkale Krallığı",
       "summary": "Çamkale Krallığı Doğu Karakolu",
-      "iconUrl": "https://file.garden/aLboplo8eB2dIZKp/camkale-kkarakol",
+      "iconUrl": "https://i.ibb.co/pvVvjKtf/camkale-kkarakol.png",
       "images": [],
       "public": true,
       "i18n": {
