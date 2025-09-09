@@ -451,17 +451,16 @@ button.wiki-link {
 
 /* Equal-size action buttons in info sidebar */
 /* Primary and secondary actions in info sidebar */
-.info-primary-action, .info-secondary-action, .info-actions {
-    margin: 10px 0;
-}
+.info-primary-action, .info-secondary-action, .info-actions { margin: 10px 0; }
+
+/* Base action button sizing */
 .info-primary-action .wiki-link, .info-primary-action .add-to-route,
 .info-secondary-action .wiki-link, .info-actions .wiki-link, .info-actions .add-to-route {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 100%;
     min-height: 40px;
-    padding: 8px 12px;
+    padding: 8px 16px;
     font-size: 14px;
     line-height: 1.2;
     box-sizing: border-box;
@@ -470,9 +469,17 @@ button.wiki-link {
 .info-primary-action .add-to-route:hover { background: #3a7a3d; }
 
 /* If both actions are used together in a row somewhere */
-.info-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: stretch; }
+.info-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: stretch; justify-items: center; }
 .info-actions .add-to-route { background: #2c5e2e; }
 .info-actions .add-to-route:hover { background: #3a7a3d; }
+
+/* Desktop: center the two buttons and keep same width */
+@media (min-width: 701px) {
+    .info-primary-action, .info-secondary-action { display: flex; justify-content: center; }
+    .info-primary-action .add-to-route, .info-secondary-action .wiki-link {
+        width: 320px; /* fixed equal width on desktop */
+    }
+}
 
 /* On very small screens, stack actions vertically to prevent crowding */
 @media (max-width: 420px) {
