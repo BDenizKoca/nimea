@@ -400,7 +400,25 @@ body, html {
     z-index: 1000;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     transition: all 0.3s ease;
-}
+    .reopen-route-btn {
+        position: fixed;
+        bottom: 18px; /* Align vertically with overlay toggles by default */
+        left: 15px;   /* JS adjusts horizontally on desktop to sit left of overlay bar */
+        width: 48px;
+        height: 48px;
+        background: #3a2410;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        font-size: 20px;
+        cursor: pointer;
+        z-index: 1000;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        transition: all 0.3s ease;
+        display: flex;                 /* Center emoji perfectly */
+        align-items: center;
+        justify-content: center;
+    }
 
 .reopen-route-btn:hover {
     background: #5d3a1a;
@@ -477,8 +495,9 @@ button.wiki-link {
 /* Desktop: center the two buttons and keep same width */
 @media (min-width: 701px) {
     .info-primary-action, .info-secondary-action { display: flex; justify-content: center; }
-    .info-primary-action .add-to-route, .info-secondary-action .wiki-link {
-        width: 240px; /* fixed equal width on desktop; fits 300px sidebar with padding */
+        top: 75px; /* Below the header on mobile */
+        bottom: auto; /* Override desktop bottom alignment */
+        left: 15px;
         max-width: 100%;
     }
 }
