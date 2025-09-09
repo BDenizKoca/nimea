@@ -255,6 +255,22 @@ Thornhold,2000,1500,fortress,Empire,Dağ kalesi,true"></textarea>
     <script src="js/terrain.js"></script>
     <script src="map.js"></script>
         <script>
+            // Ensure map and sidebars start below header: set CSS var dynamically
+            (function(){
+                function setHeaderH(){
+                    const h = document.querySelector('.map-header');
+                    if (!h) return;
+                    const px = h.getBoundingClientRect().height;
+                    document.documentElement.style.setProperty('--map-header-h', px + 'px');
+                }
+                window.addEventListener('load', setHeaderH);
+                window.addEventListener('resize', setHeaderH);
+                const ro = new ResizeObserver(setHeaderH);
+                const hdr = document.querySelector('.map-header');
+                if (hdr && ro) ro.observe(hdr);
+            })();
+        </script>
+        <script>
             // PWA install prompt handling (TR)
             let deferredPrompt;
             const installBtn = document.getElementById('pwa-install');

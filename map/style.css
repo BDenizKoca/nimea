@@ -65,6 +65,8 @@ body, html {
     --shadow-layer: 0 0 10px rgba(0,0,0,0.5);
     --transition-fast: 0.2s ease;
     --transition-med: 0.3s ease;
+    /* Dynamic header height (updated via JS); fallback 60px */
+    --map-header-h: 60px;
 }
 
 /* Legend */
@@ -276,8 +278,8 @@ body, html {
 
 #map {
     width: 100%;
-    height: calc(100% - 60px); /* Subtract header height */
-    margin-top: 60px; /* Account for fixed header */
+    height: calc(100% - var(--map-header-h)); /* Subtract header height */
+    margin-top: var(--map-header-h); /* Account for fixed header */
     background-color: #ffffff;
     
     /* Ensure iOS Safari doesn't apply its own touch behaviors */
@@ -317,8 +319,8 @@ body, html {
 
 .sidebar {
     position: fixed;
-    top: 60px; /* Account for header */
-    height: calc(100% - 60px); /* Subtract header height */
+    top: var(--map-header-h); /* Account for header */
+    height: calc(100% - var(--map-header-h)); /* Subtract header height */
     width: 300px;
     background: white;
     box-shadow: 0 0 10px rgba(0,0,0,0.5);
@@ -966,13 +968,13 @@ button.wiki-link {
 @media (max-width: 700px) {
     body, html { overflow: hidden; }
     /* Keep map sized below the fixed header without overflowing viewport */
-    #map { height: calc(100% - 60px); margin-top: 60px; }
+    #map { height: calc(100% - var(--map-header-h)); margin-top: var(--map-header-h); }
     /* Route planner stays left slide-in */
     .left-sidebar {
         left: 0;
-        top: 60px;
+        top: var(--map-header-h);
         bottom: 0;
-        height: calc(100% - 60px);
+        height: calc(100% - var(--map-header-h));
         width: 55%;
         max-width: 280px;
         min-width: 220px;
@@ -986,9 +988,9 @@ button.wiki-link {
     /* Info sidebar overlays from right above route */
     .right-sidebar {
         right: 0;
-        top: 60px;
+        top: var(--map-header-h);
         bottom: 0;
-        height: calc(100% - 60px);
+        height: calc(100% - var(--map-header-h));
         width: 78%;
         max-width: 360px;
         transform: translateX(100%);
