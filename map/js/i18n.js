@@ -6,6 +6,7 @@
     const translations = {
         tr: {
             "addToRoute": "Rotaya Ekle",
+            "clearRoute": "Rotayı Temizle",
             "showOnWiki": "Külliyatta Gör", 
             "showOnMap": "Haritada Göster",
             "edit": "Düzenle",
@@ -35,6 +36,7 @@
         },
         en: {
             "addToRoute": "Add to Route",
+            "clearRoute": "Clear Route",
             "showOnWiki": "View on Wiki",
             "showOnMap": "Show on Map", 
             "edit": "Edit",

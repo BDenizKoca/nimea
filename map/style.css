@@ -977,14 +977,14 @@ button:focus, .leaflet-control-button:focus {
 }
 
 .waypoint-marker {
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
     background: #ff6b35;
     border: 2px solid white;
     border-radius: 50%;
     color: white;
     font-weight: bold;
-    font-size: 12px;
+    font-size: 11px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1226,10 +1226,10 @@ button:focus, .leaflet-control-button:focus {
     
     /* Touch-friendly waypoint markers */
     .waypoint-marker {
-        min-width: 28px;
-        min-height: 28px;
-        font-size: 14px;
-        line-height: 28px;
+        min-width: 20px;
+        min-height: 20px;
+        font-size: 11px;
+        line-height: 20px;
     }
 }
 
