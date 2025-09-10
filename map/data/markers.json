@@ -257,13 +257,15 @@
     {
       "id": "goldibi",
       "name": "Göldibi",
-      "x": 1413.628005607457,
-      "y": 925.6898118075768,
+      "x": 1406,
+      "y": 936,
       "type": "town",
       "faction": "Çamkale Krallığı",
       "summary": "Göl kıyısında, balıkçılık, kereste ve ticaret kasabası. Vali soyu ile yönetiliyor, Çamkale Krallığına bağlı.",
       "iconUrl": "https://file.garden/aLboplo8eB2dIZKp/Gemini_Generated_Image_vmyxmxvmyxmxvmyx%20(1)%20(1).png",
-      "images": [],
+      "images": [
+        "https://file.garden/aLboplo8eB2dIZKp/Image_fx.jpg"
+      ],
       "public": true,
       "i18n": {
         "tr": {
