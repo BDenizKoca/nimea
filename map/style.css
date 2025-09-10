@@ -53,7 +53,7 @@ body, html {
 /* Design Tokens */
 :root {
     --color-bg-parchment: #f4f0e6;
-    --color-bg-parchment-dark: #e8dfcc; /* slightly darker tone for map backdrop */
+    --color-bg-parchment-dark: #d9cfb4; /* darker tone for map backdrop */
     --color-bg-panel: #ffffff;
     --color-border: #d3c0a5;
     --color-accent: #8b4513;
@@ -337,9 +337,9 @@ body, html {
     height: calc(100% - var(--map-header-h)); /* Subtract header height */
     margin-top: var(--map-header-h); /* Account for fixed header */
     background-color: var(--color-bg-parchment-dark);
-    /* Subtle noise texture using SVG fractal noise */
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='table' tableValues='0 0.05'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
-    background-size: 200px 200px; /* coarse grain */
+    /* Stronger paper noise texture using SVG fractal noise */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='table' tableValues='0 0.14'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 120px 120px; /* denser grain */
     background-blend-mode: normal;
     position: relative; /* establish stacking context for inner shadow */
     
@@ -357,10 +357,11 @@ body, html {
     position: absolute;
     inset: 0;
     pointer-events: none;
-    /* Layered soft inner shadows around edges */
+    /* Stronger vignette/inner shadows around edges */
     box-shadow:
-        inset 0 0 60px rgba(0,0,0,0.16),
-        inset 0 0 140px rgba(0,0,0,0.10);
+        inset 0 0 40px rgba(0,0,0,0.30),
+        inset 0 0 120px rgba(0,0,0,0.34),
+        inset 0 0 220px rgba(0,0,0,0.22);
     z-index: 999; /* above map layers but non-interactive */
 }
 
