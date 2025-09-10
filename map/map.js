@@ -34,6 +34,8 @@ document.addEventListener('DOMContentLoaded', () => {
         routePolylines: [],
         overlays: {},
         shadeLayer: null,
+        markersLayer: null,
+        showMarkers: true,
         isLiveCMS: false, // Will be set to true when authenticated for live saving
         routePolyline: null, // active rendered route
         dirty: { markers: false, terrain: false }, // track unsaved edits in DM session
@@ -91,6 +93,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Store the original map bounds for overlays
     let originalMapBounds = null;
+
+    // Create a dedicated LayerGroup for map markers so we can toggle visibility fast
+    state.markersLayer = L.layerGroup().addTo(map);
 
     // --- LOAD MAP IMAGE & DATA ---
     const mapImageUrl = 'map.webp';

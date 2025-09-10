@@ -89,6 +89,37 @@
                 const mode = btn.getAttribute('data-mode');
                 applyOverlayMode(mode);
             });
+            // Markers on/off toggle
+            const markersToggle = overlayToggleContainer.querySelector('.markers-toggle');
+            if (markersToggle) {
+                // Initialize aria state from current bridge flag
+                markersToggle.setAttribute('aria-pressed', bridge.state.showMarkers ? 'true' : 'false');
+                // Apply initial layer visibility just in case markers module hadn't toggled
+                if (bridge.state.markersLayer) {
+                    const pressed = !!bridge.state.showMarkers;
+                    if (pressed && !bridge.map.hasLayer(bridge.state.markersLayer)) {
+                        bridge.map.addLayer(bridge.state.markersLayer);
+                    }
+                    if (!pressed && bridge.map.hasLayer(bridge.state.markersLayer)) {
+                        bridge.map.removeLayer(bridge.state.markersLayer);
+                    }
+                }
+                markersToggle.addEventListener('click', (e) => {
+                    // Prevent the click from bubbling into data-mode handler
+                    e.stopPropagation();
+                    e.preventDefault();
+                    bridge.state.showMarkers = !bridge.state.showMarkers;
+                    const pressed = bridge.state.showMarkers;
+                    markersToggle.setAttribute('aria-pressed', pressed ? 'true' : 'false');
+                    if (bridge.state.markersLayer) {
+                        if (pressed) {
+                            if (!bridge.map.hasLayer(bridge.state.markersLayer)) bridge.map.addLayer(bridge.state.markersLayer);
+                        } else {
+                            if (bridge.map.hasLayer(bridge.state.markersLayer)) bridge.map.removeLayer(bridge.state.markersLayer);
+                        }
+                    }
+                });
+            }
         }
     }
 

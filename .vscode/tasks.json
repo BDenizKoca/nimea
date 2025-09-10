@@ -143,6 +143,11 @@
 			"command": "npm run build",
 			"args": [],
 			"group": "build"
+		},
+		{
+			"label": "Build Eleventy site",
+			"type": "shell",
+			"command": "npx eleventy"
 		}
 	]
 }

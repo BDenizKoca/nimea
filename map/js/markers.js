@@ -103,8 +103,13 @@ function updateAllMarkerSizes() {
     }
 
     function renderMarkers() {
-        // Clear existing markers from the map and our reference array
-        allMarkers.forEach(marker => bridge.map.removeLayer(marker));
+        // Clear existing markers from the markers layer and our reference array
+        if (bridge.state.markersLayer) {
+            bridge.state.markersLayer.clearLayers();
+        } else {
+            // Fallback if layer group missing: remove from map
+            allMarkers.forEach(marker => bridge.map.removeLayer(marker));
+        }
         allMarkers = [];
         
         let focusMarkerInstance = null;
@@ -126,7 +131,12 @@ function updateAllMarkerSizes() {
                     markerOptions.icon = icon;
                 }
 
-                const marker = L.marker([markerData.y, markerData.x], markerOptions).addTo(bridge.map);
+                const marker = L.marker([markerData.y, markerData.x], markerOptions);
+                if (bridge.state.markersLayer) {
+                    bridge.state.markersLayer.addLayer(marker);
+                } else {
+                    marker.addTo(bridge.map);
+                }
                 marker.markerData = markerData;
                 allMarkers.push(marker); // Add to our list for scaling
                 
