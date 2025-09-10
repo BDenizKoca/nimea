@@ -148,6 +148,26 @@
 			"label": "Build Eleventy site",
 			"type": "shell",
 			"command": "npx eleventy"
+		},
+		{
+			"label": "Build Eleventy site",
+			"type": "shell",
+			"command": "npx eleventy"
+		},
+		{
+			"label": "Build Eleventy site",
+			"type": "shell",
+			"command": "npx eleventy"
+		},
+		{
+			"label": "Build Eleventy site",
+			"type": "shell",
+			"command": "npx eleventy"
+		},
+		{
+			"label": "Build Eleventy site",
+			"type": "shell",
+			"command": "npx eleventy"
 		}
 	]
 }

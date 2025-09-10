@@ -74,6 +74,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const routePane = map.createPane('routePane');
         routePane.style.zIndex = 650; // Above overlays (default 400-600 range) but below markers (700)
     }
+    // Additional panes to control stacking order for overlays and shading
+    if (!map.getPane('shadePane')) {
+        const shadePane = map.createPane('shadePane');
+        shadePane.style.zIndex = 450; // above base image (overlayPane ~400), below overlays
+    }
+    if (!map.getPane('bordersPane')) {
+        const bordersPane = map.createPane('bordersPane');
+        bordersPane.style.zIndex = 480;
+    }
+    if (!map.getPane('regionsPane')) {
+        const regionsPane = map.createPane('regionsPane');
+        regionsPane.style.zIndex = 500; // above borders and shade
+    }
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
@@ -364,17 +377,29 @@ document.addEventListener('DOMContentLoaded', () => {
     function setupOverlays() {
         console.log('Setting up overlays:', config.overlays, 'bounds:', originalMapBounds);
         if (config.overlays && originalMapBounds) {
+            // Prepare a semi-transparent shade layer to improve region label readability when regions are active
+            try {
+                state.shadeLayer = L.rectangle(originalMapBounds, {
+                    pane: 'shadePane',
+                    color: '#000',
+                    weight: 0,
+                    fill: true,
+                    fillColor: '#000',
+                    fillOpacity: 0.35,
+                    interactive: false
+                });
+            } catch (e) { console.warn('Shade layer creation failed', e); }
             if (config.overlays.regions) {
                 console.log('Adding regions overlay:', config.overlays.regions);
-                const regionsPath = `../${config.overlays.regions}`;
+                const regionsPath = config.overlays.regions.startsWith('/') ? config.overlays.regions : '/' + config.overlays.regions;
                 console.log('Regions overlay path:', regionsPath);
-                state.overlays.regions = L.imageOverlay(regionsPath, originalMapBounds, { opacity: 0.7 });
+                state.overlays.regions = L.imageOverlay(regionsPath, originalMapBounds, { opacity: 1, pane: 'regionsPane' });
             }
             if (config.overlays.borders) {
                 console.log('Adding borders overlay:', config.overlays.borders);
-                const bordersPath = `../${config.overlays.borders}`;
+                const bordersPath = config.overlays.borders.startsWith('/') ? config.overlays.borders : '/' + config.overlays.borders;
                 console.log('Borders overlay path:', bordersPath);
-                state.overlays.borders = L.imageOverlay(bordersPath, originalMapBounds, { opacity: 0.8 });
+                state.overlays.borders = L.imageOverlay(bordersPath, originalMapBounds, { opacity: 0.9, pane: 'bordersPane' });
             }
         }
         // Apply current mode (default none) after overlays are created
