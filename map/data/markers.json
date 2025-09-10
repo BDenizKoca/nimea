@@ -8,10 +8,8 @@
       "type": "city",
       "faction": "Bağımsız şehir",
       "summary": "İki güçlü nehrin birleştiği stratejik bir konumda yer alan, Kral tarafından yönetilen görkemli, kadim bir şehir. Yüksek dağlar kuzeyini korurken, nehirleri ticaretle dolup taşmaktadır.",
-      "images": [
-        "images/varkas_1.jpg",
-        "images/varkas_2.jpg"
-      ],
+      "iconUrl": "https://file.garden/aLboplo8eB2dIZKp/Nimea/valmoris.png",
+      "images": [],
       "public": true,
       "i18n": {
         "tr": {
@@ -25,7 +23,7 @@
           "faction": "Independent city"
         }
       },
-      "banner": "images/varkas_2.jpg"
+      "banner": "https://file.garden/aLboplo8eB2dIZKp/Nimea/valmoriscover.jpg"
     },
     {
       "id": "aurelium",
