@@ -1,36 +1,37 @@
 {
   "markers": [
     {
-      "id": "varkas",
-      "name": "Varkas",
+      "id": "valmoris",
+      "name": "Valmoris",
       "x": 1251,
-      "y": 1110,
+      "y": 1115,
       "type": "city",
-      "faction": "Kuruntar",
-      "summary": "Başkent, yıkık bir kutsal şehrin üzerine inşa edildi.",
-      "i18n": {
-        "tr": {
-          "name": "Varkas",
-          "summary": "Başkent, yıkık bir kutsal şehrin üzerine inşa edildi.",
-          "faction": "Kuruntar"
-        },
-        "en": {
-          "name": "Varkas",
-          "summary": "The capital built atop the ruins of a sacred city.",
-          "faction": "Kuruntar"
-        }
-      },
+      "faction": "Bağımsız şehir",
+      "summary": "İki güçlü nehrin birleştiği stratejik bir konumda yer alan, Kral tarafından yönetilen görkemli, kadim bir şehir. Yüksek dağlar kuzeyini korurken, nehirleri ticaretle dolup taşmaktadır.",
+      "iconUrl": "https://file.garden/aLboplo8eB2dIZKp/Nimea/valmoris.png",
       "images": [
         "images/varkas_1.jpg",
         "images/varkas_2.jpg"
       ],
-      "public": true
+      "public": true,
+      "i18n": {
+        "tr": {
+          "name": "Valmoris",
+          "summary": "İki güçlü nehrin birleştiği stratejik bir konumda yer alan, Kral tarafından yönetilen görkemli, kadim bir şehir. Yüksek dağlar kuzeyini korurken, nehirleri ticaretle dolup taşmaktadır.",
+          "faction": "Bağımsız şehir"
+        },
+        "en": {
+          "name": "Valmoris",
+          "summary": "A majestic, ancient city ruled by a King, strategically built at the confluence of two powerful rivers. Towering mountains guard its northern flank, and its rivers are bustling with trade.",
+          "faction": "Independent city"
+        }
+      }
     },
     {
       "id": "aurelium",
       "name": "Aurelium",
-      "x": 1705,
-      "y": 1248,
+      "x": 1706,
+      "y": 1251,
       "type": "city",
       "faction": "Aurelius İmparatorluğu",
       "summary": "Aurelius İmparatorluğu'nun görkemli başkenti ve Nimea'nın en büyük şehri.",
@@ -53,8 +54,8 @@
     {
       "id": "camkale",
       "name": "Çamkale",
-      "x": 1531,
-      "y": 890,
+      "x": 1527,
+      "y": 892,
       "type": "city",
       "faction": "Bağımsız şehir.",
       "summary": "Mihver Çam gölgesinde krallık ile yönetilen ülke.",
@@ -210,8 +211,8 @@
     {
       "id": "dogu-karakolu",
       "name": "Doğu Karakolu",
-      "x": 1649.999887229678,
-      "y": 823.9844420248907,
+      "x": 1648,
+      "y": 827,
       "type": "fortress",
       "faction": "Çamkale Krallığı",
       "summary": "Çamkale Krallığı Doğu Karakolu",
@@ -257,7 +258,7 @@
     {
       "id": "goldibi",
       "name": "Göldibi",
-      "x": 1406,
+      "x": 1408,
       "y": 936,
       "type": "town",
       "faction": "Çamkale Krallığı",
