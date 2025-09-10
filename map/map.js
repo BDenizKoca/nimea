@@ -357,13 +357,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (config.overlays && originalMapBounds) {
             if (config.overlays.regions) {
                 console.log('Adding regions overlay:', config.overlays.regions);
-                const regionsPath = `../${config.overlays.regions}`;
+                const regionsPath = config.overlays.regions.startsWith('/') ? config.overlays.regions : '/' + config.overlays.regions;
                 console.log('Regions overlay path:', regionsPath);
                 state.overlays.regions = L.imageOverlay(regionsPath, originalMapBounds, { opacity: 0.7 });
             }
             if (config.overlays.borders) {
                 console.log('Adding borders overlay:', config.overlays.borders);
-                const bordersPath = `../${config.overlays.borders}`;
+                const bordersPath = config.overlays.borders.startsWith('/') ? config.overlays.borders : '/' + config.overlays.borders;
                 console.log('Borders overlay path:', bordersPath);
                 state.overlays.borders = L.imageOverlay(bordersPath, originalMapBounds, { opacity: 0.8 });
             }
