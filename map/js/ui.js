@@ -180,10 +180,12 @@
               }).join('')
             : '';
         
-        // Add edit button for DM mode
+        // Add DM action buttons when in DM mode
         const dmButtons = bridge.state.isDmMode ? `
             <div class="dm-actions">
                 <button class="edit-marker-btn" data-id="${data.id}">${window.nimeaI18n ? window.nimeaI18n.t('edit') : 'Düzenle'}</button>
+                <button class="dm-icon-btn" data-id="${data.id}">Icon</button>
+                <button class="dm-banner-btn" data-id="${data.id}">Banner</button>
                 <button class="delete-marker-btn" data-id="${data.id}">${window.nimeaI18n ? window.nimeaI18n.t('delete') : 'Sil'}</button>
             </div>
         ` : '';
@@ -278,6 +280,27 @@
                     if (bridge.uiModule && bridge.uiModule.updatePublishUI) bridge.uiModule.updatePublishUI();
                     openInfoSidebar(bridge.state.markers[markerIdx]);
                     bridge.showNotification(isEnglish ? 'Banner cleared.' : 'Banner kaldırıldı.', 'success');
+                });
+            }
+            const iconBtn = infoContent.querySelector('.dm-icon-btn');
+            if (iconBtn) {
+                iconBtn.addEventListener('click', (e) => {
+                    const markerId = e.target.dataset.id;
+                    const marker = bridge.state.markers.find(m => m.id === markerId);
+                    if (marker && bridge.dmModule && bridge.dmModule.openIconModal) {
+                        bridge.dmModule.openIconModal(marker);
+                    }
+                });
+            }
+
+            const bannerBtn = infoContent.querySelector('.dm-banner-btn');
+            if (bannerBtn) {
+                bannerBtn.addEventListener('click', (e) => {
+                    const markerId = e.target.dataset.id;
+                    const marker = bridge.state.markers.find(m => m.id === markerId);
+                    if (marker && bridge.dmModule && bridge.dmModule.openBannerModal) {
+                        bridge.dmModule.openBannerModal(marker);
+                    }
                 });
             }
         }

@@ -208,6 +208,44 @@ Thornhold,2000,1500,fortress,Empire,Dağ kalesi,true"></textarea>
         </div>
     </div>
 
+    <!-- Icon Edit Modal -->
+    <div class="modal hidden" id="icon-edit-modal">
+        <div class="modal-content">
+            <h3>Simgeyi Düzenle</h3>
+            <div class="form-group">
+                <label for="icon-char-input">Özel Simge Karakteri</label>
+                <input type="text" id="icon-char-input" maxlength="10" placeholder="Örn. 🏰 veya V">
+                <small>Boş bırakırsan varsayılan simge kullanılır.</small>
+            </div>
+            <div class="form-group">
+                <label for="icon-url-input">Veya Simge Görsel URL</label>
+                <input type="url" id="icon-url-input" placeholder="https://example.com/icon.png">
+                <small>PNG/JPG bir simge URL’si kullanabilirsin (yukarıdakinin yerine geçer)</small>
+            </div>
+            <div class="form-actions">
+                <button type="button" id="cancel-icon-modal">Vazgeç</button>
+                <button type="button" id="save-icon-modal">Kaydet</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Banner Edit Modal -->
+    <div class="modal hidden" id="banner-edit-modal">
+        <div class="modal-content">
+            <h3>Banner Görselini Ayarla</h3>
+            <div class="form-group">
+                <label for="banner-url-input">Banner Görsel URL</label>
+                <input type="url" id="banner-url-input" placeholder="https://... veya images/ornek.jpg">
+                <small>Boş bırakıp Kaydet dersen banner kaldırılır.</small>
+            </div>
+            <div class="form-actions">
+                <button type="button" id="cancel-banner-modal">Vazgeç</button>
+                <button type="button" id="clear-banner-modal">Bannerı Kaldır</button>
+                <button type="button" id="save-banner-modal">Kaydet</button>
+            </div>
+        </div>
+    </div>
+
     <div class="leaflet-top leaflet-right">
         <div class="leaflet-control-layers leaflet-control" id="overlay-toggles">
             <div class="overlay-segmented" role="group" aria-label="Kaplama görünürlüğü">

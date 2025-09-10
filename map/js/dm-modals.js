@@ -443,11 +443,10 @@
                 this.bridge.showNotification('Hata: Güncellenecek orijinal işaretçi bulunamadı', 'error');
                 return;
             }
-            
-            // Preserve any images from the original marker
-            if (this.bridge.state.markers[markerIndex].images && this.bridge.state.markers[markerIndex].images.length > 0) {
-                markerData.images = [...this.bridge.state.markers[markerIndex].images];
-            }
+            // IMPORTANT: Do NOT overwrite form-provided images with old ones.
+            // markerData.images already reflects the current UI state (added/removed by the user).
+            // We only ensure it's an array to avoid runtime issues.
+            if (!Array.isArray(markerData.images)) markerData.images = [];
             
             // Replace the existing marker
             this.bridge.state.markers[markerIndex] = markerData;
@@ -732,6 +731,122 @@
                     });
                 }
             });
+        }
+
+        /**
+         * Opens the Icon edit modal for a given marker
+         * @param {Object} markerData
+         */
+        openIconModal(markerData) {
+            if (!markerData || !markerData.id) return;
+            this._iconModalMarkerId = markerData.id;
+            const modal = document.getElementById('icon-edit-modal');
+            if (!modal) return;
+            const charInp = document.getElementById('icon-char-input');
+            const urlInp = document.getElementById('icon-url-input');
+            // Prefill
+            if (charInp) charInp.value = markerData.customIcon || '';
+            if (urlInp) urlInp.value = markerData.iconUrl || '';
+            modal.classList.remove('hidden');
+            charInp && charInp.focus();
+        }
+
+        /**
+         * Opens the Banner edit modal for a given marker
+         * @param {Object} markerData
+         */
+        openBannerModal(markerData) {
+            if (!markerData || !markerData.id) return;
+            this._bannerModalMarkerId = markerData.id;
+            const modal = document.getElementById('banner-edit-modal');
+            if (!modal) return;
+            const urlInp = document.getElementById('banner-url-input');
+            if (urlInp) urlInp.value = markerData.banner || '';
+            modal.classList.remove('hidden');
+            urlInp && urlInp.focus();
+        }
+
+        /** Setup listeners for icon modal */
+        _setupIconModalInternal() {
+            const modal = document.getElementById('icon-edit-modal');
+            if (!modal) return;
+            if (modal.getAttribute('data-setup')) return; // idempotent
+            modal.setAttribute('data-setup', '1');
+
+            const cancelBtn = document.getElementById('cancel-icon-modal');
+            const saveBtn = document.getElementById('save-icon-modal');
+            const charInp = document.getElementById('icon-char-input');
+            const urlInp = document.getElementById('icon-url-input');
+
+            cancelBtn && cancelBtn.addEventListener('click', () => modal.classList.add('hidden'));
+            saveBtn && saveBtn.addEventListener('click', () => {
+                const id = this._iconModalMarkerId;
+                if (!id) return;
+                const idx = this.bridge.state.markers.findIndex(m => m.id === id);
+                if (idx === -1) return;
+                const marker = this.bridge.state.markers[idx];
+                marker.customIcon = (charInp?.value || '').trim() || undefined;
+                marker.iconUrl = (urlInp?.value || '').trim() || undefined;
+                this.bridge.state.markers[idx] = marker;
+                this.bridge.markDirty('markers');
+                if (this.bridge.markersModule && this.bridge.markersModule.renderMarkers) {
+                    this.bridge.markersModule.renderMarkers();
+                }
+                modal.classList.add('hidden');
+                try {
+                    // Refresh info sidebar if open
+                    if (this.bridge.uiModule && this.bridge.uiModule.openInfoSidebar) {
+                        this.bridge.uiModule.openInfoSidebar(marker);
+                    }
+                } catch {}
+                this.bridge.showNotification('Simge güncellendi.', 'success');
+            });
+        }
+
+        /** Setup listeners for banner modal */
+        _setupBannerModalInternal() {
+            const modal = document.getElementById('banner-edit-modal');
+            if (!modal) return;
+            if (modal.getAttribute('data-setup')) return; // idempotent
+            modal.setAttribute('data-setup', '1');
+
+            const cancelBtn = document.getElementById('cancel-banner-modal');
+            const saveBtn = document.getElementById('save-banner-modal');
+            const clearBtn = document.getElementById('clear-banner-modal');
+            const urlInp = document.getElementById('banner-url-input');
+
+            const doSave = (clear = false) => {
+                const id = this._bannerModalMarkerId;
+                if (!id) return;
+                const idx = this.bridge.state.markers.findIndex(m => m.id === id);
+                if (idx === -1) return;
+                const marker = this.bridge.state.markers[idx];
+                if (clear) {
+                    delete marker.banner;
+                } else {
+                    const v = (urlInp?.value || '').trim();
+                    if (v) marker.banner = v; else delete marker.banner;
+                }
+                this.bridge.state.markers[idx] = marker;
+                this.bridge.markDirty('markers');
+                modal.classList.add('hidden');
+                try {
+                    if (this.bridge.uiModule && this.bridge.uiModule.openInfoSidebar) {
+                        this.bridge.uiModule.openInfoSidebar(marker);
+                    }
+                } catch {}
+                this.bridge.showNotification(clear ? 'Banner kaldırıldı.' : 'Banner güncellendi.', 'success');
+            };
+
+            cancelBtn && cancelBtn.addEventListener('click', () => modal.classList.add('hidden'));
+            saveBtn && saveBtn.addEventListener('click', () => doSave(false));
+            clearBtn && clearBtn.addEventListener('click', () => doSave(true));
+        }
+
+        /** Public setup entry for new modals */
+        setupIconAndBannerModals() {
+            this._setupIconModalInternal();
+            this._setupBannerModalInternal();
         }
     }
 

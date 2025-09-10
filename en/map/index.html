@@ -208,6 +208,44 @@ Thornhold,2000,1500,fortress,Empire,Mountain fortress,true"></textarea>
         </div>
     </div>
 
+    <!-- Icon Edit Modal -->
+    <div class="modal hidden" id="icon-edit-modal">
+        <div class="modal-content">
+            <h3>Edit Icon</h3>
+            <div class="form-group">
+                <label for="icon-char-input">Custom Icon Character</label>
+                <input type="text" id="icon-char-input" maxlength="10" placeholder="e.g., 🏰 or V">
+                <small>Leave empty to use the default icon.</small>
+            </div>
+            <div class="form-group">
+                <label for="icon-url-input">Or Icon Image URL</label>
+                <input type="url" id="icon-url-input" placeholder="https://example.com/icon.png">
+                <small>You can use a PNG/JPG icon URL (overrides the character)</small>
+            </div>
+            <div class="form-actions">
+                <button type="button" id="cancel-icon-modal">Cancel</button>
+                <button type="button" id="save-icon-modal">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Banner Edit Modal -->
+    <div class="modal hidden" id="banner-edit-modal">
+        <div class="modal-content">
+            <h3>Set Banner Image</h3>
+            <div class="form-group">
+                <label for="banner-url-input">Banner Image URL</label>
+                <input type="url" id="banner-url-input" placeholder="https://... or images/sample.jpg">
+                <small>Leave empty and Save to clear the banner.</small>
+            </div>
+            <div class="form-actions">
+                <button type="button" id="cancel-banner-modal">Cancel</button>
+                <button type="button" id="clear-banner-modal">Clear Banner</button>
+                <button type="button" id="save-banner-modal">Save</button>
+            </div>
+        </div>
+    </div>
+
     <div class="leaflet-top leaflet-right">
         <div class="leaflet-control-layers leaflet-control" id="overlay-toggles">
             <div class="overlay-segmented" role="group" aria-label="Overlay visibility">

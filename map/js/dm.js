@@ -44,6 +44,8 @@
             editMarker: (markerData) => dmModals.editMarker(markerData),
             deleteMarker,
             openBulkImportModal: () => dmModals.openBulkImportModal(),
+            openIconModal: (markerData) => dmModals.openIconModal(markerData),
+            openBannerModal: (markerData) => dmModals.openBannerModal(markerData),
             exportData,
             publishAll
         };
@@ -83,6 +85,10 @@
 
         // Set up modals via the modals module
         dmModals.setupAllModals();
+        // Set up additional icon/banner modals
+        if (dmModals.setupIconAndBannerModals) {
+            dmModals.setupIconAndBannerModals();
+        }
 
         // Set up Leaflet-Geoman event listeners
         setupMapEventListeners();
