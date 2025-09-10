@@ -27,7 +27,7 @@
             <div class="lang-switch">
                 <a href="../en/map/">EN</a>
             </div>
-            <button id="dm-mode-toggle" class="wiki-link">DM Modu</button>
+            <button id="logout-btn" class="wiki-link" style="display:none">Çıkış yap</button>
             <button id="pwa-install" class="wiki-link">Uygulamayı Yükle</button>
         </nav>
     </header>
@@ -330,31 +330,41 @@ Thornhold,2000,1500,fortress,Empire,Dağ kalesi,true"></textarea>
                     navigator.serviceWorker.register('/service-worker.js').catch(console.error);
                 });
             }
-            // Visible DM toggle when logged in (TR)
+            // Show only a single Logout button when logged in; on click, logout and refresh without DM
             (function(){
                 const LS_DM_KEY = 'nimea.dm';
-                const btn = document.getElementById('dm-mode-toggle');
-                const isDm = () => {
-                    try { return localStorage.getItem(LS_DM_KEY) === '1' || new URLSearchParams(location.search).has('dm'); } catch(e){ return false; }
-                };
+                const btn = document.getElementById('logout-btn');
                 function render(user){
                     if (!btn) return;
                     const loggedIn = !!user;
-                    if (!loggedIn) { btn.style.display = 'none'; return; }
-                    btn.style.display = 'inline-block';
-                    btn.textContent = isDm() ? 'DM Modunu Kapat' : 'DM Modunu Aç';
+                    btn.style.display = loggedIn ? 'inline-block' : 'none';
+                }
+                function refreshedUrlWithoutDm(){
+                    try {
+                        const url = new URL(location.href);
+                        url.searchParams.delete('dm');
+                        return url.toString();
+                    } catch { return location.href; }
                 }
                 if (window.netlifyIdentity) {
-                    // Initial render if available
                     try { render(window.netlifyIdentity.currentUser && window.netlifyIdentity.currentUser()); } catch {}
                     window.netlifyIdentity.on('init', render);
                     window.netlifyIdentity.on('login', render);
-                    window.netlifyIdentity.on('logout', () => render(null));
+                    window.netlifyIdentity.on('logout', () => {
+                        render(null);
+                        try { localStorage.removeItem(LS_DM_KEY); } catch{}
+                        location.replace(refreshedUrlWithoutDm());
+                    });
                 }
                 btn && btn.addEventListener('click', () => {
-                    const enable = !isDm();
-                    try { if (enable) localStorage.setItem(LS_DM_KEY,'1'); else localStorage.removeItem(LS_DM_KEY);} catch(e){}
-                    location.reload();
+                    try { localStorage.removeItem(LS_DM_KEY); } catch{}
+                    if (window.netlifyIdentity && typeof window.netlifyIdentity.logout === 'function') {
+                        window.netlifyIdentity.logout();
+                        // Fallback in case no event fires
+                        setTimeout(() => location.replace(refreshedUrlWithoutDm()), 1000);
+                    } else {
+                        location.replace(refreshedUrlWithoutDm());
+                    }
                 });
             })();
             // Admin can be reached via header Admin link in wiki; no hidden shortcuts on map.

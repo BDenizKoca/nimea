@@ -111,6 +111,7 @@
         bridge.state.currentOverlayMode = mode;
         const regionsOverlay = bridge.state.overlays.regions;
         const bordersOverlay = bridge.state.overlays.borders;
+        const shadeLayer = bridge.state.shadeLayer;
 
         if (regionsOverlay) {
             if (mode === 'both' || mode === 'regions') bridge.map.addLayer(regionsOverlay);
@@ -119,6 +120,15 @@
         if (bordersOverlay) {
             if (mode === 'both' || mode === 'borders') bridge.map.addLayer(bordersOverlay);
             else bridge.map.removeLayer(bordersOverlay);
+        }
+
+        // Toggle shade layer to improve readability of region labels
+        if (shadeLayer) {
+            if (mode === 'both' || mode === 'regions') {
+                if (!bridge.map.hasLayer(shadeLayer)) bridge.map.addLayer(shadeLayer);
+            } else {
+                if (bridge.map.hasLayer(shadeLayer)) bridge.map.removeLayer(shadeLayer);
+            }
         }
 
         const overlayToggleContainer = document.querySelector('#overlay-toggles .overlay-segmented');

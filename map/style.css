@@ -309,6 +309,8 @@ body, html {
     border-radius: 4px;
     white-space: nowrap; /* prevent wrapping long TR label */
 }
+/* Logout button hidden by default; shown when logged in */
+#logout-btn { display: none; margin-left: 10px; }
 
 #map {
     width: 100%;
