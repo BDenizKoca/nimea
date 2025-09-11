@@ -124,27 +124,29 @@
       "public": true
     },
     {
-      "id": "evergreen",
-      "name": "Evergreen",
-      "x": 845.999943517365,
-      "y": 762.9844702261285,
+      "id": "serenova",
+      "name": "Serenova",
+      "x": 1028,
+      "y": 531,
       "type": "city",
-      "faction": "Evergreen Krallıgı",
-      "summary": "Evergreen",
+      "faction": "Serenova Krallığı",
+      "summary": "Altın buğday tarlaları arasına kurulmuş, görünüşte pastoral bir şehir olan Serenova, Konfederasyon'un ekmek ambarı ve tarafsızlığın simgesidir. Ancak, müreffeh dış görünüşünün altında, güçlü tüccar aileleri ve gizli loncalar, tahıl akışını kontrol eden ve kaderleri gölgelerden şekillendiren görünmez bir güce sahiptir.",
+      "iconUrl": "https://file.garden/aLboplo8eB2dIZKp/Nimea/serenovamarker.png",
+      "images": [],
+      "public": true,
       "i18n": {
         "tr": {
-          "name": "Evergreen",
-          "summary": "Evergreen",
-          "faction": "Evergreen Krallıgı"
+          "name": "Serenova",
+          "summary": "Altın buğday tarlaları arasına kurulmuş, görünüşte pastoral bir şehir olan Serenova, Konfederasyon'un ekmek ambarı ve tarafsızlığın simgesidir. Ancak, müreffeh dış görünüşünün altında, güçlü tüccar aileleri ve gizli loncalar, tahıl akışını kontrol eden ve kaderleri gölgelerden şekillendiren görünmez bir güce sahiptir.",
+          "faction": "Serenova Krallığı"
         },
         "en": {
-          "name": "Evergreen",
-          "summary": "Evergreen",
-          "faction": "Evergreen Krallıgı"
+          "name": "Serenova",
+          "summary": "A seemingly idyllic city nestled amidst golden wheat fields, Serenova is known as the Confederation's breadbasket and a beacon of neutrality. Yet, beneath its prosperous facade, powerful merchant families and secret guilds wield an unseen hand, controlling the flow of grain and shaping destinies from the shadows.",
+          "faction": "Kingdom of Serenova"
         }
       },
-      "images": [],
-      "public": true
+      "banner": "https://file.garden/aLboplo8eB2dIZKp/Nimea/serenovabanner.jpg"
     },
     {
       "id": "kuzey-kent",
