@@ -74,13 +74,13 @@ document.addEventListener('DOMContentLoaded', () => {
         routePane.style.zIndex = 650; // Above overlays (default 400-600 range) but below markers (700)
     }
         // Additional panes to control stacking order for overlays and shading
-        if (!map.getPane('bordersPane')) {
-            const bordersPane = map.createPane('bordersPane');
-            bordersPane.style.zIndex = 480;
-        }
         if (!map.getPane('regionsPane')) {
             const regionsPane = map.createPane('regionsPane');
-            regionsPane.style.zIndex = 500; // above borders
+            regionsPane.style.zIndex = 480; // base regions layer
+        }
+        if (!map.getPane('bordersPane')) {
+            const bordersPane = map.createPane('bordersPane');
+            bordersPane.style.zIndex = 490; // ensure borders draw above regions
         }
     
 
