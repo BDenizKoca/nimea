@@ -2736,26 +2736,6 @@
     {
       "type": "Feature",
       "properties": {
-        "kind": "road",
-        "_internal_id": "terrain_1756821856646_0.5571915377744019"
-      },
-      "geometry": {
-        "type": "LineString",
-        "coordinates": [
-          [
-            1062.760369,
-            867.535673
-          ],
-          [
-            1038.249989,
-            886.623052
-          ]
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
         "kind": "unpassable",
         "_internal_id": "terrain_1756822111861_0.6877759293281878"
       },
