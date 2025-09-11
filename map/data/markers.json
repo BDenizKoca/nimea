@@ -232,27 +232,29 @@
       "banner": "https://file.garden/aLboplo8eB2dIZKp/Nimea/file_0000000069686246866c0deb0e5d6dd9.png"
     },
     {
-      "id": "tasyurt",
-      "name": "Taşyurt",
+      "id": "taskan",
+      "name": "Taşkan",
       "x": 1061.999987,
       "y": 1001.74611,
       "type": "city",
-      "faction": "Taşyurt Krallığı",
-      "summary": "Taşyurt Krallığı Başkenti",
+      "faction": "Taşkan Krallığı",
+      "summary": "Dağların zirvesine oyulmuş, sert ve heybetli bir krallık. Güçlü Taşhisar kalesi, dağın kendisinden yontulmuş gibi durur. Taş işçiliğiyle ünlü halkı, dağ geçitlerini koruyan sarp arazide, ticaretle ve sade bir yaşamla var olur. Soğuk ve gururlu görünen bu halk, sabırla çalışır ve kadim geleneklerine bağlıdır.",
+      "iconUrl": "https://file.garden/aLboplo8eB2dIZKp/Nimea/taskanmarker.png",
+      "images": [],
+      "public": true,
       "i18n": {
         "tr": {
-          "name": "Taşyurt",
-          "summary": "Taşyurt Krallığı Başkenti",
-          "faction": "Taşyurt Krallığı"
+          "name": "Taşkan",
+          "summary": "Dağların zirvesine oyulmuş, sert ve heybetli bir krallık. Güçlü Taşhisar kalesi, dağın kendisinden yontulmuş gibi durur. Taş işçiliğiyle ünlü halkı, dağ geçitlerini koruyan sarp arazide, ticaretle ve sade bir yaşamla var olur. Soğuk ve gururlu görünen bu halk, sabırla çalışır ve kadim geleneklerine bağlıdır.",
+          "faction": "Taşkan Krallığı"
         },
         "en": {
-          "name": "Taşyurt",
-          "summary": "Taşyurt Krallığı Başkenti",
-          "faction": "Taşyurt Krallığı"
+          "name": "Rockford",
+          "summary": "A harsh and majestic kingdom carved into a mountain peak. The mighty fortress of Taşhisar seems to be hewn from the mountain itself. The people, famous for their stonework, survive through trade and a simple life in this rugged terrain that guards a mountain pass. They appear cold and proud, working with patience and adhering to their ancient traditions.",
+          "faction": "Kingdom of Rockford"
         }
       },
-      "images": [],
-      "public": true
+      "banner": "https://file.garden/aLboplo8eB2dIZKp/Nimea/taskancover.jpg"
     },
     {
       "id": "goldibi",
