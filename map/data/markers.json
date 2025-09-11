@@ -281,6 +281,31 @@
           "faction": "Kingdom of Pinefort"
         }
       }
+    },
+    {
+      "id": "dukmar",
+      "name": "Dukmar",
+      "x": 1048,
+      "y": 911,
+      "type": "town",
+      "faction": "Taşkan Krallığı",
+      "summary": "Dağ vadisine kurulmuş, disiplinli bir ortaçağ lonca şehri olan Dukmar, Taş İşçileri Loncası'nın mutlak egemenlik alanıdır. Ustaca düzenlenmiş bu yerleşim, usta taş çıkarımının ve eşsiz zanaatkarlığın merkezidir; Taşkanlıların topraklarını tanımlayan ham maddeleri titizlikle üretir.",
+      "iconUrl": "https://file.garden/aLboplo8eB2dIZKp/Nimea/dukmarmarker.png",
+      "images": [],
+      "public": true,
+      "i18n": {
+        "tr": {
+          "name": "Dukmar",
+          "summary": "Dağ vadisine kurulmuş, disiplinli bir ortaçağ lonca şehri olan Dukmar, Taş İşçileri Loncası'nın mutlak egemenlik alanıdır. Ustaca düzenlenmiş bu yerleşim, usta taş çıkarımının ve eşsiz zanaatkarlığın merkezidir; Taşkanlıların topraklarını tanımlayan ham maddeleri titizlikle üretir.",
+          "faction": "Taşkan Krallığı"
+        },
+        "en": {
+          "name": "Dukmar",
+          "summary": "A disciplined medieval guild-city nestled in a mountain valley, Dukmar is the supreme domain of the Stoneworkers' Guild. This ordered settlement, a hub of master stone extraction and unparalleled craftsmanship, meticulously produces the raw materials that define the Kingdom of Rockford's realm.",
+          "faction": "Kingdom of Rockford"
+        }
+      },
+      "banner": "https://file.garden/aLboplo8eB2dIZKp/Nimea/dukmar.png"
     }
   ]
 }
