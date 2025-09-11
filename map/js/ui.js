@@ -229,8 +229,8 @@
             <h2>${name}</h2>
             ${addRouteBtn ? `<div class="info-primary-action">${addRouteBtn}</div>` : ''}
             <p>${summary}</p>
-            ${data.type ? `<p><strong>Tür:</strong> ${data.type}</p>` : ''}
-            ${faction ? `<p><strong>Cemiyet/Devlet:</strong> ${faction}</p>` : ''}
+            ${data.type ? `<p><strong>${window.nimeaI18n ? window.nimeaI18n.t('markerType') : (isEnglish ? 'Type' : 'Tür')}:</strong> ${data.type}</p>` : ''}
+            ${faction ? `<p><strong>${window.nimeaI18n ? window.nimeaI18n.t('markerFaction') : (isEnglish ? 'Faction/Nation' : 'Cemiyet/Devlet')}:</strong> ${faction}</p>` : ''}
             ${bridge.state.isDmMode && bannerUrl ? `<div><button class=\"wiki-link clear-banner-btn\" data-id=\"${data.id}\">${clearBannerLbl}</button></div>` : ''}
             ${galleryHtml}
             ${wikiLink ? `<div class=\"info-secondary-action\"><a href=\"${wikiLink}\" class=\"wiki-link\" target=\"_blank\">${window.nimeaI18n ? window.nimeaI18n.t('showOnWiki') : 'Külliyatta Gör'}</a></div>` : ''}
