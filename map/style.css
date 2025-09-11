@@ -121,7 +121,7 @@ body, html {
 .overlay-segmented .route-toggle {
     width: 36px;
     height: 36px;
-    border-radius: 16px;
+    border-radius: 18px;
     padding: 0;
     display: inline-flex;
     align-items: center;
@@ -129,14 +129,15 @@ body, html {
     font-size: 16px;
 }
 .overlay-segmented .markers-toggle {
-    width: 36px;
-    height: 36px;
-    border-radius: 16px;
+    width: 40px;
+    height: 40px;
+    border-radius: 20px;
     padding: 0;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 20px; /* slightly larger so 📍 doesn't look too slim */
+    font-size: 24px; /* rollback to earlier size */
+    line-height: 1; /* remove extra inline box space */
 }
 .overlay-segmented .route-toggle[aria-pressed="true"] {
     background: var(--color-accent);
@@ -164,8 +165,8 @@ body, html {
         font-size: 11px;
         min-width: auto;
     }
-    .overlay-segmented .route-toggle { width: 28px; height: 28px; font-size: 14px; }
-    .overlay-segmented .markers-toggle { width: 28px; height: 28px; font-size: 18px; }
+    .overlay-segmented .route-toggle { width: 38px; height: 38px; font-size: 18px; }
+    .overlay-segmented .markers-toggle { width: 40px; height: 40px; font-size: 26px; }
     /* Abbreviate labels using data-mode attribute */
     .overlay-segmented button[data-mode="regions"]::after { content: "Reg"; }
     .overlay-segmented button[data-mode="borders"]::after { content: "Bor"; }
@@ -342,6 +343,9 @@ body, html {
     background-size: 120px 120px; /* denser grain */
     background-blend-mode: normal;
     position: relative; /* establish stacking context for inner shadow */
+    /* Add subtle outer drop shadow to lift the map surface */
+    /* Softer lifted surface shadow */
+    box-shadow: 0 4px 14px -4px rgba(0,0,0,0.32), 0 2px 4px -1px rgba(0,0,0,0.28);
     
     /* Ensure iOS Safari doesn't apply its own touch behaviors */
     -webkit-touch-callout: none;
@@ -357,11 +361,11 @@ body, html {
     position: absolute;
     inset: 0;
     pointer-events: none;
-    /* Stronger vignette/inner shadows around edges */
+    /* Much lighter vignette: reduce radii & opacity */
     box-shadow:
-        inset 0 0 40px rgba(0,0,0,0.30),
-        inset 0 0 120px rgba(0,0,0,0.34),
-        inset 0 0 220px rgba(0,0,0,0.22);
+        inset 0 0 28px rgba(0,0,0,0.16),
+        inset 0 0 90px rgba(0,0,0,0.12),
+        inset 0 0 180px rgba(0,0,0,0.08);
     z-index: 999; /* above map layers but non-interactive */
 }
 
@@ -512,18 +516,7 @@ button.wiki-link {
 .info-actions .add-to-route { background: #2c5e2e; }
 .info-actions .add-to-route:hover { background: #3a7a3d; }
 
-/* Mobile: larger overlay controls and route icon */
-@media (max-width: 520px) {
-    #overlay-toggles { padding: 6px 10px; bottom: 12px; }
-    .overlay-segmented { gap: 4px; }
-    .overlay-segmented button {
-        padding: 6px 10px;
-        font-size: 12px;
-        min-width: auto;
-        min-height: 40px; /* mobile tap target */
-    }
-    .overlay-segmented .route-toggle { width: 36px; height: 36px; font-size: 18px; }
-}
+/* (Removed duplicate mobile overlay sizing block after rollback) */
 
 /* Make action buttons full-width on narrow screens */
 @media (max-width: 700px) {
