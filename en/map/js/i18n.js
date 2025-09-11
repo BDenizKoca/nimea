@@ -121,6 +121,14 @@
         translateStaticContent();
     }
 
+    function getTypeBilingual(typeKey) {
+        if (!typeKey) return '';
+        const trVal = translations.tr.types[typeKey] || typeKey;
+        const enVal = translations.en.types[typeKey] || typeKey;
+        // Always English version root shows English first
+        return trVal === enVal ? enVal : `${enVal} (${trVal})`;
+    }
+
     // Initialize on DOM ready
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initI18n);
@@ -133,7 +141,8 @@
         t,
         getCurrentLang,
         setLang,
-        initI18n
+        initI18n,
+        getTypeBilingual
     };
 
 })(window);
