@@ -229,7 +229,7 @@
             <h2>${name}</h2>
             ${addRouteBtn ? `<div class="info-primary-action">${addRouteBtn}</div>` : ''}
             <p>${summary}</p>
-            ${data.type ? `<p><strong>${window.nimeaI18n ? window.nimeaI18n.t('markerType') : (isEnglish ? 'Type' : 'Tür')}:</strong> ${window.nimeaI18n && window.nimeaI18n.getTypeBilingual ? window.nimeaI18n.getTypeBilingual(data.type) : data.type}</p>` : ''}
+            ${data.type ? `<p><strong>${window.nimeaI18n ? window.nimeaI18n.t('markerType') : (isEnglish ? 'Type' : 'Tür')}:</strong> ${window.nimeaI18n && window.nimeaI18n.getType ? window.nimeaI18n.getType(data.type) : data.type}</p>` : ''}
             ${faction ? `<p><strong>${window.nimeaI18n ? window.nimeaI18n.t('markerFaction') : (isEnglish ? 'Faction/Nation' : 'Cemiyet/Devlet')}:</strong> ${faction}</p>` : ''}
             ${bridge.state.isDmMode && bannerUrl ? `<div><button class=\"wiki-link clear-banner-btn\" data-id=\"${data.id}\">${clearBannerLbl}</button></div>` : ''}
             ${galleryHtml}
